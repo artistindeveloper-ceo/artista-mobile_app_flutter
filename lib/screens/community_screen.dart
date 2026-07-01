@@ -69,7 +69,7 @@ class _CommunityScreenState extends State<CommunityScreen>
       _searchError = null;
     });
     try {
-      final results = await ApiService.searchUsers(query.trim());
+      final results = await UserService.searchUsers(query.trim());
       setState(() {
         _searchResults = results;
         _isSearching = false;
@@ -136,7 +136,7 @@ class _CommunityScreenState extends State<CommunityScreen>
             labelColor: Colors.white,
             unselectedLabelColor: Colors.white60,
             tabs: const [
-              Tab(text: 'Discover'),       // ← New tab
+              Tab(text: 'Discover'), // ← New tab
               Tab(text: 'Search'),
               Tab(text: 'Requests'),
             ],
@@ -196,12 +196,12 @@ class _CommunityScreenState extends State<CommunityScreen>
               prefixIcon: const Icon(Icons.search),
               suffixIcon: _searchCtrl.text.isNotEmpty
                   ? IconButton(
-                icon: const Icon(Icons.clear),
-                onPressed: () {
-                  _searchCtrl.clear();
-                  setState(() => _searchResults = []);
-                },
-              )
+                      icon: const Icon(Icons.clear),
+                      onPressed: () {
+                        _searchCtrl.clear();
+                        setState(() => _searchResults = []);
+                      },
+                    )
                   : null,
               border: OutlineInputBorder(
                 borderRadius: BorderRadius.circular(25),
@@ -214,27 +214,29 @@ class _CommunityScreenState extends State<CommunityScreen>
           child: _isSearching
               ? const Center(child: CircularProgressIndicator())
               : _searchError != null
-              ? Center(child: Text(_searchError!,
-              style: const TextStyle(color: Colors.grey)))
-              : _searchResults.isEmpty
-              ? const Center(
-            child: Text('Search for people to follow',
-                style: TextStyle(color: Colors.grey)),
-          )
-              : ListView.builder(
-            itemCount: _searchResults.length,
-            itemBuilder: (ctx, i) {
-              final user = _searchResults[i];
-              return _UserTile(
-                user: user,
-                onFollow: () => _followUser(user.id),
-              );
-            },
-          ),
+                  ? Center(
+                      child: Text(_searchError!,
+                          style: const TextStyle(color: Colors.grey)))
+                  : _searchResults.isEmpty
+                      ? const Center(
+                          child: Text('Search for people to follow',
+                              style: TextStyle(color: Colors.grey)),
+                        )
+                      : ListView.builder(
+                          itemCount: _searchResults.length,
+                          itemBuilder: (ctx, i) {
+                            final user = _searchResults[i];
+                            return _UserTile(
+                              user: user,
+                              onFollow: () => _followUser(user.id),
+                            );
+                          },
+                        ),
         ),
       ],
     );
   }
+
 // ─── Follow User ──────────────────────────────────────
   Future<void> _followUser(int userId) async {
     try {
@@ -254,6 +256,7 @@ class _CommunityScreenState extends State<CommunityScreen>
       _showSnack(e.toString(), isError: true);
     }
   }
+
   // ─── Requests Tab ─────────────────────────────────────
   Widget _buildRequestsTab() {
     if (_isLoadingRequests) {
@@ -272,19 +275,18 @@ class _CommunityScreenState extends State<CommunityScreen>
         itemBuilder: (ctx, i) {
           final req = _followRequests[i];
           final requestId = req['id'] ?? req['requestId'];
-          final username = req['username'] ??
-              req['requester']?['username'] ?? 'Unknown';
-          final avatarUrl = req['avatarUrl'] ??
-              req['requester']?['avatarUrl'];
+          final username =
+              req['username'] ?? req['requester']?['username'] ?? 'Unknown';
+          final avatarUrl = req['avatarUrl'] ?? req['requester']?['avatarUrl'];
 
           return ListTile(
             leading: CircleAvatar(
               backgroundColor: AppColors.primaryLight,
               backgroundImage:
-              avatarUrl != null ? NetworkImage(avatarUrl) : null,
+                  avatarUrl != null ? NetworkImage(avatarUrl) : null,
               child: avatarUrl == null
                   ? Text(username[0].toUpperCase(),
-                  style: const TextStyle(color: Colors.white))
+                      style: const TextStyle(color: Colors.white))
                   : null,
             ),
             title: Text(username,
@@ -299,8 +301,7 @@ class _CommunityScreenState extends State<CommunityScreen>
                   onPressed: () => _acceptRequest(requestId),
                 ),
                 IconButton(
-                  icon: const Icon(Icons.cancel,
-                      color: Colors.red, size: 28),
+                  icon: const Icon(Icons.cancel, color: Colors.red, size: 28),
                   onPressed: () => _rejectRequest(requestId),
                 ),
               ],
@@ -311,6 +312,7 @@ class _CommunityScreenState extends State<CommunityScreen>
     );
   }
 }
+
 class _UserTile extends StatelessWidget {
   final UserModel user;
   final VoidCallback onFollow;
@@ -322,41 +324,42 @@ class _UserTile extends StatelessWidget {
     return ListTile(
       leading: CircleAvatar(
         backgroundColor: AppColors.primaryLight,
-        backgroundImage: user.avatarUrl != null ? NetworkImage(user.avatarUrl!) : null,
+        backgroundImage:
+            user.avatarUrl != null ? NetworkImage(user.avatarUrl!) : null,
         child: user.avatarUrl == null
             ? Text(user.name.isNotEmpty ? user.name[0].toUpperCase() : '?',
-            style: const TextStyle(color: Colors.white))
+                style: const TextStyle(color: Colors.white))
             : null,
       ),
-      title: Text(user.name,
-          style: const TextStyle(fontWeight: FontWeight.bold)),
+      title:
+          Text(user.name, style: const TextStyle(fontWeight: FontWeight.bold)),
       subtitle: user.username != null
           ? Text('@${user.username}',
-          style: const TextStyle(color: Colors.grey))
+              style: const TextStyle(color: Colors.grey))
           : null,
       trailing: user.isFollowing
-      // ✅ Already following — grey outlined button
+          // ✅ Already following — grey outlined button
           ? OutlinedButton(
-        onPressed: null, // disabled
-        style: OutlinedButton.styleFrom(
-          foregroundColor: Colors.grey,
-          side: const BorderSide(color: Colors.grey),
-          padding: const EdgeInsets.symmetric(horizontal: 16),
-          minimumSize: const Size(90, 32),
-        ),
-        child: const Text('Following', style: TextStyle(fontSize: 12)),
-      )
-      // Not following — solid blue button
+              onPressed: null, // disabled
+              style: OutlinedButton.styleFrom(
+                foregroundColor: Colors.grey,
+                side: const BorderSide(color: Colors.grey),
+                padding: const EdgeInsets.symmetric(horizontal: 16),
+                minimumSize: const Size(90, 32),
+              ),
+              child: const Text('Following', style: TextStyle(fontSize: 12)),
+            )
+          // Not following — solid blue button
           : ElevatedButton(
-        onPressed: onFollow,
-        style: ElevatedButton.styleFrom(
-          backgroundColor: AppColors.primaryDark,
-          foregroundColor: Colors.white,
-          padding: const EdgeInsets.symmetric(horizontal: 16),
-          minimumSize: const Size(80, 32),
-        ),
-        child: const Text('Follow', style: TextStyle(fontSize: 12)),
-      ),
+              onPressed: onFollow,
+              style: ElevatedButton.styleFrom(
+                backgroundColor: AppColors.primaryDark,
+                foregroundColor: Colors.white,
+                padding: const EdgeInsets.symmetric(horizontal: 16),
+                minimumSize: const Size(80, 32),
+              ),
+              child: const Text('Follow', style: TextStyle(fontSize: 12)),
+            ),
     );
   }
 }

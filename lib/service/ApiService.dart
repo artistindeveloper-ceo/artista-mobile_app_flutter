@@ -94,6 +94,7 @@ class ApiService {
 
   // ─── GET USER BY USERNAME (GET /api/v1/users/{username}) ────────
   static Future<UserModel> getUserByUsername(String username) async {
+
     final uri = Uri.parse(ApiConfig.userByUsernameUrl(username));
     print("🌐 getUserByUsername URL: $uri"); // add this
     http.Response response;
@@ -115,28 +116,8 @@ class ApiService {
     return UserModel.fromJson(userJson);
   }
 
-  // ─── SEARCH USERS (GET /api/v1/users/search?q=) ─────────────────
-  static Future<List<UserModel>> searchUsers(String query) async {
-    final uri = Uri.parse(
-        '${ApiConfig.searchUsersUrl}?q=${Uri.encodeComponent(query)}');
-    http.Response response;
-    try {
-      response = await http.get(uri, headers: _authHeaders());
-    } catch (e) {
-      throw ApiException(
-          'Could not reach server. Check your internet connection.');
-    }
 
-    final body = _safeDecode(response.body);
-    if (response.statusCode != 200 || body['success'] == false) {
-      throw ApiException(body['message'] ?? 'Search failed.');
-    }
 
-    final List<dynamic> list = body['data'] ?? [];
-    return list
-        .map((e) => UserModel.fromJson(e as Map<String, dynamic>))
-        .toList();
-  }
 
   // ─── UPDATE PROFILE (PUT /api/v1/users/me) ──────────────────────
   static Future<UserModel> updateMe({

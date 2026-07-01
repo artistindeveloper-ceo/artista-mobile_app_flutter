@@ -40,7 +40,8 @@ class UserService {
 // ─── GET ALL USERS (Discover) ─────────────────────────
   static Future<List<UserModel>> getAllUsers() async {
     // ✅ Correct URL matching your backend
-    final uri = Uri.parse('${ApiConfig.baseUrl}/api/v1/community/users/discover?page=0&size=20');
+    final uri = Uri.parse(
+        '${ApiConfig.baseUrl}/api/v1/community/users/discover?page=0&size=20');
 
     http.Response response;
     try {
@@ -57,6 +58,34 @@ class UserService {
     }
 
     final List<dynamic> list = body['content'] ?? [];
+    return list
+        .map((e) => UserModel.fromJson(e as Map<String, dynamic>))
+        .toList();
+  }
+
+  // ─── SEARCH USERS (GET /api/v1/users/search?query=) ─────────────
+  static Future<List<UserModel>> searchUsers(String query,
+      {int page = 0, int size = 20}) async {
+    if (query.trim().isEmpty) return [];
+
+    final uri = Uri.parse(
+        '${ApiConfig.baseUrl}/api/v1/users/search?query=${Uri.encodeQueryComponent(query)}&page=$page&size=$size');
+
+    http.Response response;
+    try {
+      response = await http.get(uri, headers: _authHeaders());
+    } catch (e) {
+      throw ApiException('Could not reach server.');
+    }
+
+    print('Search → ${response.statusCode}: ${response.body}'); // debug
+
+    final body = _safeDecode(response.body);
+    if (response.statusCode != 200) {
+      throw ApiException(body['message'] ?? 'Search failed.');
+    }
+
+    final List<dynamic> list = body['content'] ?? []; // ✅ correct key
     return list
         .map((e) => UserModel.fromJson(e as Map<String, dynamic>))
         .toList();

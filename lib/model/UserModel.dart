@@ -47,7 +47,7 @@ class UserModel {
       followingCount: followingCount,
       postsCount: postsCount,
       isFollowing: isFollowing ?? this.isFollowing,
-      profilePhotoUrl: profilePhotoUrl ?? this.profilePhotoUrl, // ← ADD
+      profilePhotoUrl: profilePhotoUrl ?? this.profilePhotoUrl,
     );
   }
 
@@ -74,9 +74,9 @@ class UserModel {
       username: json['username'],
       bio: json['bio'],
       followersCount: json['followerCount'] ?? json['followersCount'] ?? json['followers'] ?? 0,
-      followingCount: json['followingCount'] ?? json['following'] ?? 0,
+      followingCount: json['followingCount'] ?? 0,  // ✅ FIXED - removed conflict
       postsCount: json['postCount'] ?? json['postsCount'] ?? json['posts'] ?? 0,
-      isFollowing: json['isFollowedByViewer'] ?? json['isFollowing'] ?? false, // ✅ NEW
+      isFollowing: json['following'] ?? json['isFollowedByViewer'] ?? json['isFollowing'] ?? false, // ✅ FIXED
       profilePhotoUrl: json['profilePhotoUrl']
           ?? json['avatarUrl']
           ?? json['profile_photo_url'],

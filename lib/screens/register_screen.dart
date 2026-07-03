@@ -1,8 +1,7 @@
 import 'package:flutter/material.dart';
-import '../service/ApiService.dart';
+
 import '../service/AuthService.dart';
 import '../theme/app_theme.dart';
-import 'home_screen.dart';
 
 class RegisterScreen extends StatefulWidget {
   const RegisterScreen({super.key});
@@ -103,9 +102,10 @@ class _RegisterScreenState extends State<RegisterScreen> {
                 decoration: InputDecoration(
                   labelText: 'Password*',
                   suffixIcon: IconButton(
-                    icon: Icon(_obscurePassword
-                        ? Icons.visibility_off_outlined
-                        : Icons.visibility_outlined,
+                    icon: Icon(
+                        _obscurePassword
+                            ? Icons.visibility_off_outlined
+                            : Icons.visibility_outlined,
                         color: AppColors.textGrey),
                     onPressed: () =>
                         setState(() => _obscurePassword = !_obscurePassword),
@@ -121,9 +121,10 @@ class _RegisterScreenState extends State<RegisterScreen> {
                 decoration: InputDecoration(
                   labelText: 'Confirm Password*',
                   suffixIcon: IconButton(
-                    icon: Icon(_obscureConfirm
-                        ? Icons.visibility_off_outlined
-                        : Icons.visibility_outlined,
+                    icon: Icon(
+                        _obscureConfirm
+                            ? Icons.visibility_off_outlined
+                            : Icons.visibility_outlined,
                         color: AppColors.textGrey),
                     onPressed: () =>
                         setState(() => _obscureConfirm = !_obscureConfirm),
@@ -137,9 +138,10 @@ class _RegisterScreenState extends State<RegisterScreen> {
                 onPressed: _isLoading ? null : _register,
                 child: _isLoading
                     ? const SizedBox(
-                    height: 22, width: 22,
-                    child: CircularProgressIndicator(
-                        strokeWidth: 2, color: AppColors.white))
+                        height: 22,
+                        width: 22,
+                        child: CircularProgressIndicator(
+                            strokeWidth: 2, color: AppColors.white))
                     : const Text('CREATE ACCOUNT'),
               ),
 
@@ -150,7 +152,8 @@ class _RegisterScreenState extends State<RegisterScreen> {
                 mainAxisAlignment: MainAxisAlignment.center,
                 children: [
                   const Text('Already have an account? ',
-                      style: TextStyle(color: AppColors.darkText, fontSize: 13)),
+                      style:
+                          TextStyle(color: AppColors.darkText, fontSize: 13)),
                   GestureDetector(
                     onTap: () => Navigator.pop(context),
                     child: const Text('Login',

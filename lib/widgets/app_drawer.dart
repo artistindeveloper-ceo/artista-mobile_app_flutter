@@ -1,11 +1,12 @@
 import 'package:flutter/material.dart';
+
 import '../config/ApiConfig.dart';
-import '../theme/app_theme.dart';
 import '../config/Session.dart';
-import '../screens/login_screen.dart';
-import '../screens/jamming_screen.dart';
-import '../screens/settings_screen.dart';
 import '../screens/Profile_Screen.dart';
+import '../screens/jamming_screen.dart';
+import '../screens/login_screen.dart';
+import '../screens/settings_screen.dart';
+import '../theme/app_theme.dart';
 
 class AppDrawer extends StatefulWidget {
   const AppDrawer({super.key});
@@ -28,13 +29,13 @@ class _AppDrawerState extends State<AppDrawer> {
     final session = Session();
     final name = await session.getDisplayName();
     final photo = await session.getProfilePhotoUrl();
-    print("🖼️ Drawer photo URL: $photo");  // ← add karo
-    print("👤 Drawer name: $name");         // ← add karo
+    print("🖼️ Drawer photo URL: $photo"); // ← add karo
+    print("👤 Drawer name: $name"); // ← add karo
     if (mounted) {
       setState(() {
         _name = name ?? 'Artista';
         _photoUrl = photo != null
-            ? '${ApiConfig.baseUrl}$photo'  // ← base URL add karo
+            ? '${ApiConfig.baseUrl}$photo' // ← base URL add karo
             : null;
       });
     }

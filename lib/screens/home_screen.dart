@@ -1,13 +1,14 @@
 import 'package:flutter/material.dart';
+
+import '../service/NotificationService.dart';
 import '../theme/app_theme.dart';
 import '../widgets/app_drawer.dart';
-import '../service/ApiService.dart';
-import 'social_feed_screen.dart';
-import 'profile_screen.dart';
-import 'community_screen.dart';
 import 'chat_list_screen.dart';
-import 'notification_screen.dart';
+import 'community_screen.dart';
 import 'jamming_screen.dart';
+import 'notification_screen.dart';
+import 'profile_screen.dart';
+import 'social_feed_screen.dart';
 
 class HomeScreen extends StatefulWidget {
   const HomeScreen({super.key});
@@ -18,10 +19,16 @@ class HomeScreen extends StatefulWidget {
 
 class _HomeScreenState extends State<HomeScreen> {
   int _currentIndex = 0;
-  int _unreadCount = 0;                          // ← NEW
+  int _unreadCount = 0; // ← NEW
   final GlobalKey<ScaffoldState> _scaffoldKey = GlobalKey<ScaffoldState>();
 
-  final List<String> _titles = ['Home', 'Chats', 'Community', 'Jamming', 'Profile'];
+  final List<String> _titles = [
+    'Home',
+    'Chats',
+    'Community',
+    'Jamming',
+    'Profile'
+  ];
   final List<IconData> _icons = [
     Icons.home_outlined,
     Icons.chat_bubble_outline,
@@ -33,11 +40,12 @@ class _HomeScreenState extends State<HomeScreen> {
   @override
   void initState() {
     super.initState();
-    _loadUnreadCount();                          // ← NEW
+    _loadUnreadCount(); // ← NEW
   }
 
-  Future<void> _loadUnreadCount() async {       // ← NEW
-    final count = await ApiService.getUnreadCount();
+  Future<void> _loadUnreadCount() async {
+    // ← NEW
+    final count = await NotificationService.getUnreadCount();
     setState(() => _unreadCount = count);
   }
 
@@ -96,7 +104,7 @@ class _HomeScreenState extends State<HomeScreen> {
                     context,
                     MaterialPageRoute(
                         builder: (_) => const NotificationScreen()),
-                  ).then((_) => _loadUnreadCount());  // reload after back
+                  ).then((_) => _loadUnreadCount()); // reload after back
                 },
               ),
               if (_unreadCount > 0)
@@ -134,7 +142,7 @@ class _HomeScreenState extends State<HomeScreen> {
         unselectedFontSize: 11,
         items: List.generate(
           5,
-              (i) => BottomNavigationBarItem(
+          (i) => BottomNavigationBarItem(
             icon: Icon(_icons[i], size: 22),
             label: _titles[i],
           ),
@@ -146,6 +154,7 @@ class _HomeScreenState extends State<HomeScreen> {
 
 class _EmptyTab extends StatelessWidget {
   final String label;
+
   const _EmptyTab({required this.label});
 
   @override

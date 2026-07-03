@@ -1,5 +1,7 @@
 import 'package:flutter/material.dart';
-import '../service/ApiService.dart';
+
+import '../service/HelperService.dart';
+import '../service/JamSessionService.dart';
 import '../theme/app_theme.dart';
 import 'jam_session_detail_screen.dart';
 
@@ -27,12 +29,16 @@ class _JammingScreenState extends State<JammingScreen> {
       _error = null;
     });
     try {
-      final sessions = await ApiService.getMySessions();
+      final sessions = await JamSessionService.getMySessions();
       setState(() {
         _sessions = sessions;
         _isLoading = false;
       });
     } catch (e) {
+      if (HelperService.isAuthError(e)) {
+        await HelperService.forceLogout(context);
+        return;
+      }
       setState(() {
         _isLoading = false;
         _error = e.toString();
@@ -53,7 +59,9 @@ class _JammingScreenState extends State<JammingScreen> {
       ),
       builder: (ctx) => Padding(
         padding: EdgeInsets.only(
-          left: 24, right: 24, top: 24,
+          left: 24,
+          right: 24,
+          top: 24,
           bottom: MediaQuery.of(ctx).viewInsets.bottom + 24,
         ),
         child: Column(
@@ -66,8 +74,7 @@ class _JammingScreenState extends State<JammingScreen> {
             TextField(
               controller: nameCtrl,
               decoration: const InputDecoration(
-                  labelText: 'Session Name',
-                  border: OutlineInputBorder()),
+                  labelText: 'Session Name', border: OutlineInputBorder()),
             ),
             const SizedBox(height: 12),
             TextField(
@@ -90,13 +97,17 @@ class _JammingScreenState extends State<JammingScreen> {
                   if (nameCtrl.text.trim().isEmpty) return;
                   Navigator.pop(ctx);
                   try {
-                    await ApiService.createSession(
+                    await JamSessionService.createSession(
                       name: nameCtrl.text.trim(),
                       description: descCtrl.text.trim(),
                     );
                     _showSnack('Session created!');
                     _loadSessions();
                   } catch (e) {
+                    if (HelperService.isAuthError(e)) {
+                      await HelperService.forceLogout(context);
+                      return;
+                    }
                     _showSnack(e.toString(), isError: true);
                   }
                 },
@@ -121,7 +132,9 @@ class _JammingScreenState extends State<JammingScreen> {
       ),
       builder: (ctx) => Padding(
         padding: EdgeInsets.only(
-          left: 24, right: 24, top: 24,
+          left: 24,
+          right: 24,
+          top: 24,
           bottom: MediaQuery.of(ctx).viewInsets.bottom + 24,
         ),
         child: Column(
@@ -152,7 +165,7 @@ class _JammingScreenState extends State<JammingScreen> {
                   if (codeCtrl.text.trim().isEmpty) return;
                   Navigator.pop(ctx);
                   try {
-                    final session = await ApiService.joinSession(
+                    final session = await JamSessionService.joinSession(
                         codeCtrl.text.trim());
                     _showSnack('Joined session!');
                     _loadSessions();
@@ -160,12 +173,16 @@ class _JammingScreenState extends State<JammingScreen> {
                       Navigator.push(
                         context,
                         MaterialPageRoute(
-                          builder: (_) => JamSessionDetailScreen(
-                              sessionId: session['id']),
+                          builder: (_) =>
+                              JamSessionDetailScreen(sessionId: session['id']),
                         ),
                       );
                     }
                   } catch (e) {
+                    if (HelperService.isAuthError(e)) {
+                      await HelperService.forceLogout(context);
+                      return;
+                    }
                     _showSnack(e.toString(), isError: true);
                   }
                 },
@@ -192,134 +209,131 @@ class _JammingScreenState extends State<JammingScreen> {
       body: _isLoading
           ? const Center(child: CircularProgressIndicator())
           : _error != null
-          ? Center(
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            const Icon(Icons.error_outline,
-                size: 48, color: Colors.grey),
-            const SizedBox(height: 12),
-            Text(_error!,
-                textAlign: TextAlign.center,
-                style: const TextStyle(color: Colors.grey)),
-            const SizedBox(height: 16),
-            ElevatedButton(
-                onPressed: _loadSessions,
-                child: const Text('Retry')),
-          ],
-        ),
-      )
-          : RefreshIndicator(
-        onRefresh: _loadSessions,
-        child: _sessions.isEmpty
-            ? ListView(
-          children: [
-            SizedBox(
-              height: MediaQuery.of(context).size.height * 0.6,
-              child: Center(
-                child: Column(
-                  mainAxisSize: MainAxisSize.min,
-                  children: [
-                    Icon(Icons.music_note_outlined,
-                        size: 64,
-                        color: Colors.grey.withOpacity(0.4)),
-                    const SizedBox(height: 12),
-                    const Text('No jam sessions yet',
-                        style: TextStyle(color: Colors.grey)),
-                    const SizedBox(height: 8),
-                    const Text(
-                        'Create or join a session below',
-                        style: TextStyle(
-                            color: Colors.grey, fontSize: 12)),
-                  ],
-                ),
-              ),
-            ),
-          ],
-        )
-            : ListView.separated(
-          padding: const EdgeInsets.all(16),
-          itemCount: _sessions.length,
-          separatorBuilder: (_, __) =>
-          const SizedBox(height: 12),
-          itemBuilder: (ctx, i) {
-            final s = _sessions[i];
-            final sessionId = s['id'];
-            final name = s['name'] ?? 'Jam Session';
-            final status = s['status'] ?? 'PENDING';
-            final inviteCode = s['inviteCode'] ?? '';
-            final participantCount =
-                s['participantCount'] ?? 0;
-
-            return GestureDetector(
-              onTap: () {
-                Navigator.push(
-                  context,
-                  MaterialPageRoute(
-                    builder: (_) => JamSessionDetailScreen(
-                        sessionId: sessionId),
+              ? Center(
+                  child: Column(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      const Icon(Icons.error_outline,
+                          size: 48, color: Colors.grey),
+                      const SizedBox(height: 12),
+                      Text(_error!,
+                          textAlign: TextAlign.center,
+                          style: const TextStyle(color: Colors.grey)),
+                      const SizedBox(height: 16),
+                      ElevatedButton(
+                          onPressed: _loadSessions, child: const Text('Retry')),
+                    ],
                   ),
-                ).then((_) => _loadSessions());
-              },
-              child: Container(
-                padding: const EdgeInsets.all(16),
-                decoration: BoxDecoration(
-                  color: Colors.white,
-                  borderRadius: BorderRadius.circular(12),
-                  boxShadow: [
-                    BoxShadow(
-                      color: Colors.grey.withOpacity(0.1),
-                      blurRadius: 8,
-                      offset: const Offset(0, 2),
-                    ),
-                  ],
-                ),
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Row(
-                      mainAxisAlignment:
-                      MainAxisAlignment.spaceBetween,
-                      children: [
-                        Expanded(
-                          child: Text(
-                            name,
-                            style: const TextStyle(
-                              fontSize: 16,
-                              fontWeight: FontWeight.bold,
+                )
+              : RefreshIndicator(
+                  onRefresh: _loadSessions,
+                  child: _sessions.isEmpty
+                      ? ListView(
+                          children: [
+                            SizedBox(
+                              height: MediaQuery.of(context).size.height * 0.6,
+                              child: Center(
+                                child: Column(
+                                  mainAxisSize: MainAxisSize.min,
+                                  children: [
+                                    Icon(Icons.music_note_outlined,
+                                        size: 64,
+                                        color: Colors.grey.withOpacity(0.4)),
+                                    const SizedBox(height: 12),
+                                    const Text('No jam sessions yet',
+                                        style: TextStyle(color: Colors.grey)),
+                                    const SizedBox(height: 8),
+                                    const Text('Create or join a session below',
+                                        style: TextStyle(
+                                            color: Colors.grey, fontSize: 12)),
+                                  ],
+                                ),
+                              ),
                             ),
-                          ),
+                          ],
+                        )
+                      : ListView.separated(
+                          padding: const EdgeInsets.all(16),
+                          itemCount: _sessions.length,
+                          separatorBuilder: (_, __) =>
+                              const SizedBox(height: 12),
+                          itemBuilder: (ctx, i) {
+                            final s = _sessions[i];
+                            final sessionId = s['id'];
+                            final name = s['name'] ?? 'Jam Session';
+                            final status = s['status'] ?? 'PENDING';
+                            final inviteCode = s['inviteCode'] ?? '';
+                            final participantCount = s['participantCount'] ?? 0;
+
+                            return GestureDetector(
+                              onTap: () {
+                                Navigator.push(
+                                  context,
+                                  MaterialPageRoute(
+                                    builder: (_) => JamSessionDetailScreen(
+                                        sessionId: sessionId),
+                                  ),
+                                ).then((_) => _loadSessions());
+                              },
+                              child: Container(
+                                padding: const EdgeInsets.all(16),
+                                decoration: BoxDecoration(
+                                  color: Colors.white,
+                                  borderRadius: BorderRadius.circular(12),
+                                  boxShadow: [
+                                    BoxShadow(
+                                      color: Colors.grey.withOpacity(0.1),
+                                      blurRadius: 8,
+                                      offset: const Offset(0, 2),
+                                    ),
+                                  ],
+                                ),
+                                child: Column(
+                                  crossAxisAlignment: CrossAxisAlignment.start,
+                                  children: [
+                                    Row(
+                                      mainAxisAlignment:
+                                          MainAxisAlignment.spaceBetween,
+                                      children: [
+                                        Expanded(
+                                          child: Text(
+                                            name,
+                                            style: const TextStyle(
+                                              fontSize: 16,
+                                              fontWeight: FontWeight.bold,
+                                            ),
+                                          ),
+                                        ),
+                                        _StatusChip(status: status),
+                                      ],
+                                    ),
+                                    const SizedBox(height: 8),
+                                    Row(
+                                      children: [
+                                        const Icon(Icons.people_outline,
+                                            size: 16, color: Colors.grey),
+                                        const SizedBox(width: 4),
+                                        Text('$participantCount participants',
+                                            style: const TextStyle(
+                                                color: Colors.grey,
+                                                fontSize: 13)),
+                                        const SizedBox(width: 16),
+                                        const Icon(Icons.vpn_key_outlined,
+                                            size: 16, color: Colors.grey),
+                                        const SizedBox(width: 4),
+                                        Text(inviteCode,
+                                            style: const TextStyle(
+                                                color: Colors.grey,
+                                                fontSize: 13)),
+                                      ],
+                                    ),
+                                  ],
+                                ),
+                              ),
+                            );
+                          },
                         ),
-                        _StatusChip(status: status),
-                      ],
-                    ),
-                    const SizedBox(height: 8),
-                    Row(
-                      children: [
-                        const Icon(Icons.people_outline,
-                            size: 16, color: Colors.grey),
-                        const SizedBox(width: 4),
-                        Text('$participantCount participants',
-                            style: const TextStyle(
-                                color: Colors.grey,
-                                fontSize: 13)),
-                        const SizedBox(width: 16),
-                        const Icon(Icons.vpn_key_outlined,
-                            size: 16, color: Colors.grey),
-                        const SizedBox(width: 4),
-                        Text(inviteCode,
-                            style: const TextStyle(
-                                color: Colors.grey,
-                                fontSize: 13)),
-                      ],
-                    ),
-                  ],
                 ),
-              ),
-            );
-          },
-        ),
-      ),
       floatingActionButton: Column(
         mainAxisSize: MainAxisSize.min,
         children: [
@@ -348,6 +362,7 @@ class _JammingScreenState extends State<JammingScreen> {
 
 class _StatusChip extends StatelessWidget {
   final String status;
+
   const _StatusChip({required this.status});
 
   @override
@@ -371,8 +386,8 @@ class _StatusChip extends StatelessWidget {
       ),
       child: Text(
         status,
-        style: TextStyle(
-            color: color, fontSize: 11, fontWeight: FontWeight.bold),
+        style:
+            TextStyle(color: color, fontSize: 11, fontWeight: FontWeight.bold),
       ),
     );
   }

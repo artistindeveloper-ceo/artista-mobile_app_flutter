@@ -1,6 +1,8 @@
+import 'package:artist_in/service/FollowUserService.dart';
 import 'package:flutter/material.dart';
+
 import '../model/UserModel.dart';
-import '../service/ApiService.dart';
+import '../service/HelperService.dart';
 import '../service/UserService.dart';
 import '../theme/app_theme.dart';
 
@@ -54,6 +56,10 @@ class _CommunityScreenState extends State<CommunityScreen>
         _isLoadingUsers = false;
       });
     } catch (e) {
+      if (HelperService.isAuthError(e)) {
+        await HelperService.forceLogout(context);
+        return;
+      }
       setState(() => _isLoadingUsers = false);
     }
   }
@@ -75,6 +81,10 @@ class _CommunityScreenState extends State<CommunityScreen>
         _isSearching = false;
       });
     } catch (e) {
+      if (HelperService.isAuthError(e)) {
+        await HelperService.forceLogout(context);
+        return;
+      }
       setState(() {
         _searchError = e.toString();
         _isSearching = false;
@@ -86,12 +96,16 @@ class _CommunityScreenState extends State<CommunityScreen>
   Future<void> _loadFollowRequests() async {
     setState(() => _isLoadingRequests = true);
     try {
-      final requests = await ApiService.getPendingFollowRequests();
+      final requests = await FollowUserservice.getPendingFollowRequests();
       setState(() {
         _followRequests = requests;
         _isLoadingRequests = false;
       });
     } catch (e) {
+      if (HelperService.isAuthError(e)) {
+        await HelperService.forceLogout(context);
+        return;
+      }
       setState(() => _isLoadingRequests = false);
     }
   }
@@ -99,20 +113,28 @@ class _CommunityScreenState extends State<CommunityScreen>
   // ─── Accept/Reject ────────────────────────────────────
   Future<void> _acceptRequest(int requestId) async {
     try {
-      await ApiService.acceptFollowRequest(requestId);
+      await FollowUserservice.acceptFollowRequest(requestId);
       _showSnack('Request accepted!');
       _loadFollowRequests();
     } catch (e) {
+      if (HelperService.isAuthError(e)) {
+        await HelperService.forceLogout(context);
+        return;
+      }
       _showSnack(e.toString(), isError: true);
     }
   }
 
   Future<void> _rejectRequest(int requestId) async {
     try {
-      await ApiService.rejectFollowRequest(requestId);
+      await FollowUserservice.rejectFollowRequest(requestId);
       _showSnack('Request rejected!');
       _loadFollowRequests();
     } catch (e) {
+      if (HelperService.isAuthError(e)) {
+        await HelperService.forceLogout(context);
+        return;
+      }
       _showSnack(e.toString(), isError: true);
     }
   }
@@ -240,10 +262,8 @@ class _CommunityScreenState extends State<CommunityScreen>
 // ─── Follow User ──────────────────────────────────────
   Future<void> _followUser(int userId) async {
     try {
-      await ApiService.followUser(userId);
+      await FollowUserservice.followUser(userId);
       _showSnack('Followed!');
-
-      // ✅ Update only that user's isFollowing — no full reload
       setState(() {
         _allUsers = _allUsers.map((u) {
           return u.id == userId ? u.copyWith(isFollowing: true) : u;
@@ -253,6 +273,10 @@ class _CommunityScreenState extends State<CommunityScreen>
         }).toList();
       });
     } catch (e) {
+      if (HelperService.isAuthError(e)) {
+        await HelperService.forceLogout(context);
+        return;
+      }
       _showSnack(e.toString(), isError: true);
     }
   }

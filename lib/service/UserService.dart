@@ -1,40 +1,90 @@
-import '../config/ApiConfig.dart';
-import '../config/Session.dart';
-import '../model/UserModel.dart';
 import 'dart:convert';
-import 'dart:io';
+
+import 'package:artist_in/service/HelperService.dart';
 import 'package:http/http.dart' as http;
 
-class ApiException implements Exception {
-  final String message;
-
-  ApiException(this.message);
-
-  @override
-  String toString() => message;
-}
+import '../Exception/ApiException.dart';
+import '../config/ApiConfig.dart';
+import '../model/UserModel.dart';
 
 class UserService {
-  // ─── Auth Headers ──────────────────────────────────────
-  static Map<String, String> _authHeaders() {
-    final token = Session().token;
-    if (token == null)
-      throw ApiException('Not logged in. Please log in again.');
-    return {
-      'Content-Type': 'application/json',
-      'Authorization': 'Bearer $token',
-    };
+  // ─── GET CURRENT USER (GET /api/v1/users/me) ────────────────────
+  static Future<UserModel> getMe() async {
+    final uri = Uri.parse(ApiConfig.getMeUrl);
+    http.Response response;
+    try {
+      response = await http.get(uri, headers: HelperService.authHeaders());
+    } catch (e) {
+      throw ApiException(
+          'Could not reach server. Check your internet connection.');
+    }
+
+    final body = HelperService.safeDecode(response.body);
+    if (response.statusCode != 200 || body['success'] == false) {
+      throw ApiException(body['message'] ?? 'Could not load profile.');
+    }
+
+    final userJson = (body['data'] ?? body) as Map<String, dynamic>;
+    // ← THESE 3 LINES — make sure all 3 are there
+    print('RAW avatarUrl: ${userJson['avatarUrl']}');
+    print('RAW coverPhotoUrl: ${userJson['coverPhotoUrl']}');
+    print('FULL USER JSON: $userJson');
+    return UserModel.fromJson(userJson);
   }
 
-  // ─── Safe Decode ───────────────────────────────────────
-  static Map<String, dynamic> _safeDecode(String raw) {
+  // ─── GET USER BY USERNAME (GET /api/v1/users/{username}) ────────
+  static Future<UserModel> getUserByUsername(String username) async {
+    final uri = Uri.parse(ApiConfig.userByUsernameUrl(username));
+    print("🌐 getUserByUsername URL: $uri"); // add this
+    http.Response response;
     try {
-      final decoded = jsonDecode(raw);
-      if (decoded is Map<String, dynamic>) return decoded;
-      return {};
-    } catch (_) {
-      return {};
+      response = await http.get(uri, headers: HelperService.authHeaders());
+    } catch (e) {
+      throw ApiException('Could not reach server.');
     }
+
+    print("📡 Status: ${response.statusCode}");
+    print("📡 Body: ${response.body}"); // add this
+
+    final body = HelperService.safeDecode(response.body);
+    if (response.statusCode != 200 || body['success'] == false) {
+      throw ApiException(body['message'] ?? 'User not found.');
+    }
+
+    final userJson = (body['data'] ?? body) as Map<String, dynamic>;
+    return UserModel.fromJson(userJson);
+  }
+
+  // ─── UPDATE PROFILE (PUT /api/v1/users/me) ──────────────────────
+  static Future<UserModel> updateMe({
+    required String name,
+    String? username,
+    String? bio,
+  }) async {
+    final uri = Uri.parse(ApiConfig.updateMeUrl);
+    http.Response response;
+    try {
+      response = await http.put(
+        uri,
+        headers: HelperService.authHeaders(),
+        body: jsonEncode({
+          'name': name,
+          if (username != null) 'username': username,
+          if (bio != null) 'bio': bio,
+        }),
+      );
+    } catch (e) {
+      throw ApiException(
+          'Could not reach server. Check your internet connection.');
+    }
+
+    final body = HelperService.safeDecode(response.body);
+    if (response.statusCode != 200 || body['success'] == false) {
+      throw ApiException(body['message'] ?? 'Profile update failed.');
+    }
+
+    final userJson = (body['data'] ?? body) as Map<String, dynamic>;
+    return UserModel.fromJson(userJson);
   }
 
 // ─── GET ALL USERS (Discover) ─────────────────────────
@@ -45,14 +95,14 @@ class UserService {
 
     http.Response response;
     try {
-      response = await http.get(uri, headers: _authHeaders());
+      response = await http.get(uri, headers: HelperService.authHeaders());
     } catch (e) {
       throw ApiException('Could not reach server.');
     }
 
     print('Discover → ${response.statusCode}: ${response.body}'); // debug
 
-    final body = _safeDecode(response.body);
+    final body = HelperService.safeDecode(response.body);
     if (response.statusCode != 200) {
       throw ApiException(body['message'] ?? 'Could not load users.');
     }
@@ -73,14 +123,14 @@ class UserService {
 
     http.Response response;
     try {
-      response = await http.get(uri, headers: _authHeaders());
+      response = await http.get(uri, headers: HelperService.authHeaders());
     } catch (e) {
       throw ApiException('Could not reach server.');
     }
 
     print('Search → ${response.statusCode}: ${response.body}'); // debug
 
-    final body = _safeDecode(response.body);
+    final body = HelperService.safeDecode(response.body);
     if (response.statusCode != 200) {
       throw ApiException(body['message'] ?? 'Search failed.');
     }
@@ -90,4 +140,26 @@ class UserService {
         .map((e) => UserModel.fromJson(e as Map<String, dynamic>))
         .toList();
   }
+
+// ─── OLD METHOD (backward compat) ───────────────────────────────
+// static Future<UserModel> getUserById(int id) async {
+//   final uri = Uri.parse(ApiConfig.userByIdUrl(id));
+//   http.Response response;
+//   try {
+//     response = await http.get(uri, headers: HelperService.authHeaders());
+//   } catch (e) {
+//     throw ApiException('Could not reach server. Check your internet connection.');
+//   }
+//
+//   print('getUserById status: ${response.statusCode}');
+//   print('getUserById body: ${response.body}');
+//
+//   final body = HelperService.safeDecode(response.body);
+//   if (response.statusCode != 200 || body['success'] == false) {
+//     throw ApiException(body['message'] ?? 'Could not load profile.');
+//   }
+//
+//   final userJson = (body['data'] ?? body) as Map<String, dynamic>;
+//   return UserModel.fromJson(userJson);
+// }
 }

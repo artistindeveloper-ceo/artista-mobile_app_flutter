@@ -1,8 +1,11 @@
 import 'dart:async';
+
+import 'package:artist_in/service/ConversationService.dart';
 import 'package:flutter/material.dart';
-import '../service/ApiService.dart';
-import '../theme/app_theme.dart';
+
 import '../config/ApiConfig.dart';
+import '../service/HelperService.dart';
+import '../theme/app_theme.dart';
 import 'chat_screen.dart';
 
 class ChatListScreen extends StatefulWidget {
@@ -40,12 +43,16 @@ class _ChatListScreenState extends State<ChatListScreen> {
       _error = null;
     });
     try {
-      final convos = await ApiService.getConversations();
+      final convos = await ConversationService.getConversations();
       setState(() {
         _conversations = convos;
         _isLoading = false;
       });
     } catch (e) {
+      if (HelperService.isAuthError(e)) {
+        await HelperService.forceLogout(context);
+        return;
+      }
       setState(() {
         _isLoading = false;
         _error = e.toString();
@@ -56,10 +63,14 @@ class _ChatListScreenState extends State<ChatListScreen> {
   // Silent refresh — no spinner
   Future<void> _silentRefresh() async {
     try {
-      final convos = await ApiService.getConversations();
+      final convos = await ConversationService.getConversations();
       if (!mounted) return;
       setState(() => _conversations = convos);
-    } catch (_) {}
+    } catch (e) {
+      if (HelperService.isAuthError(e) && mounted) {
+        await HelperService.forceLogout(context);
+      }
+    }
   }
 
   String _formatTime(String? isoString) {

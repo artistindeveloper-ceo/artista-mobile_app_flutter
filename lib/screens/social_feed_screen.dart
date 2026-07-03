@@ -2,11 +2,13 @@ import 'dart:io';
 
 import 'package:flutter/material.dart';
 import 'package:image_picker/image_picker.dart';
+
+import '../config/ApiConfig.dart';
 import '../config/Session.dart';
 import '../model/PostModel.dart';
-import '../service/ApiService.dart';
+import '../service/CommentService.dart';
+import '../service/HelperService.dart';
 import '../service/PostService.dart';
-import '../config/ApiConfig.dart';
 import 'Profile_Screen.dart';
 
 // ─── SOCIAL FEED SCREEN ───────────────────────────────────
@@ -34,12 +36,17 @@ class _SocialFeedScreenState extends State<SocialFeedScreen> {
       _error = null;
     });
     try {
-      final posts = await ApiService.getFeed();
+      final posts = await PostService.getFeed();
       setState(() {
         _posts = posts;
         _isLoading = false;
       });
     } catch (e) {
+      if (HelperService.isAuthError(e)) {
+        // Session expire ho chuka hai — login pe bhej do
+        await HelperService.forceLogout(context);
+        return;
+      }
       setState(() {
         _isLoading = false;
         _error = e.toString();
@@ -145,7 +152,8 @@ class _PostBar extends StatelessWidget {
             radius: 20,
             backgroundColor: Colors.grey[300],
             backgroundImage: Session().profilePhotoUrl != null
-                ? NetworkImage('${ApiConfig.baseUrl}${Session().profilePhotoUrl}')
+                ? NetworkImage(
+                    '${ApiConfig.baseUrl}${Session().profilePhotoUrl}')
                 : null,
             child: Session().profilePhotoUrl == null
                 ? const Icon(Icons.person, color: Colors.white)
@@ -156,7 +164,8 @@ class _PostBar extends StatelessWidget {
             child: GestureDetector(
               onTap: onTap,
               child: Container(
-                padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
+                padding:
+                    const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
                 decoration: BoxDecoration(
                   color: Colors.grey[100],
                   borderRadius: BorderRadius.circular(24),
@@ -178,7 +187,8 @@ class _PostBar extends StatelessWidget {
                 color: Colors.blue[50],
                 shape: BoxShape.circle,
               ),
-              child: const Icon(Icons.photo_outlined, color: Colors.blue, size: 22),
+              child: const Icon(Icons.photo_outlined,
+                  color: Colors.blue, size: 22),
             ),
           ),
           const SizedBox(width: 6),
@@ -190,7 +200,8 @@ class _PostBar extends StatelessWidget {
                 color: Colors.red[50],
                 shape: BoxShape.circle,
               ),
-              child: const Icon(Icons.videocam_outlined, color: Colors.red, size: 22),
+              child: const Icon(Icons.videocam_outlined,
+                  color: Colors.red, size: 22),
             ),
           ),
         ],
@@ -332,28 +343,28 @@ class _CreatePostSheetState extends State<CreatePostSheet> {
               ),
               _isPosting
                   ? const SizedBox(
-                width: 24,
-                height: 24,
-                child: CircularProgressIndicator(strokeWidth: 2),
-              )
+                      width: 24,
+                      height: 24,
+                      child: CircularProgressIndicator(strokeWidth: 2),
+                    )
                   : SizedBox(
-                width: 80,
-                child: ElevatedButton(
-                  onPressed: _submit,
-                  style: ElevatedButton.styleFrom(
-                    backgroundColor: const Color(0xFF1A237E),
-                    foregroundColor: Colors.white,
-                    shape: RoundedRectangleBorder(
-                      borderRadius: BorderRadius.circular(20),
+                      width: 80,
+                      child: ElevatedButton(
+                        onPressed: _submit,
+                        style: ElevatedButton.styleFrom(
+                          backgroundColor: const Color(0xFF1A237E),
+                          foregroundColor: Colors.white,
+                          shape: RoundedRectangleBorder(
+                            borderRadius: BorderRadius.circular(20),
+                          ),
+                          padding: const EdgeInsets.symmetric(
+                            horizontal: 20,
+                            vertical: 8,
+                          ),
+                        ),
+                        child: const Text('Post'),
+                      ),
                     ),
-                    padding: const EdgeInsets.symmetric(
-                      horizontal: 20,
-                      vertical: 8,
-                    ),
-                  ),
-                  child: const Text('Post'),
-                ),
-              ),
             ],
           ),
         ),
@@ -390,29 +401,29 @@ class _CreatePostSheetState extends State<CreatePostSheet> {
                         borderRadius: BorderRadius.circular(12),
                         child: _isVideo
                             ? Container(
-                          height: 200,
-                          color: Colors.black87,
-                          child: const Center(
-                            child: Column(
-                              mainAxisSize: MainAxisSize.min,
-                              children: [
-                                Icon(Icons.videocam,
-                                    color: Colors.white, size: 48),
-                                SizedBox(height: 8),
-                                Text(
-                                  'Video selected',
-                                  style: TextStyle(color: Colors.white),
+                                height: 200,
+                                color: Colors.black87,
+                                child: const Center(
+                                  child: Column(
+                                    mainAxisSize: MainAxisSize.min,
+                                    children: [
+                                      Icon(Icons.videocam,
+                                          color: Colors.white, size: 48),
+                                      SizedBox(height: 8),
+                                      Text(
+                                        'Video selected',
+                                        style: TextStyle(color: Colors.white),
+                                      ),
+                                    ],
+                                  ),
                                 ),
-                              ],
-                            ),
-                          ),
-                        )
+                              )
                             : Image.file(
-                          _selectedMedia!,
-                          height: 250,
-                          width: double.infinity,
-                          fit: BoxFit.cover,
-                        ),
+                                _selectedMedia!,
+                                height: 250,
+                                width: double.infinity,
+                                fit: BoxFit.cover,
+                              ),
                       ),
                       Positioned(
                         top: 8,
@@ -553,7 +564,7 @@ class _PostCardState extends State<PostCard> {
       _likeCount += _isLiked ? 1 : -1;
     });
     try {
-      await ApiService.likePost(widget.post.id);
+      await PostService.likePost(widget.post.id);
     } catch (_) {
       setState(() {
         _isLiked = !_isLiked;
@@ -582,7 +593,8 @@ class _PostCardState extends State<PostCard> {
     Navigator.push(
       context,
       MaterialPageRoute(
-        builder: (_) => ProfileScreen(username: post.username), // ✅ use username
+        builder: (_) =>
+            ProfileScreen(username: post.username), // ✅ use username
       ),
     );
   }
@@ -611,10 +623,10 @@ class _PostCardState extends State<PostCard> {
                         : null,
                     child: post.userAvatarUrl == null
                         ? Text(
-                      post.username.isNotEmpty
-                          ? post.username[0].toUpperCase()
-                          : '?',
-                    )
+                            post.username.isNotEmpty
+                                ? post.username[0].toUpperCase()
+                                : '?',
+                          )
                         : null,
                   ),
                 ),
@@ -769,7 +781,7 @@ class _CommentsSheetState extends State<CommentsSheet> {
 
   Future<void> _loadComments() async {
     try {
-      final comments = await ApiService.getComments(widget.postId);
+      final comments = await CommentService.getComments(widget.postId);
       setState(() {
         _comments = comments;
         _isLoading = false;
@@ -784,7 +796,7 @@ class _CommentsSheetState extends State<CommentsSheet> {
     if (text.isEmpty) return;
     _ctrl.clear();
     try {
-      await ApiService.addComment(widget.postId, text);
+      await CommentService.addComment(widget.postId, text);
       _loadComments();
       widget.onCommentAdded?.call();
     } catch (_) {}
@@ -815,41 +827,41 @@ class _CommentsSheetState extends State<CommentsSheet> {
             child: _isLoading
                 ? const Center(child: CircularProgressIndicator())
                 : _comments.isEmpty
-                ? const Center(child: Text('No comments yet'))
-                : ListView.builder(
-              itemCount: _comments.length,
-              itemBuilder: (ctx, i) {
-                final c = _comments[i];
-                final author = c['author'] as Map<String, dynamic>?;
-                final username =
-                    author?['username'] ?? c['username'] ?? 'unknown';
-                final avatarPath =
-                    author?['profilePhotoUrl'] ?? c['userAvatarUrl'];
-                final avatarUrl = (avatarPath != null &&
-                    avatarPath.toString().isNotEmpty)
-                    ? (avatarPath.toString().startsWith('http')
-                    ? avatarPath.toString()
-                    : '${ApiConfig.baseUrl}${avatarPath.toString().startsWith('/') ? '' : '/'}$avatarPath')
-                    : null;
+                    ? const Center(child: Text('No comments yet'))
+                    : ListView.builder(
+                        itemCount: _comments.length,
+                        itemBuilder: (ctx, i) {
+                          final c = _comments[i];
+                          final author = c['author'] as Map<String, dynamic>?;
+                          final username =
+                              author?['username'] ?? c['username'] ?? 'unknown';
+                          final avatarPath =
+                              author?['profilePhotoUrl'] ?? c['userAvatarUrl'];
+                          final avatarUrl = (avatarPath != null &&
+                                  avatarPath.toString().isNotEmpty)
+                              ? (avatarPath.toString().startsWith('http')
+                                  ? avatarPath.toString()
+                                  : '${ApiConfig.baseUrl}${avatarPath.toString().startsWith('/') ? '' : '/'}$avatarPath')
+                              : null;
 
-                return ListTile(
-                  leading: CircleAvatar(
-                    backgroundImage: avatarUrl != null
-                        ? NetworkImage(avatarUrl)
-                        : null,
-                    child: avatarUrl == null
-                        ? Text(
-                      username.isNotEmpty
-                          ? username[0].toUpperCase()
-                          : '?',
-                    )
-                        : null,
-                  ),
-                  title: Text(username),
-                  subtitle: Text(c['content'] ?? c['text'] ?? ''),
-                );
-              },
-            ),
+                          return ListTile(
+                            leading: CircleAvatar(
+                              backgroundImage: avatarUrl != null
+                                  ? NetworkImage(avatarUrl)
+                                  : null,
+                              child: avatarUrl == null
+                                  ? Text(
+                                      username.isNotEmpty
+                                          ? username[0].toUpperCase()
+                                          : '?',
+                                    )
+                                  : null,
+                            ),
+                            title: Text(username),
+                            subtitle: Text(c['content'] ?? c['text'] ?? ''),
+                          );
+                        },
+                      ),
           ),
           const Divider(height: 1),
           Padding(

@@ -15,6 +15,7 @@ class UserModel {
   final int postsCount;
   final bool isFollowing; // ✅ NEW
   final String? profilePhotoUrl;
+
   UserModel({
     required this.id,
     required this.name,
@@ -66,20 +67,31 @@ class UserModel {
       role: json['role'],
       createdAt: json['createdAt'],
       avatarUrl: _buildUrl(
-        json['profilePhotoUrl'] ?? json['avatarUrl'] ?? json['profileImage'] ?? json['profilePhoto'],
+        json['profilePhotoUrl'] ??
+            json['avatarUrl'] ??
+            json['profileImage'] ??
+            json['profilePhoto'],
       ),
       coverPhotoUrl: _buildUrl(
         json['coverPhotoUrl'] ?? json['coverPhoto'],
       ),
       username: json['username'],
       bio: json['bio'],
-      followersCount: json['followerCount'] ?? json['followersCount'] ?? json['followers'] ?? 0,
-      followingCount: json['followingCount'] ?? 0,  // ✅ FIXED - removed conflict
+      followersCount: json['followerCount'] ??
+          json['followersCount'] ??
+          json['followers'] ??
+          0,
+      followingCount: json['followingCount'] ?? 0,
+      // ✅ FIXED - removed conflict
       postsCount: json['postCount'] ?? json['postsCount'] ?? json['posts'] ?? 0,
-      isFollowing: json['following'] ?? json['isFollowedByViewer'] ?? json['isFollowing'] ?? false, // ✅ FIXED
-      profilePhotoUrl: json['profilePhotoUrl']
-          ?? json['avatarUrl']
-          ?? json['profile_photo_url'],
+      isFollowing: json['following'] ??
+          json['isFollowedByViewer'] ??
+          json['isFollowing'] ??
+          false,
+      // ✅ FIXED
+      profilePhotoUrl: json['profilePhotoUrl'] ??
+          json['avatarUrl'] ??
+          json['profile_photo_url'],
     );
   }
 }

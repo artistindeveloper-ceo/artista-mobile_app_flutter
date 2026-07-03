@@ -2,42 +2,21 @@ import 'dart:convert';
 
 import 'package:http/http.dart' as http;
 
+import '../Exception/ApiException.dart';
 import '../config/ApiConfig.dart';
-import '../config/Session.dart';
-import 'ApiService.dart';
+import 'HelperService.dart';
 
-class Songservice {
-  // ─── Auth Headers ──────────────────────────────────────
-  static Map<String, String> _authHeaders() {
-    final token = Session().token;
-    if (token == null)
-      throw ApiException('Not logged in. Please log in again.');
-    return {
-      'Content-Type': 'application/json',
-      'Authorization': 'Bearer $token',
-    };
-  }
-
-  // ─── Safe Decode ───────────────────────────────────────
-  static Map<String, dynamic> _safeDecode(String raw) {
-    try {
-      final decoded = jsonDecode(raw);
-      if (decoded is Map<String, dynamic>) return decoded;
-      return {};
-    } catch (_) {
-      return {};
-    }
-  }
+class SongService {
 // ─── GET MY SONGS ─────────────────────────────────────
   static Future<List<dynamic>> getMySongs() async {
     final uri = Uri.parse('${ApiConfig.baseUrl}/api/v1/songs/mine');
     http.Response response;
     try {
-      response = await http.get(uri, headers: _authHeaders());
+      response = await http.get(uri, headers: HelperService.authHeaders());
     } catch (e) {
       throw ApiException('Could not reach server.');
     }
-    final body = _safeDecode(response.body);
+    final body = HelperService.safeDecode(response.body);
     if (response.statusCode != 200) return [];
     return body['data'] ?? body['content'] ?? body ?? [];
   }
@@ -54,7 +33,7 @@ class Songservice {
     try {
       await http.post(
         uri,
-        headers: _authHeaders(),
+        headers: HelperService.authHeaders(),
         body: jsonEncode({
           'title': title,
           if (artist != null && artist.isNotEmpty) 'artist': artist,
@@ -75,13 +54,29 @@ class Songservice {
     );
     http.Response response;
     try {
-      response = await http.get(uri, headers: _authHeaders());
+      response = await http.get(uri, headers: HelperService.authHeaders());
     } catch (e) {
       throw ApiException('Could not reach server.');
     }
     if (response.statusCode != 200) return [];
-    final body = _safeDecode(response.body);
+    final body = HelperService.safeDecode(response.body);
     // Swagger response mein "content" array hai
     return body['content'] ?? [];
+  }
+
+  // ─── GET SONG BY ID (full details incl. lyricsWithChords) ─
+  static Future<Map<String, dynamic>> getSongById(int songId) async {
+    final uri = Uri.parse('${ApiConfig.baseUrl}/api/v1/songs/$songId');
+    http.Response response;
+    try {
+      response = await http.get(uri, headers: HelperService.authHeaders());
+    } catch (e) {
+      throw ApiException('Could not reach server.');
+    }
+    final body = HelperService.safeDecode(response.body);
+    if (response.statusCode != 200) {
+      throw ApiException(body['message'] ?? 'Song not found.');
+    }
+    return body['data'] ?? body;
   }
 }

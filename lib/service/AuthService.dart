@@ -2,31 +2,52 @@ import 'dart:convert';
 
 import 'package:http/http.dart' as http;
 
+import '../Exception/ApiException.dart';
 import '../config/ApiConfig.dart';
 import '../config/Session.dart';
-import 'ApiService.dart';
+import '../model/UserModel.dart';
+import 'HelperService.dart';
 
 class AuthService {
-  // ─── Auth Headers ──────────────────────────────────────
-  static Map<String, String> _authHeaders() {
-    final token = Session().token;
-    if (token == null)
-      throw ApiException('Not logged in. Please log in again.');
-    return {
-      'Content-Type': 'application/json',
-      'Authorization': 'Bearer $token',
-    };
-  }
-
-  // ─── Safe Decode ───────────────────────────────────────
-  static Map<String, dynamic> _safeDecode(String raw) {
+  // ─── LOGIN ──────────────────────────────────────────────────────
+  static Future<UserModel> login({
+    required String emailOrMobile,
+    required String password,
+  }) async {
+    final uri = Uri.parse(ApiConfig.loginUrl);
+    http.Response response;
     try {
-      final decoded = jsonDecode(raw);
-      if (decoded is Map<String, dynamic>) return decoded;
-      return {};
-    } catch (_) {
-      return {};
+      response = await http.post(
+        uri,
+        headers: {'Content-Type': 'application/json'},
+        body: jsonEncode({
+          'usernameOrEmail': emailOrMobile, // ← 'email' → 'usernameOrEmail'
+          'password': password,
+        }),
+      );
+    } catch (e) {
+      throw ApiException(
+          'Could not reach server. Check your internet connection.');
     }
+
+    final body = HelperService.safeDecode(response.body);
+
+    // Backend direct response deta hai, 'success' field nahi hai
+    if (response.statusCode != 200) {
+      throw ApiException(body['message'] ?? 'Login failed. Please try again.');
+    }
+
+    // Swagger se: accessToken aur user direct root mein hain
+    final token = body['accessToken'] as String;
+    final userJson = body['user'] as Map<String, dynamic>;
+    final user = UserModel.fromJson(userJson);
+    Session().save(
+      token: token,
+      userId: user.id,
+      profilePhotoUrl: user.profilePhotoUrl,
+      displayName: user.name,
+    );
+    return user;
   }
 
   // ─── REGISTER ───────────────────────────────────────────
@@ -55,38 +76,36 @@ class AuthService {
           'Could not reach server. Check your internet connection.');
     }
 
-    final body = _safeDecode(response.body);
+    final body = HelperService.safeDecode(response.body);
     if (response.statusCode != 200 && response.statusCode != 201) {
       throw ApiException(body['message'] ?? 'Registration failed.');
     }
   }
 
+  // ─── CHANGE PASSWORD (POST /api/v1/users/me/password) ───────────
   static Future<void> changePassword({
     required String currentPassword,
     required String newPassword,
   }) async {
-    final response = await http.post(
-      Uri.parse('${ApiConfig.baseUrl}/api/v1/users/me/password'),
-      headers: {
-        'Content-Type': 'application/json',
-        'Authorization': 'Bearer ${Session().token}',
-        // adjust if your Session stores it differently
-      },
-      body: jsonEncode({
-        'currentPassword': currentPassword,
-        'newPassword': newPassword,
-      }),
-    );
+    final uri = Uri.parse(ApiConfig.changePasswordUrl);
+    http.Response response;
+    try {
+      response = await http.post(
+        uri,
+        headers: HelperService.authHeaders(),
+        body: jsonEncode({
+          'currentPassword': currentPassword,
+          'newPassword': newPassword,
+        }),
+      );
+    } catch (e) {
+      throw ApiException(
+          'Could not reach server. Check your internet connection.');
+    }
 
-    if (response.statusCode != 200 && response.statusCode != 204) {
-      String message = 'Failed to update password';
-      try {
-        final body = jsonDecode(response.body);
-        if (body is Map && body['message'] != null) {
-          message = body['message'];
-        }
-      } catch (_) {}
-      throw Exception(message);
+    final body = HelperService.safeDecode(response.body);
+    if (response.statusCode != 200 || body['success'] == false) {
+      throw ApiException(body['message'] ?? 'Password change failed.');
     }
   }
 }

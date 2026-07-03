@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
+
+import '../service/AuthService.dart';
 import '../theme/app_theme.dart';
-import '../service/ApiService.dart';
 
 class ChangePasswordScreen extends StatefulWidget {
   const ChangePasswordScreen({super.key});
@@ -33,7 +34,7 @@ class _ChangePasswordScreenState extends State<ChangePasswordScreen> {
 
     setState(() => _isSubmitting = true);
     try {
-      await ApiService.changePassword(
+      await AuthService.changePassword(
         currentPassword: _currentCtrl.text,
         newPassword: _newCtrl.text,
       );
@@ -73,9 +74,11 @@ class _ChangePasswordScreenState extends State<ChangePasswordScreen> {
               controller: _currentCtrl,
               label: 'Current Password',
               obscure: _obscureCurrent,
-              onToggle: () => setState(() => _obscureCurrent = !_obscureCurrent),
-              validator: (v) =>
-              (v == null || v.isEmpty) ? 'Enter your current password' : null,
+              onToggle: () =>
+                  setState(() => _obscureCurrent = !_obscureCurrent),
+              validator: (v) => (v == null || v.isEmpty)
+                  ? 'Enter your current password'
+                  : null,
             ),
             const SizedBox(height: 16),
             _PasswordField(
@@ -85,7 +88,8 @@ class _ChangePasswordScreenState extends State<ChangePasswordScreen> {
               onToggle: () => setState(() => _obscureNew = !_obscureNew),
               validator: (v) {
                 if (v == null || v.isEmpty) return 'Enter a new password';
-                if (v.length < 8) return 'Password must be at least 8 characters';
+                if (v.length < 8)
+                  return 'Password must be at least 8 characters';
                 return null;
               },
             ),
@@ -94,7 +98,8 @@ class _ChangePasswordScreenState extends State<ChangePasswordScreen> {
               controller: _confirmCtrl,
               label: 'Confirm New Password',
               obscure: _obscureConfirm,
-              onToggle: () => setState(() => _obscureConfirm = !_obscureConfirm),
+              onToggle: () =>
+                  setState(() => _obscureConfirm = !_obscureConfirm),
               validator: (v) {
                 if (v != _newCtrl.text) return 'Passwords do not match';
                 return null;
@@ -115,13 +120,13 @@ class _ChangePasswordScreenState extends State<ChangePasswordScreen> {
                 ),
                 child: _isSubmitting
                     ? const SizedBox(
-                  width: 22,
-                  height: 22,
-                  child: CircularProgressIndicator(
-                    strokeWidth: 2,
-                    color: Colors.white,
-                  ),
-                )
+                        width: 22,
+                        height: 22,
+                        child: CircularProgressIndicator(
+                          strokeWidth: 2,
+                          color: Colors.white,
+                        ),
+                      )
                     : const Text('Update Password'),
               ),
             ),

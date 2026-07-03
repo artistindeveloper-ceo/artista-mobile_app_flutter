@@ -3,45 +3,24 @@ import 'dart:io';
 
 import 'package:http/http.dart' as http;
 
+import '../Exception/ApiException.dart';
+import '../config/ApiConfig.dart';
 import '../config/Session.dart';
 import '../model/PostModel.dart';
-import '../config/ApiConfig.dart';
-import '../service/ApiService.dart';
+import 'HelperService.dart';
 
 class PostService {
-  // ─── Auth Headers ──────────────────────────────────────
-  static Map<String, String> _authHeaders() {
-    final token = Session().token;
-    if (token == null)
-      throw ApiException('Not logged in. Please log in again.');
-    return {
-      'Content-Type': 'application/json',
-      'Authorization': 'Bearer $token',
-    };
-  }
-
-  // ─── Safe Decode ───────────────────────────────────────
-  static Map<String, dynamic> _safeDecode(String raw) {
-    try {
-      final decoded = jsonDecode(raw);
-      if (decoded is Map<String, dynamic>) return decoded;
-      return {};
-    } catch (_) {
-      return {};
-    }
-  }
-
   // ─── GET USER POSTS ──────────────────────────────────────
   static Future<List<PostModel>> getUserPosts(int userId) async {
     final uri = Uri.parse('${ApiConfig.baseUrl}/api/v1/posts/users/$userId');
     http.Response response;
     try {
-      response = await http.get(uri, headers: _authHeaders());
+      response = await http.get(uri, headers: HelperService.authHeaders());
     } catch (e) {
       throw ApiException('Could not reach server.');
     }
 
-    final body = _safeDecode(response.body);
+    final body = HelperService.safeDecode(response.body);
     if (response.statusCode != 200) {
       throw ApiException(body['message'] ?? 'Could not load posts.');
     }
@@ -53,9 +32,6 @@ class PostService {
   }
 
   // ─── CREATE POST ──────────────────────────────────────────
-  // API: POST /api/v1/posts
-  //   caption  → query param (string)
-  //   media    → multipart file (optional)
   static Future<void> createPost({
     String? caption,
     File? mediaFile,
@@ -104,6 +80,43 @@ class PostService {
         body = jsonDecode(response.body) as Map<String, dynamic>;
       } catch (_) {}
       throw ApiException(body['message'] ?? 'Failed to create post.');
+    }
+  }
+
+  // ─── GET FEED ────────────────────────────────────────────
+  static Future<List<PostModel>> getFeed({int page = 0}) async {
+    final uri = Uri.parse('${ApiConfig.feedUrl}?page=$page&size=10');
+    http.Response response;
+    try {
+      response = await http.get(uri, headers: HelperService.authHeaders());
+    } catch (e) {
+      throw ApiException('Could not reach server.');
+    }
+
+    final body = HelperService.safeDecode(response.body);
+    if (response.statusCode != 200) {
+      throw ApiException(body['message'] ?? 'Could not load feed.');
+    }
+
+    final List<dynamic> list = body['content'] ?? body['data'] ?? body ?? [];
+    return list
+        .map((e) => PostModel.fromJson(e as Map<String, dynamic>))
+        .toList();
+  }
+
+// ─── LIKE / UNLIKE POST ──────────────────────────────────
+  static Future<void> likePost(int postId) async {
+    final uri = Uri.parse(ApiConfig.likePostUrl(postId));
+    http.Response response;
+    try {
+      response = await http.post(uri, headers: HelperService.authHeaders());
+    } catch (e) {
+      throw ApiException('Could not reach server.');
+    }
+    if (response.statusCode != 200 &&
+        response.statusCode != 201 &&
+        response.statusCode != 204) {
+      throw ApiException('Failed to like post.');
     }
   }
 }

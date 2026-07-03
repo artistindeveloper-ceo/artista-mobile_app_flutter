@@ -11,6 +11,7 @@ class PostModel {
   final int commentsCount;
   final bool likedByMe;
   final int authorId;
+
   PostModel({
     required this.id,
     required this.username,

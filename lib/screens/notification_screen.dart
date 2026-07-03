@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
+
 import '../config/ApiConfig.dart' as $baseUrl;
-import '../service/ApiService.dart';
+import '../service/NotificationService.dart';
 import '../theme/app_theme.dart';
 import 'Profile_Screen.dart'; // 👈 import your profile screen
 
@@ -28,13 +29,13 @@ class _NotificationScreenState extends State<NotificationScreen> {
       _error = null;
     });
     try {
-      final notifs = await ApiService.getNotifications();
+      final notifs = await NotificationService.getNotifications();
       print('🔔 NOTIF DATA: ${notifs}'); // 👈 add this
       setState(() {
         _notifications = notifs;
         _isLoading = false;
       });
-      await ApiService.markAllNotificationsRead();
+      await NotificationService.markAllNotificationsRead();
     } catch (e) {
       setState(() {
         _isLoading = false;

@@ -1,7 +1,7 @@
 import 'dart:async';
 import 'package:flutter/material.dart';
-import '../service/ApiService.dart';
 import '../config/Session.dart';
+import '../service/ConversationService.dart';
 
 class ChatScreen extends StatefulWidget {
   final int conversationId;
@@ -48,14 +48,14 @@ class _ChatScreenState extends State<ChatScreen> {
   Future<void> _loadMessages() async {
     setState(() => _isLoading = true);
     try {
-      final msgs = await ApiService.getMessages(widget.conversationId);
+      final msgs = await ConversationService.getMessages(widget.conversationId);
       final sorted = msgs.reversed.toList();
       setState(() {
         _messages = sorted;
         _isLoading = false;
       });
       if (mounted) {
-        await ApiService.markAsRead(widget.conversationId);
+        await ConversationService.markAsRead(widget.conversationId);
       }
       _scrollToBottom();
     } catch (e) {
@@ -65,11 +65,11 @@ class _ChatScreenState extends State<ChatScreen> {
 
   Future<void> _pollMessages() async {
     try {
-      final msgs = await ApiService.getMessages(widget.conversationId);
+      final msgs = await ConversationService.getMessages(widget.conversationId);
       if (!mounted) return;
       final sorted = msgs.reversed.toList();
       setState(() => _messages = sorted);
-      await ApiService.markAsRead(widget.conversationId);
+      await ConversationService.markAsRead(widget.conversationId);
     } catch (_) {}
   }
 
@@ -91,7 +91,7 @@ class _ChatScreenState extends State<ChatScreen> {
     if (text.isEmpty) return;
     _msgCtrl.clear();
     try {
-      await ApiService.sendMessage(
+      await ConversationService.sendMessage(
           recipientId: widget.otherUserId, content: text);
       await _pollMessages();
       _scrollToBottom();

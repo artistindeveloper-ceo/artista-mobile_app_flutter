@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
-import '../service/ApiService.dart';
+
+import '../service/AuthService.dart';
 import '../theme/app_theme.dart';
 import 'home_screen.dart';
 import 'register_screen.dart';
@@ -30,7 +31,8 @@ class _LoginScreenState extends State<LoginScreen> {
 
     if (credential.isEmpty || password.isEmpty) {
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Please enter your mobile/email and password')),
+        const SnackBar(
+            content: Text('Please enter your mobile/email and password')),
       );
       return;
     }
@@ -41,7 +43,7 @@ class _LoginScreenState extends State<LoginScreen> {
       // NOTE: backend currently expects "email" field. If your users will
       // type a mobile number here instead, this still works as long as the
       // value typed matches what's stored against that user on the backend.
-      await ApiService.login(emailOrMobile: credential, password: password);
+      await AuthService.login(emailOrMobile: credential, password: password);
       if (!mounted) return;
       _goToHome();
     } catch (e) {
@@ -67,10 +69,9 @@ class _LoginScreenState extends State<LoginScreen> {
 
               // Logo box with border
               Container(
-                  child: Image.asset(
-                    'assets/images/Artist.inlogo.png',
-                    width: 220,
-
+                child: Image.asset(
+                  'assets/images/Artist.inlogo.png',
+                  width: 220,
                 ),
               ),
 
@@ -130,13 +131,13 @@ class _LoginScreenState extends State<LoginScreen> {
                 onPressed: _isLoading ? null : _login,
                 child: _isLoading
                     ? const SizedBox(
-                  height: 22,
-                  width: 22,
-                  child: CircularProgressIndicator(
-                    strokeWidth: 2,
-                    color: AppColors.white,
-                  ),
-                )
+                        height: 22,
+                        width: 22,
+                        child: CircularProgressIndicator(
+                          strokeWidth: 2,
+                          color: AppColors.white,
+                        ),
+                      )
                     : const Text('LOGIN'),
               ),
 
@@ -214,7 +215,8 @@ class _LoginScreenState extends State<LoginScreen> {
                     onTap: () {
                       Navigator.push(
                         context,
-                        MaterialPageRoute(builder: (_) => const RegisterScreen()),
+                        MaterialPageRoute(
+                            builder: (_) => const RegisterScreen()),
                       );
                     },
                     child: const Text(

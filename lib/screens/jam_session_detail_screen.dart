@@ -3,7 +3,7 @@ import 'package:flutter/services.dart';
 
 import '../config/Session.dart';
 import '../service/JamSessionService.dart';
-import '../service/JamSessionSocketService.dart';
+import '../websocket/JamSessionSocketService.dart';
 import '../service/SongService.dart';
 import '../theme/app_theme.dart';
 

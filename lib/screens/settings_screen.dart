@@ -1,12 +1,69 @@
 import 'package:flutter/material.dart';
 import '../theme/app_theme.dart';
 import '../config/Session.dart';
+import '../service/UserService.dart';
 import '../screens/login_screen.dart';
 import 'change_password_screen.dart';
 import 'edit_profile_screen.dart';
 
-class SettingsScreen extends StatelessWidget {
+class SettingsScreen extends StatefulWidget {
   const SettingsScreen({super.key});
+
+  @override
+  State<SettingsScreen> createState() => _SettingsScreenState();
+}
+
+class _SettingsScreenState extends State<SettingsScreen> {
+  bool _isPrivate = false;
+  bool _isLoadingPrivacy = true;
+  bool _isSavingPrivacy = false;
+
+  @override
+  void initState() {
+    super.initState();
+    _loadPrivacyStatus();
+  }
+
+  Future<void> _loadPrivacyStatus() async {
+    try {
+      final user = await UserService.getMe();
+      if (!mounted) return;
+      setState(() {
+        _isPrivate = user.isPrivate;
+        _isLoadingPrivacy = false;
+      });
+    } catch (_) {
+      if (!mounted) return;
+      setState(() => _isLoadingPrivacy = false);
+    }
+  }
+
+  Future<void> _togglePrivacy(bool newValue) async {
+    setState(() {
+      _isPrivate = newValue; // optimistic update
+      _isSavingPrivacy = true;
+    });
+    try {
+      await UserService.updatePrivacy(newValue);
+      if (!mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(SnackBar(
+        content: Text(newValue
+            ? 'Your account is now Private'
+            : 'Your account is now Public'),
+        backgroundColor: Colors.green,
+      ));
+    } catch (e) {
+      // Revert on failure
+      if (!mounted) return;
+      setState(() => _isPrivate = !newValue);
+      ScaffoldMessenger.of(context).showSnackBar(SnackBar(
+        content: Text('Could not update privacy setting.'),
+        backgroundColor: Colors.red,
+      ));
+    } finally {
+      if (mounted) setState(() => _isSavingPrivacy = false);
+    }
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -59,13 +116,40 @@ class SettingsScreen extends StatelessWidget {
               // TODO: hook up notifications screen
             },
           ),
-          _SettingsTile(
-            icon: Icons.privacy_tip_outlined,
-            label: 'Privacy & Security',
-            onTap: () {
-              // TODO: hook up privacy screen
-            },
-          ),
+
+          // ✅ NEW — Private Account toggle
+          _isLoadingPrivacy
+              ? const ListTile(
+                  leading: Icon(Icons.privacy_tip_outlined),
+                  title: Text('Privacy & Security'),
+                  trailing: SizedBox(
+                    width: 20,
+                    height: 20,
+                    child: CircularProgressIndicator(strokeWidth: 2),
+                  ),
+                  dense: true,
+                  contentPadding:
+                      EdgeInsets.symmetric(horizontal: 20, vertical: 2),
+                )
+              : SwitchListTile(
+                  secondary: Icon(Icons.privacy_tip_outlined,
+                      color: AppColors.darkText.withOpacity(0.75)),
+                  title: const Text('Private Account',
+                      style: TextStyle(fontSize: 15)),
+                  subtitle: Text(
+                    _isPrivate
+                        ? 'New followers must be approved'
+                        : 'Anyone can follow you instantly',
+                    style: const TextStyle(fontSize: 12, color: Colors.grey),
+                  ),
+                  value: _isPrivate,
+                  onChanged: _isSavingPrivacy ? null : _togglePrivacy,
+                  activeColor: AppColors.primaryDark,
+                  dense: true,
+                  contentPadding:
+                      const EdgeInsets.symmetric(horizontal: 20, vertical: 2),
+                ),
+
           _SettingsTile(
             icon: Icons.language_outlined,
             label: 'Language',
@@ -92,12 +176,12 @@ class SettingsScreen extends StatelessWidget {
             label: 'Logout',
             iconColor: AppColors.logoutRed,
             labelColor: AppColors.logoutRed,
-            onTap: () async {  // ✅ async add karo
+            onTap: () async {
               await Session().clear();
               Navigator.pushAndRemoveUntil(
                 context,
                 MaterialPageRoute(builder: (_) => const LoginScreen()),
-                    (route) => false,
+                (route) => false,
               );
             },
           ),
@@ -133,6 +217,7 @@ class SettingsScreen extends StatelessWidget {
 
 class _SectionHeader extends StatelessWidget {
   final String title;
+
   const _SectionHeader({required this.title});
 
   @override
@@ -170,7 +255,8 @@ class _SettingsTile extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return ListTile(
-      leading: Icon(icon, color: iconColor ?? AppColors.darkText.withOpacity(0.75)),
+      leading:
+          Icon(icon, color: iconColor ?? AppColors.darkText.withOpacity(0.75)),
       title: Text(
         label,
         style: TextStyle(

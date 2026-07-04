@@ -64,9 +64,7 @@ class AuthService {
         headers: {'Content-Type': 'application/json'},
         body: jsonEncode({
           'username': name.replaceAll(' ', '_').toLowerCase(),
-          // "Ashvini Khare" → "ashvini_khare"
           'displayName': name,
-          // "Ashvini Khare" (shown in UI)
           'email': email,
           'password': password,
         }),

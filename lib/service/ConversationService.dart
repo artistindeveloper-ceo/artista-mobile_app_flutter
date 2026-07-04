@@ -100,4 +100,16 @@ class ConversationService {
     final data = (body['data'] ?? body) as Map<String, dynamic>;
     return (data['conversationId'] ?? data['id']) as int;
   }
+
+  static Future<int> getTotalUnreadCount() async {
+    final uri = Uri.parse('${ApiConfig.baseUrl}/api/v1/messages/unread-count');
+    final response =
+        await http.get(uri, headers: await HelperService.authHeaders());
+
+    if (response.statusCode != 200) {
+      throw ApiException('Could not fetch unread count.');
+    }
+
+    return int.parse(response.body.trim());
+  }
 }

@@ -25,26 +25,18 @@ class UserService {
     }
 
     final userJson = (body['data'] ?? body) as Map<String, dynamic>;
-    // ← THESE 3 LINES — make sure all 3 are there
-    print('RAW avatarUrl: ${userJson['avatarUrl']}');
-    print('RAW coverPhotoUrl: ${userJson['coverPhotoUrl']}');
-    print('FULL USER JSON: $userJson');
     return UserModel.fromJson(userJson);
   }
 
   // ─── GET USER BY USERNAME (GET /api/v1/users/{username}) ────────
   static Future<UserModel> getUserByUsername(String username) async {
     final uri = Uri.parse(ApiConfig.userByUsernameUrl(username));
-    print("🌐 getUserByUsername URL: $uri"); // add this
     http.Response response;
     try {
       response = await http.get(uri, headers: HelperService.authHeaders());
     } catch (e) {
       throw ApiException('Could not reach server.');
     }
-
-    print("📡 Status: ${response.statusCode}");
-    print("📡 Body: ${response.body}"); // add this
 
     final body = HelperService.safeDecode(response.body);
     if (response.statusCode != 200 || body['success'] == false) {
@@ -87,9 +79,37 @@ class UserService {
     return UserModel.fromJson(userJson);
   }
 
-// ─── GET ALL USERS (Discover) ─────────────────────────
+  // ─── UPDATE PRIVACY ONLY (PUT /api/v1/users/me) ─────────────────
+  // ✅ NEW — separate lightweight call so Settings screen doesn't need
+  // to resend name/username/bio just to toggle the privacy switch.
+  // Backend's UpdateProfileRequest only touches fields that are
+  // non-null, so sending just {"isPrivate": ...} is safe.
+  static Future<UserModel> updatePrivacy(bool isPrivate) async {
+    final uri = Uri.parse(ApiConfig.updateMeUrl);
+    http.Response response;
+    try {
+      response = await http.put(
+        uri,
+        headers: HelperService.authHeaders(),
+        body: jsonEncode({'isPrivate': isPrivate}),
+      );
+    } catch (e) {
+      throw ApiException(
+          'Could not reach server. Check your internet connection.');
+    }
+
+    final body = HelperService.safeDecode(response.body);
+    if (response.statusCode != 200 || body['success'] == false) {
+      throw ApiException(
+          body['message'] ?? 'Could not update privacy setting.');
+    }
+
+    final userJson = (body['data'] ?? body) as Map<String, dynamic>;
+    return UserModel.fromJson(userJson);
+  }
+
+  // ─── GET ALL USERS (Discover) ─────────────────────────
   static Future<List<UserModel>> getAllUsers() async {
-    // ✅ Correct URL matching your backend
     final uri = Uri.parse(
         '${ApiConfig.baseUrl}/api/v1/community/users/discover?page=0&size=20');
 
@@ -99,8 +119,6 @@ class UserService {
     } catch (e) {
       throw ApiException('Could not reach server.');
     }
-
-    print('Discover → ${response.statusCode}: ${response.body}'); // debug
 
     final body = HelperService.safeDecode(response.body);
     if (response.statusCode != 200) {
@@ -128,38 +146,14 @@ class UserService {
       throw ApiException('Could not reach server.');
     }
 
-    print('Search → ${response.statusCode}: ${response.body}'); // debug
-
     final body = HelperService.safeDecode(response.body);
     if (response.statusCode != 200) {
       throw ApiException(body['message'] ?? 'Search failed.');
     }
 
-    final List<dynamic> list = body['content'] ?? []; // ✅ correct key
+    final List<dynamic> list = body['content'] ?? [];
     return list
         .map((e) => UserModel.fromJson(e as Map<String, dynamic>))
         .toList();
   }
-
-// ─── OLD METHOD (backward compat) ───────────────────────────────
-// static Future<UserModel> getUserById(int id) async {
-//   final uri = Uri.parse(ApiConfig.userByIdUrl(id));
-//   http.Response response;
-//   try {
-//     response = await http.get(uri, headers: HelperService.authHeaders());
-//   } catch (e) {
-//     throw ApiException('Could not reach server. Check your internet connection.');
-//   }
-//
-//   print('getUserById status: ${response.statusCode}');
-//   print('getUserById body: ${response.body}');
-//
-//   final body = HelperService.safeDecode(response.body);
-//   if (response.statusCode != 200 || body['success'] == false) {
-//     throw ApiException(body['message'] ?? 'Could not load profile.');
-//   }
-//
-//   final userJson = (body['data'] ?? body) as Map<String, dynamic>;
-//   return UserModel.fromJson(userJson);
-// }
 }

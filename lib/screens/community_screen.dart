@@ -1,6 +1,7 @@
 import 'package:artist_in/service/FollowUserService.dart';
 import 'package:flutter/material.dart';
 
+import '../config/ApiConfig.dart';
 import '../model/UserModel.dart';
 import '../service/HelperService.dart';
 import '../service/UserService.dart';
@@ -34,7 +35,7 @@ class _CommunityScreenState extends State<CommunityScreen>
   @override
   void initState() {
     super.initState();
-    _tabController = TabController(length: 3, vsync: this); // ← 3 tabs
+    _tabController = TabController(length: 3, vsync: this);
     _loadAllUsers();
     _loadFollowRequests();
   }
@@ -158,7 +159,7 @@ class _CommunityScreenState extends State<CommunityScreen>
             labelColor: Colors.white,
             unselectedLabelColor: Colors.white60,
             tabs: const [
-              Tab(text: 'Discover'), // ← New tab
+              Tab(text: 'Discover'),
               Tab(text: 'Search'),
               Tab(text: 'Requests'),
             ],
@@ -197,7 +198,7 @@ class _CommunityScreenState extends State<CommunityScreen>
           final user = _allUsers[i];
           return _UserTile(
             user: user,
-            onFollow: () => _followUser(user.id),
+            onFollow: () => _followUser(user.id, isDiscoverList: true),
           );
         },
       ),
@@ -250,7 +251,8 @@ class _CommunityScreenState extends State<CommunityScreen>
                             final user = _searchResults[i];
                             return _UserTile(
                               user: user,
-                              onFollow: () => _followUser(user.id),
+                              onFollow: () =>
+                                  _followUser(user.id, isDiscoverList: false),
                             );
                           },
                         ),
@@ -259,17 +261,38 @@ class _CommunityScreenState extends State<CommunityScreen>
     );
   }
 
-// ─── Follow User ──────────────────────────────────────
-  Future<void> _followUser(int userId) async {
+  // ─── Follow User ──────────────────────────────────────
+  // ✅ CHANGED: reads the actual backend status (FOLLOWING /
+  // REQUEST_PENDING / ALREADY_FOLLOWING) and updates the right flag,
+  // instead of always assuming "Followed!".
+  Future<void> _followUser(int userId, {required bool isDiscoverList}) async {
     try {
-      await FollowUserservice.followUser(userId);
-      _showSnack('Followed!');
+      final status = await FollowUserservice.followUser(userId);
+
+      final bool nowFollowing = status == 'FOLLOWING';
+      final bool nowPending = status == 'REQUEST_PENDING';
+
+      if (nowPending) {
+        _showSnack('Follow request sent!');
+      } else if (nowFollowing) {
+        _showSnack('Followed!');
+      }
+      // ALREADY_FOLLOWING → no snack needed, just resync state below.
+
       setState(() {
         _allUsers = _allUsers.map((u) {
-          return u.id == userId ? u.copyWith(isFollowing: true) : u;
+          if (u.id != userId) return u;
+          return u.copyWith(
+            isFollowing: nowFollowing || u.isFollowing,
+            hasPendingFollowRequest: nowPending,
+          );
         }).toList();
         _searchResults = _searchResults.map((u) {
-          return u.id == userId ? u.copyWith(isFollowing: true) : u;
+          if (u.id != userId) return u;
+          return u.copyWith(
+            isFollowing: nowFollowing || u.isFollowing,
+            hasPendingFollowRequest: nowPending,
+          );
         }).toList();
       });
     } catch (e) {
@@ -299,9 +322,16 @@ class _CommunityScreenState extends State<CommunityScreen>
         itemBuilder: (ctx, i) {
           final req = _followRequests[i];
           final requestId = req['id'] ?? req['requestId'];
+          final requester = req['requester'] as Map<String, dynamic>?;
           final username =
-              req['username'] ?? req['requester']?['username'] ?? 'Unknown';
-          final avatarUrl = req['avatarUrl'] ?? req['requester']?['avatarUrl'];
+              req['username'] ?? requester?['username'] ?? 'Unknown';
+          final rawAvatarPath =
+              req['profilePhotoUrl'] ?? requester?['profilePhotoUrl'];
+          final avatarUrl = rawAvatarPath != null
+              ? (rawAvatarPath.toString().startsWith('http')
+                  ? rawAvatarPath.toString()
+                  : '${ApiConfig.baseUrl}${rawAvatarPath.toString().startsWith('/') ? '' : '/'}$rawAvatarPath')
+              : null;
 
           return ListTile(
             leading: CircleAvatar(
@@ -361,29 +391,47 @@ class _UserTile extends StatelessWidget {
           ? Text('@${user.username}',
               style: const TextStyle(color: Colors.grey))
           : null,
-      trailing: user.isFollowing
-          // ✅ Already following — grey outlined button
-          ? OutlinedButton(
-              onPressed: null, // disabled
-              style: OutlinedButton.styleFrom(
-                foregroundColor: Colors.grey,
-                side: const BorderSide(color: Colors.grey),
-                padding: const EdgeInsets.symmetric(horizontal: 16),
-                minimumSize: const Size(90, 32),
-              ),
-              child: const Text('Following', style: TextStyle(fontSize: 12)),
-            )
-          // Not following — solid blue button
-          : ElevatedButton(
-              onPressed: onFollow,
-              style: ElevatedButton.styleFrom(
-                backgroundColor: AppColors.primaryDark,
-                foregroundColor: Colors.white,
-                padding: const EdgeInsets.symmetric(horizontal: 16),
-                minimumSize: const Size(80, 32),
-              ),
-              child: const Text('Follow', style: TextStyle(fontSize: 12)),
-            ),
+      trailing: _buildTrailingButton(),
+    );
+  }
+
+  // ✅ NEW: three states instead of two
+  Widget _buildTrailingButton() {
+    if (user.isFollowing) {
+      return OutlinedButton(
+        onPressed: null,
+        style: OutlinedButton.styleFrom(
+          foregroundColor: Colors.grey,
+          side: const BorderSide(color: Colors.grey),
+          padding: const EdgeInsets.symmetric(horizontal: 16),
+          minimumSize: const Size(90, 32),
+        ),
+        child: const Text('Following', style: TextStyle(fontSize: 12)),
+      );
+    }
+
+    if (user.hasPendingFollowRequest) {
+      return OutlinedButton(
+        onPressed: null,
+        style: OutlinedButton.styleFrom(
+          foregroundColor: AppColors.primaryDark,
+          side: BorderSide(color: AppColors.primaryDark.withOpacity(0.5)),
+          padding: const EdgeInsets.symmetric(horizontal: 12),
+          minimumSize: const Size(90, 32),
+        ),
+        child: const Text('Requested', style: TextStyle(fontSize: 12)),
+      );
+    }
+
+    return ElevatedButton(
+      onPressed: onFollow,
+      style: ElevatedButton.styleFrom(
+        backgroundColor: AppColors.primaryDark,
+        foregroundColor: Colors.white,
+        padding: const EdgeInsets.symmetric(horizontal: 16),
+        minimumSize: const Size(80, 32),
+      ),
+      child: const Text('Follow', style: TextStyle(fontSize: 12)),
     );
   }
 }

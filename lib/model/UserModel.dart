@@ -13,7 +13,9 @@ class UserModel {
   final int followersCount;
   final int followingCount;
   final int postsCount;
-  final bool isFollowing; // ✅ NEW
+  final bool isFollowing;
+  final bool isPrivate;
+  final bool hasPendingFollowRequest; // ✅ NEW
   final String? profilePhotoUrl;
 
   UserModel({
@@ -29,11 +31,18 @@ class UserModel {
     this.followersCount = 0,
     this.followingCount = 0,
     this.postsCount = 0,
-    this.isFollowing = false, // ✅ NEW
+    this.isFollowing = false,
+    this.isPrivate = false,
+    this.hasPendingFollowRequest = false, // ✅ NEW
     this.profilePhotoUrl,
   });
 
-  UserModel copyWith({bool? isFollowing, String? profilePhotoUrl}) {
+  UserModel copyWith({
+    bool? isFollowing,
+    String? profilePhotoUrl,
+    bool? isPrivate,
+    bool? hasPendingFollowRequest, // ✅ NEW
+  }) {
     return UserModel(
       id: id,
       name: name,
@@ -48,6 +57,10 @@ class UserModel {
       followingCount: followingCount,
       postsCount: postsCount,
       isFollowing: isFollowing ?? this.isFollowing,
+      isPrivate: isPrivate ?? this.isPrivate,
+      hasPendingFollowRequest:
+          hasPendingFollowRequest ?? this.hasPendingFollowRequest,
+      // ✅ NEW
       profilePhotoUrl: profilePhotoUrl ?? this.profilePhotoUrl,
     );
   }
@@ -82,13 +95,14 @@ class UserModel {
           json['followers'] ??
           0,
       followingCount: json['followingCount'] ?? 0,
-      // ✅ FIXED - removed conflict
       postsCount: json['postCount'] ?? json['postsCount'] ?? json['posts'] ?? 0,
       isFollowing: json['following'] ??
           json['isFollowedByViewer'] ??
           json['isFollowing'] ??
           false,
-      // ✅ FIXED
+      isPrivate: json['isPrivate'] ?? false,
+      hasPendingFollowRequest: json['hasPendingFollowRequest'] ?? false,
+      // ✅ NEW
       profilePhotoUrl: json['profilePhotoUrl'] ??
           json['avatarUrl'] ??
           json['profile_photo_url'],

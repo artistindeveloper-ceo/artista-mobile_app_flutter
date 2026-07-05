@@ -34,7 +34,7 @@ class ChatSocketService {
     // ⚠️ Same '/ws' endpoint as JamSessionSocketService — must match
     // WebSocketConfig.registerStompEndpoints().
     final wsUrl =
-        '${ApiConfig.baseUrl.replaceFirst('https://', 'wss://').replaceFirst('http://', 'ws://')}/ws';
+        '${ApiConfig.baseUrl.replaceFirst('https://', 'wss://').replaceFirst('http://', 'ws://')}/ws-native?token=$token';
 
     _client = StompClient(
       config: StompConfig(

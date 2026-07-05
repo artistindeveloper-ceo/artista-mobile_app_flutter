@@ -6,6 +6,8 @@ import '../service/JamSessionService.dart';
 import '../websocket/JamSessionSocketService.dart';
 import '../service/SongService.dart';
 import '../theme/app_theme.dart';
+import 'jam_session_song_detail_screen.dart';
+import 'jam_session_participants_tab.dart';
 
 class JamSessionDetailScreen extends StatefulWidget {
   final int sessionId;
@@ -127,6 +129,7 @@ class _JamSessionDetailScreenState extends State<JamSessionDetailScreen>
             'transposedKey': event['transposedKey'],
             'transposedLyricsWithChords': event['transposedLyricsWithChords'],
           };
+          _session!['currentTransposeOffset'] = event['transposeOffset'] ?? 0;
         });
         break;
 
@@ -273,6 +276,8 @@ class _JamSessionDetailScreenState extends State<JamSessionDetailScreen>
           'transposedKey': event['transposedKey'],
           'transposedLyricsWithChords': event['transposedLyricsWithChords'],
         };
+        // Session's offset ko naye song ke actual offset ke saath sync karo
+        _session!['currentTransposeOffset'] = event['transposeOffset'] ?? 0;
       });
     } catch (e) {
       _showSnack(e.toString(), isError: true);
@@ -281,12 +286,33 @@ class _JamSessionDetailScreenState extends State<JamSessionDetailScreen>
 
   Future<void> _doTranspose(int delta) async {
     if (!_isLeader || _currentSongDisplay == null) return;
-    final current = _session?['currentTransposeOffset'] ?? 0;
     try {
+      // Sirf delta bhejo — current offset ka pata hone ki zaroorat nahi,
+      // backend hi source of truth hai
       final event =
-          await JamSessionService.transpose(widget.sessionId, current + delta);
+          await JamSessionService.transposeByDelta(widget.sessionId, delta);
       setState(() {
-        _session!['currentTransposeOffset'] = current + delta;
+        _session!['currentTransposeOffset'] = event['transposeOffset'];
+        _currentSongDisplay!['transposedKey'] = event['transposedKey'];
+        _currentSongDisplay!['transposedLyricsWithChords'] =
+            event['transposedLyricsWithChords'];
+      });
+    } catch (e) {
+      _showSnack(e.toString(), isError: true);
+    }
+  }
+
+  Future<void> _resetTranspose() async {
+    if (!_isLeader || _currentSongDisplay == null) return;
+    final currentOffset = (_session?['currentTransposeOffset'] ?? 0) as int;
+    if (currentOffset == 0) return; // already original key mein hai
+    try {
+      // Backend sirf delta accept karta hai, isliye offset ko 0 tak
+      // wapas laane ke liye uska ulta delta bhej dete hain
+      final event = await JamSessionService.transposeByDelta(
+          widget.sessionId, -currentOffset);
+      setState(() {
+        _session!['currentTransposeOffset'] = event['transposeOffset'];
         _currentSongDisplay!['transposedKey'] = event['transposedKey'];
         _currentSongDisplay!['transposedLyricsWithChords'] =
             event['transposedLyricsWithChords'];
@@ -674,50 +700,20 @@ class _JamSessionDetailScreenState extends State<JamSessionDetailScreen>
       body: TabBarView(
         controller: _tabController,
         children: [
-          _participants.isEmpty
-              ? const Center(
-                  child: Text('No participants yet',
-                      style: TextStyle(color: Colors.grey)))
-              : ListView.builder(
-                  itemCount: _participants.length,
-                  itemBuilder: (ctx, i) {
-                    final p = _participants[i]['user'] ?? _participants[i];
-                    final username =
-                        p['username'] ?? p['displayName'] ?? 'Unknown';
-                    final avatarUrl = p['avatarUrl'];
-                    final role = _participants[i]['role'] ?? '';
-                    return ListTile(
-                      leading: CircleAvatar(
-                        backgroundColor: AppColors.primaryLight,
-                        backgroundImage:
-                            avatarUrl != null ? NetworkImage(avatarUrl) : null,
-                        child: avatarUrl == null
-                            ? Text(
-                                username.isNotEmpty
-                                    ? username[0].toUpperCase()
-                                    : '?',
-                                style: const TextStyle(color: Colors.white))
-                            : null,
-                      ),
-                      title: Text(username,
-                          style: const TextStyle(fontWeight: FontWeight.bold)),
-                      trailing: role.toString().isNotEmpty
-                          ? Container(
-                              padding: const EdgeInsets.symmetric(
-                                  horizontal: 8, vertical: 4),
-                              decoration: BoxDecoration(
-                                  color: AppColors.primaryDark.withOpacity(0.1),
-                                  borderRadius: BorderRadius.circular(12)),
-                              child: Text(role.toString(),
-                                  style: const TextStyle(
-                                      fontSize: 11,
-                                      color: AppColors.primaryDark)),
-                            )
-                          : null,
-                    );
-                  },
+          ParticipantsTab(participants: _participants),
+          _currentSongDisplay == null
+              ? _buildSongList()
+              : JamSessionSongDetailScreen(
+                  currentSongDisplay: _currentSongDisplay!,
+                  songs: _songs,
+                  currentTransposeOffset:
+                      (_session?['currentTransposeOffset'] ?? 0) as int,
+                  isLeader: _isLeader,
+                  onBack: () => setState(() => _currentSongDisplay = null),
+                  onTranspose: _doTranspose,
+                  onResetTranspose: _resetTranspose,
+                  onSwitchSong: _switchToSong,
                 ),
-          _currentSongDisplay == null ? _buildSongList() : _buildSongDetail(),
           Padding(
             padding: const EdgeInsets.all(20),
             child: Column(
@@ -913,198 +909,6 @@ class _JamSessionDetailScreenState extends State<JamSessionDetailScreen>
               label: const Text('Add Song'),
             )
           : null,
-    );
-  }
-
-  Widget _buildSongDetail() {
-    final display = _currentSongDisplay!;
-    final title = display['title'] ?? 'Untitled';
-    final currentKey = display['transposedKey'] ?? '';
-    final rawData = display['transposedLyricsWithChords'] ?? '';
-    final lines = rawData.toString().split('\n');
-    final activeJamSongId = display['jamSessionSongId'];
-
-    return Row(
-      children: [
-        Expanded(
-          flex: 7,
-          child: Column(
-            children: [
-              Container(
-                color: AppColors.primaryDark.withOpacity(0.05),
-                padding:
-                    const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
-                child: Row(
-                  children: [
-                    GestureDetector(
-                      onTap: () => setState(() => _currentSongDisplay = null),
-                      child: const Icon(Icons.arrow_back,
-                          color: AppColors.primaryDark, size: 20),
-                    ),
-                    const SizedBox(width: 8),
-                    Expanded(
-                      child: Text(title,
-                          style: const TextStyle(
-                              fontWeight: FontWeight.bold, fontSize: 14),
-                          overflow: TextOverflow.ellipsis),
-                    ),
-                    Text('Key: $currentKey',
-                        style: const TextStyle(
-                            fontWeight: FontWeight.bold, fontSize: 13)),
-                  ],
-                ),
-              ),
-              if (_isLeader)
-                Container(
-                  padding:
-                      const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
-                  decoration: BoxDecoration(
-                      border: Border(
-                          bottom: BorderSide(color: Colors.grey.shade200))),
-                  child: Row(
-                    mainAxisAlignment: MainAxisAlignment.center,
-                    children: [
-                      const Text('Transpose:',
-                          style: TextStyle(
-                              fontSize: 12, fontWeight: FontWeight.w600)),
-                      IconButton(
-                        onPressed: () => _doTranspose(-1),
-                        icon: const Icon(Icons.remove_circle_outline, size: 20),
-                        color: AppColors.primaryDark,
-                        padding: EdgeInsets.zero,
-                        constraints: const BoxConstraints(),
-                      ),
-                      const SizedBox(width: 6),
-                      Text('${_session?['currentTransposeOffset'] ?? 0}',
-                          style: const TextStyle(
-                              fontWeight: FontWeight.bold,
-                              color: AppColors.primaryDark)),
-                      const SizedBox(width: 6),
-                      IconButton(
-                        onPressed: () => _doTranspose(1),
-                        icon: const Icon(Icons.add_circle_outline, size: 20),
-                        color: AppColors.primaryDark,
-                        padding: EdgeInsets.zero,
-                        constraints: const BoxConstraints(),
-                      ),
-                    ],
-                  ),
-                ),
-              Expanded(
-                child: ListView.builder(
-                  padding: const EdgeInsets.all(12),
-                  itemCount: lines.length,
-                  itemBuilder: (context, index) {
-                    final line = lines[index] as String;
-                    final sectionMatch =
-                        RegExp(r'^\[([^\]]+)\]$').firstMatch(line.trim());
-                    if (sectionMatch != null) {
-                      return Padding(
-                        padding: const EdgeInsets.only(top: 8, bottom: 4),
-                        child: Text(sectionMatch.group(1)!,
-                            style: const TextStyle(
-                                color: Colors.teal,
-                                fontWeight: FontWeight.bold,
-                                fontSize: 13)),
-                      );
-                    }
-                    final chordMatches =
-                        RegExp(r'\[([^\]]+)\]').allMatches(line);
-                    final chords =
-                        chordMatches.map((m) => m.group(1)!).join('  ');
-                    final lyrics = line.replaceAll(RegExp(r'\[[^\]]+\]'), '');
-                    return Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        if (chords.trim().isNotEmpty)
-                          Text(chords,
-                              style: const TextStyle(
-                                  color: Colors.blue,
-                                  fontWeight: FontWeight.bold,
-                                  fontFamily: 'monospace',
-                                  fontSize: 13)),
-                        if (lyrics.trim().isNotEmpty)
-                          Text(lyrics,
-                              style:
-                                  const TextStyle(fontSize: 14, height: 1.5)),
-                        const SizedBox(height: 4),
-                      ],
-                    );
-                  },
-                ),
-              ),
-            ],
-          ),
-        ),
-        Container(width: 1, color: Colors.grey.shade300),
-        SizedBox(
-          width: 100,
-          child: Column(
-            children: [
-              Container(
-                width: double.infinity,
-                padding: const EdgeInsets.symmetric(vertical: 10),
-                color: AppColors.primaryDark,
-                child: const Text('Songs',
-                    textAlign: TextAlign.center,
-                    style: TextStyle(
-                        color: Colors.white,
-                        fontWeight: FontWeight.bold,
-                        fontSize: 12)),
-              ),
-              Expanded(
-                child: _songs.isEmpty
-                    ? const Center(
-                        child: Text('No songs',
-                            style: TextStyle(color: Colors.grey, fontSize: 11)))
-                    : ListView.builder(
-                        itemCount: _songs.length,
-                        itemBuilder: (ctx, i) {
-                          final entry = _songs[i];
-                          final sTitle = entry['title'] ?? '';
-                          final isSelected = activeJamSongId == entry['id'];
-                          return GestureDetector(
-                            onTap: () => _switchToSong(entry),
-                            child: Container(
-                              padding: const EdgeInsets.symmetric(
-                                  horizontal: 8, vertical: 10),
-                              decoration: BoxDecoration(
-                                color: isSelected
-                                    ? AppColors.primaryDark.withOpacity(0.15)
-                                    : Colors.transparent,
-                                border: Border(
-                                  bottom:
-                                      BorderSide(color: Colors.grey.shade200),
-                                  left: isSelected
-                                      ? const BorderSide(
-                                          color: AppColors.primaryDark,
-                                          width: 3)
-                                      : BorderSide.none,
-                                ),
-                              ),
-                              child: Text(
-                                sTitle,
-                                style: TextStyle(
-                                  fontSize: 11,
-                                  fontWeight: isSelected
-                                      ? FontWeight.bold
-                                      : FontWeight.normal,
-                                  color: isSelected
-                                      ? AppColors.primaryDark
-                                      : Colors.black87,
-                                ),
-                                maxLines: 2,
-                                overflow: TextOverflow.ellipsis,
-                              ),
-                            ),
-                          );
-                        },
-                      ),
-              ),
-            ],
-          ),
-        ),
-      ],
     );
   }
 }

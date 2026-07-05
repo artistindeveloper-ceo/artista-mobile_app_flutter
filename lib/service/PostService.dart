@@ -119,4 +119,25 @@ class PostService {
       throw ApiException('Failed to like post.');
     }
   }
+
+  // ─── GET EXPLORE ─────────────────────────────────────────
+  static Future<List<PostModel>> getExplore({int page = 0}) async {
+    final uri = Uri.parse('${ApiConfig.exploreUrl}?page=$page&size=10');
+    http.Response response;
+    try {
+      response = await http.get(uri, headers: HelperService.authHeaders());
+    } catch (e) {
+      throw ApiException('Could not reach server.');
+    }
+
+    final body = HelperService.safeDecode(response.body);
+    if (response.statusCode != 200) {
+      throw ApiException(body['message'] ?? 'Could not load explore feed.');
+    }
+
+    final List<dynamic> list = body['content'] ?? body['data'] ?? body ?? [];
+    return list
+        .map((e) => PostModel.fromJson(e as Map<String, dynamic>))
+        .toList();
+  }
 }

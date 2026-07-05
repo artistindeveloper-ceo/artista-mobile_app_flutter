@@ -11,7 +11,7 @@ import '../service/HelperService.dart';
 import '../service/PostService.dart';
 import 'Profile_Screen.dart';
 
-// ─── SOCIAL FEED SCREEN ───────────────────────────────────
+// ─── SOCIAL FEED SCREEN (Following + Explore tabs) ────────
 class SocialFeedScreen extends StatefulWidget {
   const SocialFeedScreen({super.key});
 
@@ -19,15 +19,32 @@ class SocialFeedScreen extends StatefulWidget {
   State<SocialFeedScreen> createState() => _SocialFeedScreenState();
 }
 
-class _SocialFeedScreenState extends State<SocialFeedScreen> {
+class _SocialFeedScreenState extends State<SocialFeedScreen>
+    with SingleTickerProviderStateMixin {
+  late final TabController _tabController;
+
+  // ── Following tab state ──
   List<PostModel> _posts = [];
   bool _isLoading = true;
   String? _error;
 
+  // ── Explore tab state ──
+  List<PostModel> _explorePosts = [];
+  bool _isExploreLoading = true;
+  String? _exploreError;
+
   @override
   void initState() {
     super.initState();
+    _tabController = TabController(length: 2, vsync: this);
     _loadFeed();
+    _loadExplore();
+  }
+
+  @override
+  void dispose() {
+    _tabController.dispose();
+    super.dispose();
   }
 
   Future<void> _loadFeed() async {
@@ -54,6 +71,29 @@ class _SocialFeedScreenState extends State<SocialFeedScreen> {
     }
   }
 
+  Future<void> _loadExplore() async {
+    setState(() {
+      _isExploreLoading = true;
+      _exploreError = null;
+    });
+    try {
+      final posts = await PostService.getExplore();
+      setState(() {
+        _explorePosts = posts;
+        _isExploreLoading = false;
+      });
+    } catch (e) {
+      if (HelperService.isAuthError(e)) {
+        await HelperService.forceLogout(context);
+        return;
+      }
+      setState(() {
+        _isExploreLoading = false;
+        _exploreError = e.toString();
+      });
+    }
+  }
+
   void _openCreatePost() {
     showModalBottomSheet(
       context: context,
@@ -68,7 +108,10 @@ class _SocialFeedScreenState extends State<SocialFeedScreen> {
         maxChildSize: 0.95,
         expand: false,
         builder: (_, controller) => CreatePostSheet(
-          onPostCreated: _loadFeed,
+          onPostCreated: () {
+            _loadFeed();
+            _loadExplore();
+          },
           scrollController: controller,
         ),
       ),
@@ -77,6 +120,36 @@ class _SocialFeedScreenState extends State<SocialFeedScreen> {
 
   @override
   Widget build(BuildContext context) {
+    return Column(
+      children: [
+        Material(
+          color: Colors.white,
+          child: TabBar(
+            controller: _tabController,
+            labelColor: const Color(0xFF1A237E),
+            unselectedLabelColor: Colors.grey,
+            indicatorColor: const Color(0xFF1A237E),
+            tabs: const [
+              Tab(text: 'Following'),
+              Tab(text: 'Explore'),
+            ],
+          ),
+        ),
+        Expanded(
+          child: TabBarView(
+            controller: _tabController,
+            children: [
+              _buildFollowingTab(),
+              _buildExploreTab(),
+            ],
+          ),
+        ),
+      ],
+    );
+  }
+
+  // ── Following tab (Home feed + create-post bar) ──
+  Widget _buildFollowingTab() {
     if (_isLoading) {
       return const Center(child: CircularProgressIndicator());
     }
@@ -129,6 +202,74 @@ class _SocialFeedScreenState extends State<SocialFeedScreen> {
             );
           }
           return PostCard(post: _posts[index - 1]);
+        },
+      ),
+    );
+  }
+
+  // ── Explore tab (public posts, no create-post bar) ──
+  Widget _buildExploreTab() {
+    if (_isExploreLoading) {
+      return const Center(child: CircularProgressIndicator());
+    }
+
+    if (_exploreError != null) {
+      return Center(
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            const Icon(Icons.error_outline, size: 48, color: Colors.grey),
+            const SizedBox(height: 12),
+            Text(
+              _exploreError!,
+              textAlign: TextAlign.center,
+              style: const TextStyle(color: Colors.grey),
+            ),
+            const SizedBox(height: 16),
+            ElevatedButton(
+              onPressed: _loadExplore,
+              child: const Text('Retry'),
+            ),
+          ],
+        ),
+      );
+    }
+
+    if (_explorePosts.isEmpty) {
+      return RefreshIndicator(
+        onRefresh: _loadExplore,
+        child: ListView(
+          physics: const AlwaysScrollableScrollPhysics(),
+          children: const [
+            SizedBox(
+              height: 400,
+              child: Center(
+                child: Column(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    Icon(Icons.explore_outlined, size: 64, color: Colors.grey),
+                    SizedBox(height: 12),
+                    Text(
+                      'Koi naya post nahi mila abhi',
+                      style: TextStyle(color: Colors.grey),
+                    ),
+                  ],
+                ),
+              ),
+            ),
+          ],
+        ),
+      );
+    }
+
+    return RefreshIndicator(
+      onRefresh: _loadExplore,
+      child: ListView.separated(
+        padding: const EdgeInsets.only(bottom: 16, top: 8),
+        itemCount: _explorePosts.length,
+        separatorBuilder: (_, __) => const SizedBox(height: 8),
+        itemBuilder: (context, index) {
+          return PostCard(post: _explorePosts[index]);
         },
       ),
     );
@@ -269,12 +410,9 @@ class _CreatePostSheetState extends State<CreatePostSheet> {
   }
 
   Future<void> _submit() async {
-    print("Step 1: Submit clicked");
-
     final caption = _captionCtrl.text.trim();
 
     if (caption.isEmpty && _selectedMedia == null) {
-      print("Step 2: Empty post");
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(content: Text('Add a caption or media to post')),
       );
@@ -284,26 +422,21 @@ class _CreatePostSheetState extends State<CreatePostSheet> {
     setState(() => _isPosting = true);
 
     try {
-      print("Step 3: Calling API");
       await PostService.createPost(
         caption: caption.isNotEmpty ? caption : null,
         mediaFile: _selectedMedia,
       );
-      print("Step 4: API Success");
       if (mounted) {
         Navigator.pop(context);
         widget.onPostCreated();
       }
-    } catch (e, stackTrace) {
-      print("ERROR: $e");
-      print(stackTrace);
+    } catch (e) {
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(content: Text("Failed: $e")),
         );
       }
     } finally {
-      print("Step 5: Finished");
       if (mounted) setState(() => _isPosting = false);
     }
   }

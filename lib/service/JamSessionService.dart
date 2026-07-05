@@ -5,6 +5,7 @@ import 'package:http/http.dart' as http;
 import '../Exception/ApiException.dart';
 import '../config/ApiConfig.dart';
 
+import '../config/Session.dart';
 import 'HelperService.dart';
 
 class JamSessionService {
@@ -236,5 +237,24 @@ class JamSessionService {
       throw ApiException(body['message'] ?? 'Failed to transpose.');
     }
     return body;
+  }
+
+  // Naya delta-based method — sirf +1/-1 bhejta hai, current value client ko pata hone ki zaroorat nahi
+  static Future<Map<String, dynamic>> transposeByDelta(
+      int sessionId, int deltaSteps) async {
+    final response = await http.post(
+      Uri.parse(
+          '${ApiConfig.baseUrl}/api/v1/jam-sessions/$sessionId/transpose/delta'),
+      headers: {
+        'Content-Type': 'application/json',
+        'Authorization': 'Bearer ${Session().token}',
+      },
+      body: jsonEncode({'deltaSteps': deltaSteps}),
+    );
+    if (response.statusCode != 200) {
+      throw Exception(
+          jsonDecode(response.body)['message'] ?? 'Failed to transpose');
+    }
+    return jsonDecode(response.body);
   }
 }

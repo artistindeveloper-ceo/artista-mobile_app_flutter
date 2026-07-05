@@ -18,10 +18,8 @@ class JamSessionSocketService {
 
     // ⚠️ IMPORTANT: '/ws' path apne WebSocketConfig.registerStompEndpoints()
     // me jo bhi mapping hai usse match karo (e.g. registry.addEndpoint("/ws")).
-    final wsUrl = '${ApiConfig.baseUrl
-            .replaceFirst('https://', 'wss://')
-            .replaceFirst('http://', 'ws://')}/ws';
-
+    final wsUrl =
+        '${ApiConfig.baseUrl.replaceFirst('https://', 'wss://').replaceFirst('http://', 'ws://')}/ws-native?token=$token';
     _client = StompClient(
       config: StompConfig(
         url: wsUrl,

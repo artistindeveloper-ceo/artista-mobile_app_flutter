@@ -14,6 +14,8 @@ import '../service/PostService.dart';
 import '../service/UserProfileService.dart';
 import '../service/UserService.dart';
 import '../theme/app_theme.dart';
+import '../widgets/fullscreen_video_page.dart';
+import '../widgets/video_thumbnail_tile.dart';
 import 'chat_screen.dart';
 
 class ProfileScreen extends StatefulWidget {
@@ -336,8 +338,8 @@ class _ProfileScreenState extends State<ProfileScreen> {
         elevation: 0,
         leading: !_isOwnProfile
             ? IconButton(
-            icon: const Icon(Icons.arrow_back, color: Colors.black),
-            onPressed: () => Navigator.pop(context))
+                icon: const Icon(Icons.arrow_back, color: Colors.black),
+                onPressed: () => Navigator.pop(context))
             : null,
         title: Text(user.username ?? user.name,
             style: const TextStyle(
@@ -602,22 +604,68 @@ class _ProfileScreenState extends State<ProfileScreen> {
                       decoration: BoxDecoration(
                           color: Colors.grey[200],
                           border: Border.all(color: Colors.white, width: 1)),
-                      child: post.imageUrl != null
-                          ? Image.network(post.imageUrl!,
-                              fit: BoxFit.cover,
-                              errorBuilder: (ctx, e, s) =>
-                                  const Icon(Icons.broken_image))
-                          : Container(
+                      child: post.imageUrl == null
+                          ? Container(
                               color: AppColors.primaryLight.withOpacity(0.3),
                               child: const Icon(Icons.text_snippet_outlined,
                                   color: AppColors.primaryDark),
-                            ),
+                            )
+                          : post.isVideo
+                              ? VideoThumbnailTile(
+                                  videoUrl: post.imageUrl!,
+                                  viewsCount: post.viewsCount,
+                                  onTap: () {
+                                    final videoPosts = _posts
+                                        .where((p) =>
+                                            p.isVideo && p.imageUrl != null)
+                                        .toList();
+                                    final tappedIndex = videoPosts
+                                        .indexWhere((p) => p.id == post.id);
+                                    Navigator.push(
+                                      ctx,
+                                      MaterialPageRoute(
+                                        builder: (_) => FullscreenVideoPage(
+                                          videoPosts: videoPosts,
+                                          initialIndex: tappedIndex >= 0
+                                              ? tappedIndex
+                                              : 0,
+                                        ),
+                                      ),
+                                    );
+                                  },
+                                )
+                              : Image.network(
+                                  post.imageUrl!,
+                                  fit: BoxFit.cover,
+                                  loadingBuilder: (context, child, progress) {
+                                    if (progress == null) return child;
+                                    return Container(
+                                      color: Colors.grey[200],
+                                      child: const Center(
+                                        child: SizedBox(
+                                          width: 18,
+                                          height: 18,
+                                          child: CircularProgressIndicator(
+                                              strokeWidth: 2),
+                                        ),
+                                      ),
+                                    );
+                                  },
+                                  errorBuilder: (ctx, e, s) => Container(
+                                    color: Colors.grey[200],
+                                    child: const Icon(Icons.broken_image,
+                                        color: Colors.grey),
+                                  ),
+                                ),
                     );
                   },
                   childCount: _posts.length,
                 ),
                 gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
-                    crossAxisCount: 3, crossAxisSpacing: 2, mainAxisSpacing: 2),
+                    crossAxisCount: 3,
+                    crossAxisSpacing: 2,
+                    mainAxisSpacing: 2,
+                    childAspectRatio: 1.0),
               ),
           ],
         ),

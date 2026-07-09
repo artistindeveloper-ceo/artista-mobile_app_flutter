@@ -5,20 +5,24 @@ class PostModel {
   final String username;
   final String? userAvatarUrl;
   final String? imageUrl;
+  final bool isVideo;
   final String? caption;
   final String? timeAgo;
   final int likesCount;
   final int commentsCount;
   final bool likedByMe;
   final int authorId;
+  final int viewsCount;
 
   PostModel({
     required this.id,
     required this.username,
     this.userAvatarUrl,
     this.imageUrl,
+    this.isVideo = false, // ← NEW
     this.caption,
     this.timeAgo,
+    this.viewsCount = 0,
     required this.likesCount,
     required this.commentsCount,
     required this.likedByMe,
@@ -33,8 +37,24 @@ class PostModel {
     return '${ApiConfig.baseUrl}/$clean';
   }
 
+  // ── URL extension se video detect karta hai (backend fallback) ──
+  static bool _detectIsVideo(String? mediaType, String? url) {
+    if (mediaType != null) {
+      return mediaType.toUpperCase() == 'VIDEO';
+    }
+    if (url == null) return false;
+    final lower = url.toLowerCase();
+    return lower.endsWith('.mp4') ||
+        lower.endsWith('.mov') ||
+        lower.endsWith('.avi') ||
+        lower.endsWith('.mkv') ||
+        lower.endsWith('.webm') ||
+        lower.endsWith('.m4v');
+  }
+
   factory PostModel.fromJson(Map<String, dynamic> json) {
     final author = json['author'] as Map<String, dynamic>?;
+    final rawMediaUrl = json['mediaUrl'] ?? json['imageUrl'] ?? json['image'];
 
     return PostModel(
       id: json['id'] is int ? json['id'] : int.tryParse('${json['id']}') ?? 0,
@@ -45,8 +65,10 @@ class PostModel {
       userAvatarUrl: _buildUrl(
         author?['profilePhotoUrl'] ?? json['userAvatarUrl'],
       ),
-      imageUrl: _buildUrl(
-        json['mediaUrl'] ?? json['imageUrl'] ?? json['image'],
+      imageUrl: _buildUrl(rawMediaUrl),
+      isVideo: _detectIsVideo(
+        json['mediaType'] as String?,
+        rawMediaUrl as String?,
       ),
       caption: json['caption'] ?? json['content'],
       timeAgo: json['timeAgo'] ?? json['createdAt'],
@@ -57,6 +79,7 @@ class PostModel {
           0,
       likedByMe:
           json['likedByViewer'] ?? json['likedByMe'] ?? json['liked'] ?? false,
+      viewsCount: json['viewsCount'] ?? json['views'] ?? json['viewCount'] ?? 0,
     );
   }
 }

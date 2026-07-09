@@ -147,4 +147,15 @@ class PostService {
         .map((e) => PostModel.fromJson(e as Map<String, dynamic>))
         .toList();
   }
+
+  // ─── REGISTER VIEW (video ke liye) ───────────────────────
+  static Future<void> registerView(int postId) async {
+    final uri = Uri.parse('${ApiConfig.baseUrl}/api/v1/posts/$postId/view');
+    try {
+      await ApiClient.authorizedRequest(
+          () => http.post(uri, headers: HelperService.authHeaders()));
+    } catch (e) {
+      // Silent fail — view count fail hone se user experience break nahi hona chahiye
+    }
+  }
 }

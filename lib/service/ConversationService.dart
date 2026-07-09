@@ -5,6 +5,7 @@ import 'package:http/http.dart' as http;
 
 import '../Exception/ApiException.dart';
 import '../config/ApiConfig.dart';
+import 'ApiClient.dart'; // ← NAYA IMPORT
 
 class ConversationService {
   // ─── GET CONVERSATIONS ───────────────────────────────────
@@ -12,7 +13,8 @@ class ConversationService {
     final uri = Uri.parse(ApiConfig.conversationsUrl);
     http.Response response;
     try {
-      response = await http.get(uri, headers: HelperService.authHeaders());
+      response = await ApiClient.authorizedRequest(
+          () => http.get(uri, headers: HelperService.authHeaders()));
     } catch (e) {
       throw ApiException('Could not reach server.');
     }
@@ -32,7 +34,8 @@ class ConversationService {
     final uri = Uri.parse(ApiConfig.conversationMessagesUrl(conversationId));
     http.Response response;
     try {
-      response = await http.get(uri, headers: HelperService.authHeaders());
+      response = await ApiClient.authorizedRequest(
+          () => http.get(uri, headers: HelperService.authHeaders()));
     } catch (e) {
       throw ApiException('Could not reach server.');
     }
@@ -50,11 +53,11 @@ class ConversationService {
   }) async {
     final uri = Uri.parse(ApiConfig.sendMessageUrl(recipientId)); // ✅ correct
     try {
-      final response = await http.post(
-        uri,
-        headers: HelperService.authHeaders(),
-        body: jsonEncode({'content': content}),
-      );
+      final response = await ApiClient.authorizedRequest(() => http.post(
+            uri,
+            headers: HelperService.authHeaders(),
+            body: jsonEncode({'content': content}),
+          ));
       print('📤 SEND MSG status: ${response.statusCode}');
       print('📤 SEND MSG body: ${response.body}');
     } catch (e) {
@@ -66,7 +69,8 @@ class ConversationService {
   static Future<void> markAsRead(int conversationId) async {
     final uri = Uri.parse(ApiConfig.markReadUrl(conversationId));
     try {
-      await http.post(uri, headers: HelperService.authHeaders());
+      await ApiClient.authorizedRequest(
+          () => http.post(uri, headers: HelperService.authHeaders()));
     } catch (e) {
       // Silent fail
     }
@@ -78,12 +82,12 @@ class ConversationService {
     final uri = Uri.parse('${ApiConfig.baseUrl}/api/v1/messages/users/$userId');
     http.Response response;
     try {
-      response = await http.post(
-        uri,
-        headers: HelperService.authHeaders(),
-        body: jsonEncode(
-            {'content': '👋'}), // sends a hi to open the conversation
-      );
+      response = await ApiClient.authorizedRequest(() => http.post(
+            uri,
+            headers: HelperService.authHeaders(),
+            body: jsonEncode(
+                {'content': '👋'}), // sends a hi to open the conversation
+          ));
     } catch (e) {
       throw ApiException('Could not reach server.');
     }
@@ -103,8 +107,8 @@ class ConversationService {
 
   static Future<int> getTotalUnreadCount() async {
     final uri = Uri.parse('${ApiConfig.baseUrl}/api/v1/messages/unread-count');
-    final response =
-        await http.get(uri, headers: await HelperService.authHeaders());
+    final response = await ApiClient.authorizedRequest(
+        () => http.get(uri, headers: HelperService.authHeaders()));
 
     if (response.statusCode != 200) {
       throw ApiException('Could not fetch unread count.');

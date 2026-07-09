@@ -5,17 +5,18 @@ import 'package:http/http.dart' as http;
 import '../Exception/ApiException.dart';
 import '../config/ApiConfig.dart';
 import 'HelperService.dart';
+import 'ApiClient.dart'; // ← NAYA IMPORT
 
 class CommentService {
   // ─── ADD COMMENT ─────────────────────────────────────────
   static Future<void> addComment(int postId, String text) async {
     final uri = Uri.parse(ApiConfig.postCommentsUrl(postId));
     try {
-      await http.post(
-        uri,
-        headers: HelperService.authHeaders(),
-        body: jsonEncode({'content': text}),
-      );
+      await ApiClient.authorizedRequest(() => http.post(
+            uri,
+            headers: HelperService.authHeaders(),
+            body: jsonEncode({'content': text}),
+          ));
     } catch (e) {
       throw ApiException('Could not reach server.');
     }
@@ -26,7 +27,8 @@ class CommentService {
     final uri = Uri.parse(ApiConfig.postCommentsUrl(postId));
     http.Response response;
     try {
-      response = await http.get(uri, headers: HelperService.authHeaders());
+      response = await ApiClient.authorizedRequest(
+          () => http.get(uri, headers: HelperService.authHeaders()));
     } catch (e) {
       throw ApiException('Could not reach server.');
     }

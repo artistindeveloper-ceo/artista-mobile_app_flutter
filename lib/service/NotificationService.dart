@@ -3,6 +3,7 @@ import 'package:http/http.dart' as http;
 import '../Exception/ApiException.dart';
 import '../config/ApiConfig.dart';
 import 'HelperService.dart';
+import 'ApiClient.dart'; // ← NAYA IMPORT
 
 class NotificationService {
 // ─── GET NOTIFICATIONS ───────────────────────────────────
@@ -10,7 +11,8 @@ class NotificationService {
     final uri = Uri.parse(ApiConfig.notificationsUrl);
     http.Response response;
     try {
-      response = await http.get(uri, headers: HelperService.authHeaders());
+      response = await ApiClient.authorizedRequest(
+          () => http.get(uri, headers: HelperService.authHeaders()));
     } catch (e) {
       throw ApiException('Could not reach server.');
     }
@@ -30,7 +32,8 @@ class NotificationService {
     final uri = Uri.parse(ApiConfig.unreadCountUrl);
     http.Response response;
     try {
-      response = await http.get(uri, headers: HelperService.authHeaders());
+      response = await ApiClient.authorizedRequest(
+          () => http.get(uri, headers: HelperService.authHeaders()));
     } catch (e) {
       return 0;
     }
@@ -42,7 +45,8 @@ class NotificationService {
   static Future<void> markAllNotificationsRead() async {
     final uri = Uri.parse(ApiConfig.markAllReadUrl);
     try {
-      await http.post(uri, headers: HelperService.authHeaders());
+      await ApiClient.authorizedRequest(
+          () => http.post(uri, headers: HelperService.authHeaders()));
     } catch (_) {
       // Silent fail
     }

@@ -3,7 +3,7 @@ class ApiConfig {
 
   // Auth
   static const String loginUrl = '$baseUrl/api/v1/auth/login';  // ← v1 add kiya
-
+  static const String refreshTokenUrl = '$baseUrl/api/v1/auth/refresh-token';
   // User v1 endpoints
   static const String getMeUrl = '$baseUrl/api/v1/users/me';
   static const String updateMeUrl = '$baseUrl/api/v1/users/me';
@@ -75,4 +75,5 @@ class ApiConfig {
   //get songs in jam session
   static const String publicSongsUrl = '$baseUrl/api/v1/songs/public';
   static const String mySongsUrl = '$baseUrl/api/v1/songs/mine';
+
 }

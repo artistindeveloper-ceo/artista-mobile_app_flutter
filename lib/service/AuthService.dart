@@ -7,6 +7,7 @@ import '../config/ApiConfig.dart';
 import '../config/Session.dart';
 import '../model/UserModel.dart';
 import 'HelperService.dart';
+import 'ApiClient.dart';
 
 class AuthService {
   // ─── LOGIN ──────────────────────────────────────────────────────
@@ -37,12 +38,15 @@ class AuthService {
       throw ApiException(body['message'] ?? 'Login failed. Please try again.');
     }
 
-    // Swagger se: accessToken aur user direct root mein hain
+    // Swagger se: accessToken, refreshToken aur user direct root mein hain
     final token = body['accessToken'] as String;
+    final refreshTokenValue = body['refreshToken'] as String?;
     final userJson = body['user'] as Map<String, dynamic>;
     final user = UserModel.fromJson(userJson);
+
     Session().save(
       token: token,
+      refreshToken: refreshTokenValue,
       userId: user.id,
       profilePhotoUrl: user.profilePhotoUrl,
       displayName: user.name,
@@ -88,14 +92,14 @@ class AuthService {
     final uri = Uri.parse(ApiConfig.changePasswordUrl);
     http.Response response;
     try {
-      response = await http.post(
-        uri,
-        headers: HelperService.authHeaders(),
-        body: jsonEncode({
-          'currentPassword': currentPassword,
-          'newPassword': newPassword,
-        }),
-      );
+      response = await ApiClient.authorizedRequest(() => http.post(
+            uri,
+            headers: HelperService.authHeaders(),
+            body: jsonEncode({
+              'currentPassword': currentPassword,
+              'newPassword': newPassword,
+            }),
+          ));
     } catch (e) {
       throw ApiException(
           'Could not reach server. Check your internet connection.');
@@ -105,5 +109,51 @@ class AuthService {
     if (response.statusCode != 200 || body['success'] == false) {
       throw ApiException(body['message'] ?? 'Password change failed.');
     }
+  }
+
+// ─── REFRESH TOKEN ──────────────────────────────────────
+  static Future<bool> refreshAccessToken() async {
+    final oldRefreshToken = Session().refreshToken;
+    if (oldRefreshToken == null) return false;
+
+    try {
+      final response = await http.post(
+        Uri.parse('${ApiConfig.baseUrl}/api/v1/auth/refresh'),
+        headers: {'Content-Type': 'application/json'},
+        body: jsonEncode({'refreshToken': oldRefreshToken}),
+      );
+
+      if (response.statusCode == 200) {
+        final body = HelperService.safeDecode(response.body);
+        final newAccessToken = body['accessToken'] as String;
+        final newRefreshToken = body['refreshToken'] as String?;
+
+        await Session().updateAccessToken(
+          newAccessToken,
+          newRefreshToken: newRefreshToken,
+        );
+        return true;
+      }
+      return false;
+    } catch (e) {
+      return false;
+    }
+  }
+
+  // ─── LOGOUT ─────────────────────────────────────────────
+  static Future<void> logout() async {
+    final refreshToken = Session().refreshToken;
+    if (refreshToken != null) {
+      try {
+        await http.post(
+          Uri.parse('${ApiConfig.baseUrl}/api/v1/auth/logout'),
+          headers: {'Content-Type': 'application/json'},
+          body: jsonEncode({'refreshToken': refreshToken}),
+        );
+      } catch (e) {
+        // ignore, local clear to hoga hi
+      }
+    }
+    await Session().clear();
   }
 }

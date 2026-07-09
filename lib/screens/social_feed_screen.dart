@@ -10,6 +10,7 @@ import '../service/CommentService.dart';
 import '../service/HelperService.dart';
 import '../service/PostService.dart';
 import 'Profile_Screen.dart';
+import '../widgets/video_post_player.dart';
 
 // ─── SOCIAL FEED SCREEN (Following + Explore tabs) ────────
 class SocialFeedScreen extends StatefulWidget {
@@ -796,26 +797,33 @@ class _PostCardState extends State<PostCard> {
 
           // Post Image
           if (post.imageUrl != null)
-            AspectRatio(
-              aspectRatio: 1,
-              child: Image.network(
-                post.imageUrl!,
-                fit: BoxFit.cover,
-                loadingBuilder: (context, child, progress) {
-                  if (progress == null) return child;
-                  return Container(
-                    color: Colors.grey[200],
-                    child: const Center(child: CircularProgressIndicator()),
-                  );
-                },
-                errorBuilder: (_, __, ___) => Container(
-                  color: Colors.grey[300],
-                  child: const Center(
-                    child: Icon(Icons.broken_image, size: 40),
+            post.isVideo
+                ? VideoPostPlayer(
+                    videoUrl: post.imageUrl!,
+                    postId: post.id,
+                    viewsCount: post.viewsCount,
+                  )
+                : AspectRatio(
+                    aspectRatio: 1,
+                    child: Image.network(
+                      post.imageUrl!,
+                      fit: BoxFit.cover,
+                      loadingBuilder: (context, child, progress) {
+                        if (progress == null) return child;
+                        return Container(
+                          color: Colors.grey[200],
+                          child:
+                              const Center(child: CircularProgressIndicator()),
+                        );
+                      },
+                      errorBuilder: (_, __, ___) => Container(
+                        color: Colors.grey[300],
+                        child: const Center(
+                          child: Icon(Icons.broken_image, size: 40),
+                        ),
+                      ),
+                    ),
                   ),
-                ),
-              ),
-            ),
 
           // Action Buttons
           Padding(

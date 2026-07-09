@@ -7,6 +7,7 @@ import '../config/ApiConfig.dart';
 
 import '../config/Session.dart';
 import 'HelperService.dart';
+import 'ApiClient.dart'; // ← NAYA IMPORT
 
 class JamSessionService {
   // ─── MY SESSIONS ─────────────────────────────────────────
@@ -14,7 +15,8 @@ class JamSessionService {
     final uri = Uri.parse(ApiConfig.mySessionsUrl);
     http.Response response;
     try {
-      response = await http.get(uri, headers: HelperService.authHeaders());
+      response = await ApiClient.authorizedRequest(
+          () => http.get(uri, headers: HelperService.authHeaders()));
     } catch (e) {
       throw ApiException('Could not reach server.');
     }
@@ -32,15 +34,15 @@ class JamSessionService {
   }) async {
     final uri = Uri.parse(ApiConfig.createSessionUrl);
     try {
-      await http.post(
-        uri,
-        headers: HelperService.authHeaders(),
-        body: jsonEncode({
-          'name': name,
-          if (description != null && description.isNotEmpty)
-            'description': description,
-        }),
-      );
+      await ApiClient.authorizedRequest(() => http.post(
+            uri,
+            headers: HelperService.authHeaders(),
+            body: jsonEncode({
+              'name': name,
+              if (description != null && description.isNotEmpty)
+                'description': description,
+            }),
+          ));
     } catch (e) {
       throw ApiException('Could not reach server.');
     }
@@ -51,7 +53,8 @@ class JamSessionService {
     final uri = Uri.parse(ApiConfig.joinSessionUrl(inviteCode));
     http.Response response;
     try {
-      response = await http.post(uri, headers: HelperService.authHeaders());
+      response = await ApiClient.authorizedRequest(
+          () => http.post(uri, headers: HelperService.authHeaders()));
     } catch (e) {
       throw ApiException('Could not reach server.');
     }
@@ -67,7 +70,8 @@ class JamSessionService {
     final uri = Uri.parse(ApiConfig.sessionByIdUrl(id));
     http.Response response;
     try {
-      response = await http.get(uri, headers: HelperService.authHeaders());
+      response = await ApiClient.authorizedRequest(
+          () => http.get(uri, headers: HelperService.authHeaders()));
     } catch (e) {
       throw ApiException('Could not reach server.');
     }
@@ -83,7 +87,8 @@ class JamSessionService {
     final uri = Uri.parse(ApiConfig.sessionParticipantsUrl(id));
     http.Response response;
     try {
-      response = await http.get(uri, headers: HelperService.authHeaders());
+      response = await ApiClient.authorizedRequest(
+          () => http.get(uri, headers: HelperService.authHeaders()));
     } catch (e) {
       throw ApiException('Could not reach server.');
     }
@@ -107,7 +112,8 @@ class JamSessionService {
   static Future<void> startSession(int id) async {
     final uri = Uri.parse(ApiConfig.startSessionUrl(id));
     try {
-      await http.post(uri, headers: HelperService.authHeaders());
+      await ApiClient.authorizedRequest(
+          () => http.post(uri, headers: HelperService.authHeaders()));
     } catch (e) {
       throw ApiException('Could not reach server.');
     }
@@ -117,7 +123,8 @@ class JamSessionService {
   static Future<void> endSession(int id) async {
     final uri = Uri.parse(ApiConfig.endSessionUrl(id));
     try {
-      await http.post(uri, headers: HelperService.authHeaders());
+      await ApiClient.authorizedRequest(
+          () => http.post(uri, headers: HelperService.authHeaders()));
     } catch (e) {
       throw ApiException('Could not reach server.');
     }
@@ -127,7 +134,8 @@ class JamSessionService {
   static Future<void> leaveSession(int id) async {
     final uri = Uri.parse(ApiConfig.leaveSessionUrl(id));
     try {
-      await http.post(uri, headers: HelperService.authHeaders());
+      await ApiClient.authorizedRequest(
+          () => http.post(uri, headers: HelperService.authHeaders()));
     } catch (e) {
       throw ApiException('Could not reach server.');
     }
@@ -139,7 +147,8 @@ class JamSessionService {
         Uri.parse('${ApiConfig.baseUrl}/api/v1/jam-sessions/$sessionId');
     http.Response response;
     try {
-      response = await http.get(uri, headers: HelperService.authHeaders());
+      response = await ApiClient.authorizedRequest(
+          () => http.get(uri, headers: HelperService.authHeaders()));
     } catch (e) {
       throw ApiException('Could not reach server.');
     }
@@ -158,12 +167,12 @@ class JamSessionService {
         '${ApiConfig.baseUrl}/api/v1/jam-sessions/$sessionId/setlist');
     http.Response response;
     try {
-      response = await http.post(
-        uri,
-        headers: HelperService.authHeaders(),
-        body: jsonEncode(
-            {'songId': songId, if (position != null) 'position': position}),
-      );
+      response = await ApiClient.authorizedRequest(() => http.post(
+            uri,
+            headers: HelperService.authHeaders(),
+            body: jsonEncode(
+                {'songId': songId, if (position != null) 'position': position}),
+          ));
     } catch (e) {
       throw ApiException('Could not reach server.');
     }
@@ -181,7 +190,8 @@ class JamSessionService {
         '${ApiConfig.baseUrl}/api/v1/jam-sessions/$sessionId/setlist/$jamSessionSongId');
     http.Response response;
     try {
-      response = await http.delete(uri, headers: HelperService.authHeaders());
+      response = await ApiClient.authorizedRequest(
+          () => http.delete(uri, headers: HelperService.authHeaders()));
     } catch (e) {
       throw ApiException('Could not reach server.');
     }
@@ -199,14 +209,14 @@ class JamSessionService {
         '${ApiConfig.baseUrl}/api/v1/jam-sessions/$sessionId/current-song');
     http.Response response;
     try {
-      response = await http.post(
-        uri,
-        headers: HelperService.authHeaders(),
-        body: jsonEncode({
-          'jamSessionSongId': jamSessionSongId,
-          if (transposeOffset != null) 'transposeOffset': transposeOffset,
-        }),
-      );
+      response = await ApiClient.authorizedRequest(() => http.post(
+            uri,
+            headers: HelperService.authHeaders(),
+            body: jsonEncode({
+              'jamSessionSongId': jamSessionSongId,
+              if (transposeOffset != null) 'transposeOffset': transposeOffset,
+            }),
+          ));
     } catch (e) {
       throw ApiException('Could not reach server.');
     }
@@ -224,11 +234,11 @@ class JamSessionService {
         '${ApiConfig.baseUrl}/api/v1/jam-sessions/$sessionId/transpose');
     http.Response response;
     try {
-      response = await http.post(
-        uri,
-        headers: HelperService.authHeaders(),
-        body: jsonEncode({'transposeOffset': transposeOffset}),
-      );
+      response = await ApiClient.authorizedRequest(() => http.post(
+            uri,
+            headers: HelperService.authHeaders(),
+            body: jsonEncode({'transposeOffset': transposeOffset}),
+          ));
     } catch (e) {
       throw ApiException('Could not reach server.');
     }
@@ -242,15 +252,12 @@ class JamSessionService {
   // Naya delta-based method — sirf +1/-1 bhejta hai, current value client ko pata hone ki zaroorat nahi
   static Future<Map<String, dynamic>> transposeByDelta(
       int sessionId, int deltaSteps) async {
-    final response = await http.post(
-      Uri.parse(
-          '${ApiConfig.baseUrl}/api/v1/jam-sessions/$sessionId/transpose/delta'),
-      headers: {
-        'Content-Type': 'application/json',
-        'Authorization': 'Bearer ${Session().token}',
-      },
-      body: jsonEncode({'deltaSteps': deltaSteps}),
-    );
+    final response = await ApiClient.authorizedRequest(() => http.post(
+          Uri.parse(
+              '${ApiConfig.baseUrl}/api/v1/jam-sessions/$sessionId/transpose/delta'),
+          headers: HelperService.authHeaders(),
+          body: jsonEncode({'deltaSteps': deltaSteps}),
+        ));
     if (response.statusCode != 200) {
       throw Exception(
           jsonDecode(response.body)['message'] ?? 'Failed to transpose');

@@ -4,6 +4,7 @@ import '../Exception/ApiException.dart';
 import '../config/ApiConfig.dart';
 
 import 'HelperService.dart';
+import 'ApiClient.dart'; // ← NAYA IMPORT
 
 class FollowUserservice {
   // ─── FOLLOW USER ─────────────────────────────────────────
@@ -13,7 +14,8 @@ class FollowUserservice {
     final uri = Uri.parse(ApiConfig.followUserUrl(userId));
     http.Response response;
     try {
-      response = await http.post(uri, headers: HelperService.authHeaders());
+      response = await ApiClient.authorizedRequest(
+          () => http.post(uri, headers: HelperService.authHeaders()));
     } catch (e) {
       throw ApiException('Could not reach server.');
     }
@@ -49,7 +51,8 @@ class FollowUserservice {
   static Future<void> unfollowUser(int userId) async {
     final uri = Uri.parse(ApiConfig.unfollowUserUrl(userId));
     try {
-      await http.delete(uri, headers: HelperService.authHeaders());
+      await ApiClient.authorizedRequest(
+          () => http.delete(uri, headers: HelperService.authHeaders()));
     } catch (e) {
       throw ApiException('Could not reach server.');
     }
@@ -60,7 +63,8 @@ class FollowUserservice {
     final uri = Uri.parse(ApiConfig.pendingRequestsUrl);
     http.Response response;
     try {
-      response = await http.get(uri, headers: HelperService.authHeaders());
+      response = await ApiClient.authorizedRequest(
+          () => http.get(uri, headers: HelperService.authHeaders()));
     } catch (e) {
       throw ApiException('Could not reach server.');
     }
@@ -75,7 +79,8 @@ class FollowUserservice {
   static Future<void> acceptFollowRequest(int requestId) async {
     final uri = Uri.parse(ApiConfig.acceptRequestUrl(requestId));
     try {
-      await http.post(uri, headers: HelperService.authHeaders());
+      await ApiClient.authorizedRequest(
+          () => http.post(uri, headers: HelperService.authHeaders()));
     } catch (e) {
       throw ApiException('Could not reach server.');
     }
@@ -85,7 +90,8 @@ class FollowUserservice {
   static Future<void> rejectFollowRequest(int requestId) async {
     final uri = Uri.parse(ApiConfig.rejectRequestUrl(requestId));
     try {
-      await http.post(uri, headers: HelperService.authHeaders());
+      await ApiClient.authorizedRequest(
+          () => http.post(uri, headers: HelperService.authHeaders()));
     } catch (e) {
       throw ApiException('Could not reach server.');
     }

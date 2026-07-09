@@ -6,6 +6,7 @@ import 'package:http/http.dart' as http;
 import '../Exception/ApiException.dart';
 import '../config/ApiConfig.dart';
 import '../model/UserModel.dart';
+import 'ApiClient.dart'; // ← NAYA IMPORT
 
 class UserService {
   // ─── GET CURRENT USER (GET /api/v1/users/me) ────────────────────
@@ -13,7 +14,8 @@ class UserService {
     final uri = Uri.parse(ApiConfig.getMeUrl);
     http.Response response;
     try {
-      response = await http.get(uri, headers: HelperService.authHeaders());
+      response = await ApiClient.authorizedRequest(
+          () => http.get(uri, headers: HelperService.authHeaders()));
     } catch (e) {
       throw ApiException(
           'Could not reach server. Check your internet connection.');
@@ -33,7 +35,8 @@ class UserService {
     final uri = Uri.parse(ApiConfig.userByUsernameUrl(username));
     http.Response response;
     try {
-      response = await http.get(uri, headers: HelperService.authHeaders());
+      response = await ApiClient.authorizedRequest(
+          () => http.get(uri, headers: HelperService.authHeaders()));
     } catch (e) {
       throw ApiException('Could not reach server.');
     }
@@ -56,15 +59,15 @@ class UserService {
     final uri = Uri.parse(ApiConfig.updateMeUrl);
     http.Response response;
     try {
-      response = await http.put(
-        uri,
-        headers: HelperService.authHeaders(),
-        body: jsonEncode({
-          'name': name,
-          if (username != null) 'username': username,
-          if (bio != null) 'bio': bio,
-        }),
-      );
+      response = await ApiClient.authorizedRequest(() => http.put(
+            uri,
+            headers: HelperService.authHeaders(),
+            body: jsonEncode({
+              'name': name,
+              if (username != null) 'username': username,
+              if (bio != null) 'bio': bio,
+            }),
+          ));
     } catch (e) {
       throw ApiException(
           'Could not reach server. Check your internet connection.');
@@ -80,19 +83,15 @@ class UserService {
   }
 
   // ─── UPDATE PRIVACY ONLY (PUT /api/v1/users/me) ─────────────────
-  // ✅ NEW — separate lightweight call so Settings screen doesn't need
-  // to resend name/username/bio just to toggle the privacy switch.
-  // Backend's UpdateProfileRequest only touches fields that are
-  // non-null, so sending just {"isPrivate": ...} is safe.
   static Future<UserModel> updatePrivacy(bool isPrivate) async {
     final uri = Uri.parse(ApiConfig.updateMeUrl);
     http.Response response;
     try {
-      response = await http.put(
-        uri,
-        headers: HelperService.authHeaders(),
-        body: jsonEncode({'isPrivate': isPrivate}),
-      );
+      response = await ApiClient.authorizedRequest(() => http.put(
+            uri,
+            headers: HelperService.authHeaders(),
+            body: jsonEncode({'isPrivate': isPrivate}),
+          ));
     } catch (e) {
       throw ApiException(
           'Could not reach server. Check your internet connection.');
@@ -115,7 +114,8 @@ class UserService {
 
     http.Response response;
     try {
-      response = await http.get(uri, headers: HelperService.authHeaders());
+      response = await ApiClient.authorizedRequest(
+          () => http.get(uri, headers: HelperService.authHeaders()));
     } catch (e) {
       throw ApiException('Could not reach server.');
     }
@@ -141,7 +141,8 @@ class UserService {
 
     http.Response response;
     try {
-      response = await http.get(uri, headers: HelperService.authHeaders());
+      response = await ApiClient.authorizedRequest(
+          () => http.get(uri, headers: HelperService.authHeaders()));
     } catch (e) {
       throw ApiException('Could not reach server.');
     }

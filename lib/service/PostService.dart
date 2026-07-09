@@ -8,6 +8,7 @@ import '../config/ApiConfig.dart';
 import '../config/Session.dart';
 import '../model/PostModel.dart';
 import 'HelperService.dart';
+import 'ApiClient.dart'; // ← NAYA IMPORT
 
 class PostService {
   // ─── GET USER POSTS ──────────────────────────────────────
@@ -15,7 +16,8 @@ class PostService {
     final uri = Uri.parse('${ApiConfig.baseUrl}/api/v1/posts/users/$userId');
     http.Response response;
     try {
-      response = await http.get(uri, headers: HelperService.authHeaders());
+      response = await ApiClient.authorizedRequest(
+          () => http.get(uri, headers: HelperService.authHeaders()));
     } catch (e) {
       throw ApiException('Could not reach server.');
     }
@@ -36,43 +38,45 @@ class PostService {
     String? caption,
     File? mediaFile,
   }) async {
-    final token = Session().token;
-    if (token == null) throw ApiException('Not logged in.');
-
-    // Build URI with caption as query param
     final uri = Uri.parse(ApiConfig.createPostUrl).replace(
       queryParameters: {
         if (caption != null && caption.isNotEmpty) 'caption': caption,
       },
     );
 
-    final request = http.MultipartRequest('POST', uri)
-      ..headers['Authorization'] = 'Bearer $token';
+    // Multipart request ko ek function mein wrap kiya taki ApiClient
+    // ise retry kar sake (401 aane par) — Bearer token hamesha fresh
+    // Session().token se uthaya jayega, refresh ke baad bhi
+    Future<http.Response> sendMultipart() async {
+      final token = Session().token;
+      if (token == null) throw ApiException('Not logged in.');
 
-    // Attach media file if selected
-    if (mediaFile != null) {
-      final ext = mediaFile.path.split('.').last.toLowerCase();
-      final mimeType = ['mp4', 'mov', 'avi', 'mkv'].contains(ext)
-          ? 'video/$ext'
-          : 'image/$ext';
+      final request = http.MultipartRequest('POST', uri)
+        ..headers['Authorization'] = 'Bearer $token';
 
-      request.files.add(
-        await http.MultipartFile.fromPath(
-          'media',
-          mediaFile.path,
-          // contentType: MediaType.parse(mimeType), // add mime package if needed
-        ),
-      );
+      if (mediaFile != null) {
+        final ext = mediaFile.path.split('.').last.toLowerCase();
+        // mimeType filhal use nahi ho raha, future mime package ke liye rakha hai
+
+        request.files.add(
+          await http.MultipartFile.fromPath(
+            'media',
+            mediaFile.path,
+            // contentType: MediaType.parse(mimeType),
+          ),
+        );
+      }
+
+      final streamed = await request.send();
+      return http.Response.fromStream(streamed);
     }
 
-    http.StreamedResponse streamed;
+    http.Response response;
     try {
-      streamed = await request.send();
+      response = await ApiClient.authorizedRequest(sendMultipart);
     } catch (e) {
       throw ApiException('Could not reach server. Check your connection.');
     }
-
-    final response = await http.Response.fromStream(streamed);
 
     if (response.statusCode != 200 && response.statusCode != 201) {
       Map<String, dynamic> body = {};
@@ -88,7 +92,8 @@ class PostService {
     final uri = Uri.parse('${ApiConfig.feedUrl}?page=$page&size=10');
     http.Response response;
     try {
-      response = await http.get(uri, headers: HelperService.authHeaders());
+      response = await ApiClient.authorizedRequest(
+          () => http.get(uri, headers: HelperService.authHeaders()));
     } catch (e) {
       throw ApiException('Could not reach server.');
     }
@@ -109,7 +114,8 @@ class PostService {
     final uri = Uri.parse(ApiConfig.likePostUrl(postId));
     http.Response response;
     try {
-      response = await http.post(uri, headers: HelperService.authHeaders());
+      response = await ApiClient.authorizedRequest(
+          () => http.post(uri, headers: HelperService.authHeaders()));
     } catch (e) {
       throw ApiException('Could not reach server.');
     }
@@ -125,7 +131,8 @@ class PostService {
     final uri = Uri.parse('${ApiConfig.exploreUrl}?page=$page&size=10');
     http.Response response;
     try {
-      response = await http.get(uri, headers: HelperService.authHeaders());
+      response = await ApiClient.authorizedRequest(
+          () => http.get(uri, headers: HelperService.authHeaders()));
     } catch (e) {
       throw ApiException('Could not reach server.');
     }

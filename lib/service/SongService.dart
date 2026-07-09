@@ -5,6 +5,7 @@ import 'package:http/http.dart' as http;
 import '../Exception/ApiException.dart';
 import '../config/ApiConfig.dart';
 import 'HelperService.dart';
+import 'ApiClient.dart'; // ← NAYA IMPORT
 
 class SongService {
 // ─── GET MY SONGS ─────────────────────────────────────
@@ -12,7 +13,8 @@ class SongService {
     final uri = Uri.parse('${ApiConfig.baseUrl}/api/v1/songs/mine');
     http.Response response;
     try {
-      response = await http.get(uri, headers: HelperService.authHeaders());
+      response = await ApiClient.authorizedRequest(
+          () => http.get(uri, headers: HelperService.authHeaders()));
     } catch (e) {
       throw ApiException('Could not reach server.');
     }
@@ -31,17 +33,17 @@ class SongService {
   }) async {
     final uri = Uri.parse('${ApiConfig.baseUrl}/api/v1/songs');
     try {
-      await http.post(
-        uri,
-        headers: HelperService.authHeaders(),
-        body: jsonEncode({
-          'title': title,
-          if (artist != null && artist.isNotEmpty) 'artist': artist,
-          if (key != null && key.isNotEmpty) 'key': key,
-          if (chords != null && chords.isNotEmpty) 'chords': chords,
-          if (lyrics != null && lyrics.isNotEmpty) 'lyrics': lyrics,
-        }),
-      );
+      await ApiClient.authorizedRequest(() => http.post(
+            uri,
+            headers: HelperService.authHeaders(),
+            body: jsonEncode({
+              'title': title,
+              if (artist != null && artist.isNotEmpty) 'artist': artist,
+              if (key != null && key.isNotEmpty) 'key': key,
+              if (chords != null && chords.isNotEmpty) 'chords': chords,
+              if (lyrics != null && lyrics.isNotEmpty) 'lyrics': lyrics,
+            }),
+          ));
     } catch (e) {
       throw ApiException('Could not reach server.');
     }
@@ -54,7 +56,8 @@ class SongService {
     );
     http.Response response;
     try {
-      response = await http.get(uri, headers: HelperService.authHeaders());
+      response = await ApiClient.authorizedRequest(
+          () => http.get(uri, headers: HelperService.authHeaders()));
     } catch (e) {
       throw ApiException('Could not reach server.');
     }
@@ -69,7 +72,8 @@ class SongService {
     final uri = Uri.parse('${ApiConfig.baseUrl}/api/v1/songs/$songId');
     http.Response response;
     try {
-      response = await http.get(uri, headers: HelperService.authHeaders());
+      response = await ApiClient.authorizedRequest(
+          () => http.get(uri, headers: HelperService.authHeaders()));
     } catch (e) {
       throw ApiException('Could not reach server.');
     }

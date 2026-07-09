@@ -7,27 +7,33 @@ import '../config/ApiConfig.dart';
 import '../config/Session.dart';
 import '../model/UserModel.dart';
 import 'HelperService.dart';
+import 'ApiClient.dart'; // ← NAYA IMPORT
 
 class UserProfileService {
   // ─── UPLOAD PROFILE PHOTO (POST /api/v1/users/me/profile-photo) ─
   static Future<UserModel> uploadProfilePhoto(File imageFile) async {
-    final token = Session().token;
-    if (token == null) throw ApiException('Not logged in.');
-
     final uri = Uri.parse(ApiConfig.uploadProfilePhotoUrl);
-    final request = http.MultipartRequest('POST', uri)
-      ..headers['Authorization'] = 'Bearer $token'
-      ..files.add(await http.MultipartFile.fromPath('file', imageFile.path));
 
-    http.StreamedResponse streamed;
+    Future<http.Response> sendMultipart() async {
+      final token = Session().token;
+      if (token == null) throw ApiException('Not logged in.');
+
+      final request = http.MultipartRequest('POST', uri)
+        ..headers['Authorization'] = 'Bearer $token'
+        ..files.add(await http.MultipartFile.fromPath('file', imageFile.path));
+
+      final streamed = await request.send();
+      return http.Response.fromStream(streamed);
+    }
+
+    http.Response response;
     try {
-      streamed = await request.send();
+      response = await ApiClient.authorizedRequest(sendMultipart);
     } catch (e) {
       throw ApiException(
           'Could not reach server. Check your internet connection.');
     }
 
-    final response = await http.Response.fromStream(streamed);
     final body = HelperService.safeDecode(response.body);
     if (response.statusCode != 200 || body['success'] == false) {
       throw ApiException(body['message'] ?? 'Photo upload failed.');
@@ -39,23 +45,28 @@ class UserProfileService {
 
   // ─── UPLOAD COVER PHOTO (POST /api/v1/users/me/cover-photo) ─────
   static Future<UserModel> uploadCoverPhoto(File imageFile) async {
-    final token = Session().token;
-    if (token == null) throw ApiException('Not logged in.');
-
     final uri = Uri.parse(ApiConfig.uploadCoverPhotoUrl);
-    final request = http.MultipartRequest('POST', uri)
-      ..headers['Authorization'] = 'Bearer $token'
-      ..files.add(await http.MultipartFile.fromPath('file', imageFile.path));
 
-    http.StreamedResponse streamed;
+    Future<http.Response> sendMultipart() async {
+      final token = Session().token;
+      if (token == null) throw ApiException('Not logged in.');
+
+      final request = http.MultipartRequest('POST', uri)
+        ..headers['Authorization'] = 'Bearer $token'
+        ..files.add(await http.MultipartFile.fromPath('file', imageFile.path));
+
+      final streamed = await request.send();
+      return http.Response.fromStream(streamed);
+    }
+
+    http.Response response;
     try {
-      streamed = await request.send();
+      response = await ApiClient.authorizedRequest(sendMultipart);
     } catch (e) {
       throw ApiException(
           'Could not reach server. Check your internet connection.');
     }
 
-    final response = await http.Response.fromStream(streamed);
     final body = HelperService.safeDecode(response.body);
     if (response.statusCode != 200 || body['success'] == false) {
       throw ApiException(body['message'] ?? 'Cover photo upload failed.');

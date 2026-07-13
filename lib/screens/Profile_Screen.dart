@@ -6,15 +6,19 @@ import 'package:image_picker/image_picker.dart';
 import '../config/Session.dart';
 import '../model/PostModel.dart';
 import '../model/UserModel.dart';
+import '../model/InstrumentModel.dart';
 import '../service/AuthService.dart';
 import '../service/ConversationService.dart';
 import '../service/FollowUserService.dart';
 import '../service/HelperService.dart';
+import '../service/InstrumentService.dart';
 import '../service/PostService.dart';
 import '../service/UserProfileService.dart';
 import '../service/UserService.dart';
 import '../theme/app_theme.dart';
+
 import '../widgets/fullscreen_video_page.dart';
+import '../widgets/showAddInstrumentSheet.dart';
 import '../widgets/video_thumbnail_tile.dart';
 import 'chat_screen.dart';
 
@@ -36,6 +40,11 @@ class _ProfileScreenState extends State<ProfileScreen> {
   bool _isFollowing = false;
   bool _isFollowLoading = false;
   String? _error;
+
+  // ── Profile tabs (Posts / Instruments / Coming Soon x2) ──
+  int _selectedTabIndex = 0;
+  List<InstrumentModel> _instruments = [];
+  bool _isLoadingInstruments = true;
 
   bool get _isOwnProfile => widget.username == null && widget.userId == null;
 
@@ -63,6 +72,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
         _isFollowing = user.isFollowing;
       });
       _loadUserPosts(user.id);
+      _loadUserInstruments(user.id);
     } catch (e, stack) {
       print("❌ PROFILE ERROR: $e\n$stack");
       if (HelperService.isAuthError(e)) {
@@ -114,16 +124,34 @@ class _ProfileScreenState extends State<ProfileScreen> {
     }
   }
 
+  Future<void> _loadUserInstruments(int userId) async {
+    setState(() => _isLoadingInstruments = true);
+    try {
+      final instruments = await InstrumentService.getUserInstruments(userId);
+      setState(() {
+        _instruments = instruments;
+        _isLoadingInstruments = false;
+      });
+    } catch (e) {
+      if (HelperService.isAuthError(e)) {
+        await HelperService.forceLogout(context);
+        return;
+      }
+      // Non-fatal — just show empty state in the Instruments tab
+      setState(() => _isLoadingInstruments = false);
+    }
+  }
+
   Future<void> _pickAndUploadProfilePhoto() async {
     if (!_isOwnProfile) return;
     final picker = ImagePicker();
     final picked =
-        await picker.pickImage(source: ImageSource.gallery, imageQuality: 80);
+    await picker.pickImage(source: ImageSource.gallery, imageQuality: 80);
     if (picked == null) return;
     try {
       _showSnack('Uploading profile photo...');
       final updated =
-          await UserProfileService.uploadProfilePhoto(File(picked.path));
+      await UserProfileService.uploadProfilePhoto(File(picked.path));
       await Session().updateProfilePhoto(updated.profilePhotoUrl);
       setState(() => _user = updated);
       _showSnack('Profile photo updated!');
@@ -140,12 +168,12 @@ class _ProfileScreenState extends State<ProfileScreen> {
     if (!_isOwnProfile) return;
     final picker = ImagePicker();
     final picked =
-        await picker.pickImage(source: ImageSource.gallery, imageQuality: 80);
+    await picker.pickImage(source: ImageSource.gallery, imageQuality: 80);
     if (picked == null) return;
     try {
       _showSnack('Uploading cover photo...');
       final updated =
-          await UserProfileService.uploadCoverPhoto(File(picked.path));
+      await UserProfileService.uploadCoverPhoto(File(picked.path));
       setState(() => _user = updated);
       _showSnack('Cover photo updated!');
     } catch (e) {
@@ -338,8 +366,8 @@ class _ProfileScreenState extends State<ProfileScreen> {
         elevation: 0,
         leading: !_isOwnProfile
             ? IconButton(
-                icon: const Icon(Icons.arrow_back, color: Colors.black),
-                onPressed: () => Navigator.pop(context))
+            icon: const Icon(Icons.arrow_back, color: Colors.black),
+            onPressed: () => Navigator.pop(context))
             : null,
         title: Text(user.username ?? user.name,
             style: const TextStyle(
@@ -381,17 +409,17 @@ class _ProfileScreenState extends State<ProfileScreen> {
                   color: AppColors.primaryLight,
                   child: user.coverPhotoUrl != null
                       ? Image.network(user.coverPhotoUrl!,
-                          fit: BoxFit.cover,
-                          errorBuilder: (ctx, e, s) => const Center(
-                              child: Icon(Icons.broken_image,
-                                  size: 40, color: Colors.white)))
+                      fit: BoxFit.cover,
+                      errorBuilder: (ctx, e, s) => const Center(
+                          child: Icon(Icons.broken_image,
+                              size: 40, color: Colors.white)))
                       : Center(
-                          child: Icon(
-                              _isOwnProfile
-                                  ? Icons.add_photo_alternate
-                                  : Icons.photo,
-                              size: 40,
-                              color: Colors.white)),
+                      child: Icon(
+                          _isOwnProfile
+                              ? Icons.add_photo_alternate
+                              : Icons.photo,
+                          size: 40,
+                          color: Colors.white)),
                 ),
               ),
             ),
@@ -401,7 +429,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
               child: Container(
                 color: Colors.white,
                 padding:
-                    const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+                const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
@@ -411,7 +439,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
                         // Avatar
                         GestureDetector(
                           onTap:
-                              _isOwnProfile ? _pickAndUploadProfilePhoto : null,
+                          _isOwnProfile ? _pickAndUploadProfilePhoto : null,
                           child: Stack(
                             children: [
                               CircleAvatar(
@@ -422,11 +450,11 @@ class _ProfileScreenState extends State<ProfileScreen> {
                                     : null,
                                 child: user.avatarUrl == null
                                     ? Text(
-                                        user.name.isNotEmpty
-                                            ? user.name[0].toUpperCase()
-                                            : '?',
-                                        style: const TextStyle(
-                                            fontSize: 34, color: Colors.white))
+                                    user.name.isNotEmpty
+                                        ? user.name[0].toUpperCase()
+                                        : '?',
+                                    style: const TextStyle(
+                                        fontSize: 34, color: Colors.white))
                                     : null,
                               ),
                               if (_isOwnProfile)
@@ -495,7 +523,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
                           style: OutlinedButton.styleFrom(
                             foregroundColor: AppColors.primaryDark,
                             side:
-                                const BorderSide(color: AppColors.primaryDark),
+                            const BorderSide(color: AppColors.primaryDark),
                             padding: const EdgeInsets.symmetric(vertical: 8),
                           ),
                           child: const Text('Edit Profile'),
@@ -508,18 +536,18 @@ class _ProfileScreenState extends State<ProfileScreen> {
                           Expanded(
                             child: ElevatedButton.icon(
                               onPressed:
-                                  _isFollowLoading ? null : _toggleFollow,
+                              _isFollowLoading ? null : _toggleFollow,
                               icon: _isFollowLoading
                                   ? const SizedBox(
-                                      width: 14,
-                                      height: 14,
-                                      child: CircularProgressIndicator(
-                                          strokeWidth: 2, color: Colors.white))
+                                  width: 14,
+                                  height: 14,
+                                  child: CircularProgressIndicator(
+                                      strokeWidth: 2, color: Colors.white))
                                   : Icon(
-                                      _isFollowing
-                                          ? Icons.person_remove_outlined
-                                          : Icons.person_add_outlined,
-                                      size: 16),
+                                  _isFollowing
+                                      ? Icons.person_remove_outlined
+                                      : Icons.person_add_outlined,
+                                  size: 16),
                               label: Text(_isFollowing ? 'Following' : 'Follow',
                                   maxLines: 1, overflow: TextOverflow.ellipsis),
                               style: ElevatedButton.styleFrom(
@@ -530,7 +558,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
                                     ? Colors.black87
                                     : Colors.white,
                                 padding:
-                                    const EdgeInsets.symmetric(vertical: 10),
+                                const EdgeInsets.symmetric(vertical: 10),
                               ),
                             ),
                           ),
@@ -541,8 +569,8 @@ class _ProfileScreenState extends State<ProfileScreen> {
                               onPressed: () async {
                                 try {
                                   final conversationId =
-                                      await ConversationService
-                                          .startConversation(user.id);
+                                  await ConversationService
+                                      .startConversation(user.id);
                                   if (mounted) {
                                     Navigator.push(
                                         context,
@@ -550,7 +578,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
                                           builder: (_) => ChatScreen(
                                             conversationId: conversationId,
                                             username:
-                                                user.username ?? user.name,
+                                            user.username ?? user.name,
                                             avatarUrl: user.avatarUrl,
                                             otherUserId: user.id,
                                           ),
@@ -568,7 +596,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
                                 side: const BorderSide(
                                     color: AppColors.primaryDark),
                                 padding:
-                                    const EdgeInsets.symmetric(vertical: 10),
+                                const EdgeInsets.symmetric(vertical: 10),
                               ),
                             ),
                           ),
@@ -582,93 +610,337 @@ class _ProfileScreenState extends State<ProfileScreen> {
             const SliverToBoxAdapter(
                 child: Divider(height: 1, color: Colors.grey)),
 
-            // ── 3. Posts Grid ──
-            if (_isLoadingPosts)
-              const SliverToBoxAdapter(
-                  child: SizedBox(
-                      height: 200,
-                      child: Center(child: CircularProgressIndicator())))
-            else if (_posts.isEmpty)
-              const SliverToBoxAdapter(
-                  child: SizedBox(
-                      height: 200,
-                      child: Center(
-                          child: Text('No posts yet',
-                              style: TextStyle(color: Colors.grey)))))
-            else
-              SliverGrid(
-                delegate: SliverChildBuilderDelegate(
-                  (ctx, i) {
-                    final post = _posts[i];
-                    return Container(
-                      decoration: BoxDecoration(
-                          color: Colors.grey[200],
-                          border: Border.all(color: Colors.white, width: 1)),
-                      child: post.imageUrl == null
-                          ? Container(
-                              color: AppColors.primaryLight.withOpacity(0.3),
-                              child: const Icon(Icons.text_snippet_outlined,
-                                  color: AppColors.primaryDark),
-                            )
-                          : post.isVideo
-                              ? VideoThumbnailTile(
-                                  videoUrl: post.imageUrl!,
-                                  viewsCount: post.viewsCount,
-                                  onTap: () {
-                                    final videoPosts = _posts
-                                        .where((p) =>
-                                            p.isVideo && p.imageUrl != null)
-                                        .toList();
-                                    final tappedIndex = videoPosts
-                                        .indexWhere((p) => p.id == post.id);
-                                    Navigator.push(
-                                      ctx,
-                                      MaterialPageRoute(
-                                        builder: (_) => FullscreenVideoPage(
-                                          videoPosts: videoPosts,
-                                          initialIndex: tappedIndex >= 0
-                                              ? tappedIndex
-                                              : 0,
-                                        ),
-                                      ),
-                                    );
-                                  },
-                                )
-                              : Image.network(
-                                  post.imageUrl!,
-                                  fit: BoxFit.cover,
-                                  loadingBuilder: (context, child, progress) {
-                                    if (progress == null) return child;
-                                    return Container(
-                                      color: Colors.grey[200],
-                                      child: const Center(
-                                        child: SizedBox(
-                                          width: 18,
-                                          height: 18,
-                                          child: CircularProgressIndicator(
-                                              strokeWidth: 2),
-                                        ),
-                                      ),
-                                    );
-                                  },
-                                  errorBuilder: (ctx, e, s) => Container(
-                                    color: Colors.grey[200],
-                                    child: const Icon(Icons.broken_image,
-                                        color: Colors.grey),
-                                  ),
-                                ),
-                    );
-                  },
-                  childCount: _posts.length,
-                ),
-                gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
-                    crossAxisCount: 3,
-                    crossAxisSpacing: 2,
-                    mainAxisSpacing: 2,
-                    childAspectRatio: 1.0),
-              ),
+            // ── 3. Tab Bar (Posts / Instruments / Coming Soon x2) ──
+            SliverToBoxAdapter(child: _buildProfileTabBar()),
+
+            const SliverToBoxAdapter(
+                child: Divider(height: 1, color: Colors.grey)),
+
+            // ── 4. Tab Content ──
+            ..._buildTabContentSlivers(),
           ],
         ),
+      ),
+    );
+  }
+
+  // ═══════════════════════════════════════════════════════════════
+  //  Profile Tabs (Instagram-style: Posts / Instruments / Soon / Soon)
+  // ═══════════════════════════════════════════════════════════════
+
+  Widget _buildProfileTabBar() {
+    final tabs = [
+      _TabDef(icon: Icons.grid_on, label: 'Posts'),
+      _TabDef(icon: Icons.music_note_outlined, label: 'Instruments'),
+      _TabDef(icon: Icons.lock_outline, label: 'Soon'),
+      _TabDef(icon: Icons.lock_outline, label: 'Soon'),
+    ];
+
+    return Row(
+      children: List.generate(tabs.length, (i) {
+        final selected = _selectedTabIndex == i;
+        return Expanded(
+          child: InkWell(
+            onTap: () => setState(() => _selectedTabIndex = i),
+            child: Container(
+              padding: const EdgeInsets.symmetric(vertical: 10),
+              decoration: BoxDecoration(
+                border: Border(
+                  bottom: BorderSide(
+                    color: selected ? AppColors.primaryDark : Colors.transparent,
+                    width: 2,
+                  ),
+                ),
+              ),
+              child: Icon(
+                tabs[i].icon,
+                size: 22,
+                color: selected ? AppColors.primaryDark : Colors.grey,
+              ),
+            ),
+          ),
+        );
+      }),
+    );
+  }
+
+  List<Widget> _buildTabContentSlivers() {
+    switch (_selectedTabIndex) {
+      case 0:
+        return _buildPostsGridSlivers();
+      case 1:
+        return [SliverToBoxAdapter(child: _buildInstrumentsSection())];
+      default:
+        return [SliverToBoxAdapter(child: _buildComingSoonSection())];
+    }
+  }
+
+  List<Widget> _buildPostsGridSlivers() {
+    if (_isLoadingPosts) {
+      return [
+        const SliverToBoxAdapter(
+            child: SizedBox(
+                height: 200,
+                child: Center(child: CircularProgressIndicator()))),
+      ];
+    }
+    if (_posts.isEmpty) {
+      return [
+        const SliverToBoxAdapter(
+            child: SizedBox(
+                height: 200,
+                child: Center(
+                    child: Text('No posts yet',
+                        style: TextStyle(color: Colors.grey))))),
+      ];
+    }
+    return [
+      SliverGrid(
+        delegate: SliverChildBuilderDelegate(
+              (ctx, i) {
+            final post = _posts[i];
+            return Container(
+              decoration: BoxDecoration(
+                  color: Colors.grey[200],
+                  border: Border.all(color: Colors.white, width: 1)),
+              child: post.imageUrl == null
+                  ? Container(
+                color: AppColors.primaryLight.withOpacity(0.3),
+                child: const Icon(Icons.text_snippet_outlined,
+                    color: AppColors.primaryDark),
+              )
+                  : post.isVideo
+                  ? VideoThumbnailTile(
+                videoUrl: post.imageUrl!,
+                viewsCount: post.viewsCount,
+                onTap: () {
+                  final videoPosts = _posts
+                      .where((p) => p.isVideo && p.imageUrl != null)
+                      .toList();
+                  final tappedIndex = videoPosts
+                      .indexWhere((p) => p.id == post.id);
+                  Navigator.push(
+                    ctx,
+                    MaterialPageRoute(
+                      builder: (_) => FullscreenVideoPage(
+                        videoPosts: videoPosts,
+                        initialIndex:
+                        tappedIndex >= 0 ? tappedIndex : 0,
+                      ),
+                    ),
+                  );
+                },
+              )
+                  : Image.network(
+                post.imageUrl!,
+                fit: BoxFit.cover,
+                loadingBuilder: (context, child, progress) {
+                  if (progress == null) return child;
+                  return Container(
+                    color: Colors.grey[200],
+                    child: const Center(
+                      child: SizedBox(
+                        width: 18,
+                        height: 18,
+                        child: CircularProgressIndicator(
+                            strokeWidth: 2),
+                      ),
+                    ),
+                  );
+                },
+                errorBuilder: (ctx, e, s) => Container(
+                  color: Colors.grey[200],
+                  child: const Icon(Icons.broken_image,
+                      color: Colors.grey),
+                ),
+              ),
+            );
+          },
+          childCount: _posts.length,
+        ),
+        gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
+            crossAxisCount: 3,
+            crossAxisSpacing: 2,
+            mainAxisSpacing: 2,
+            childAspectRatio: 1.0),
+      ),
+    ];
+  }
+
+  Widget _buildInstrumentsSection() {
+    if (_isLoadingInstruments) {
+      return const SizedBox(
+          height: 200, child: Center(child: CircularProgressIndicator()));
+    }
+
+    final primary = _instruments.where((i) => i.isPrimary).toList();
+    final secondary = _instruments.where((i) => !i.isPrimary).toList();
+
+    if (_instruments.isEmpty) {
+      return SizedBox(
+        height: 220,
+        child: Center(
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              Icon(Icons.music_off_outlined,
+                  size: 40, color: AppColors.textGrey),
+              const SizedBox(height: 10),
+              const Text('No instruments added yet',
+                  style: TextStyle(color: Colors.grey)),
+              if (_isOwnProfile) ...[
+                const SizedBox(height: 12),
+                OutlinedButton.icon(
+                  onPressed: () => showAddInstrumentSheet(
+                    context,
+                    onAdded: () => _loadUserInstruments(_user!.id),
+                  ),
+                  icon: const Icon(Icons.add, size: 16),
+                  label: const Text('Add Instrument'),
+                ),
+              ],
+            ],
+          ),
+        ),
+      );
+    }
+
+    return Padding(
+      padding: const EdgeInsets.all(16),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          if (_isOwnProfile)
+            Align(
+              alignment: Alignment.centerRight,
+              child: TextButton.icon(
+                onPressed: () => showAddInstrumentSheet(
+                  context,
+                  onAdded: () => _loadUserInstruments(_user!.id),
+                ),
+                icon: const Icon(Icons.add, size: 16),
+                label: const Text('Add'),
+              ),
+            ),
+          if (primary.isNotEmpty) ...[
+            const Text('Primary Instrument',
+                style: TextStyle(fontWeight: FontWeight.bold, fontSize: 14)),
+            const SizedBox(height: 8),
+            ...primary.map((ins) => _InstrumentCard(instrument: ins)),
+            const SizedBox(height: 20),
+          ],
+          if (secondary.isNotEmpty) ...[
+            const Text('Secondary Instrument',
+                style: TextStyle(fontWeight: FontWeight.bold, fontSize: 14)),
+            const SizedBox(height: 8),
+            ...secondary.map((ins) => _InstrumentCard(instrument: ins)),
+          ],
+        ],
+      ),
+    );
+  }
+
+  Widget _buildComingSoonSection() {
+    return SizedBox(
+      height: 220,
+      child: Center(
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Icon(Icons.lock_outline, size: 40, color: AppColors.textGrey),
+            const SizedBox(height: 10),
+            const Text('Coming Soon',
+                style: TextStyle(color: Colors.grey, fontWeight: FontWeight.w600)),
+          ],
+        ),
+      ),
+    );
+  }
+}
+
+class _TabDef {
+  final IconData icon;
+  final String label;
+  _TabDef({required this.icon, required this.label});
+}
+
+class _InstrumentCard extends StatelessWidget {
+  final InstrumentModel instrument;
+
+  const _InstrumentCard({required this.instrument});
+
+  @override
+  Widget build(BuildContext context) {
+    final details = instrument.userInstrumentDetails;
+    return Container(
+      margin: const EdgeInsets.only(bottom: 10),
+      padding: const EdgeInsets.all(10),
+      decoration: BoxDecoration(
+        color: Colors.grey[100],
+        borderRadius: BorderRadius.circular(12),
+        border: Border.all(color: Colors.grey[300]!),
+      ),
+      child: Row(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          ClipRRect(
+            borderRadius: BorderRadius.circular(8),
+            child: instrument.displayImageUrl != null
+                ? Image.network(
+              instrument.displayImageUrl!,
+              width: 56,
+              height: 56,
+              fit: BoxFit.cover,
+              errorBuilder: (ctx, e, s) => Container(
+                width: 56,
+                height: 56,
+                color: AppColors.primaryLight.withOpacity(0.3),
+                child: const Icon(Icons.music_note,
+                    color: AppColors.primaryDark),
+              ),
+            )
+                : Container(
+              width: 56,
+              height: 56,
+              color: AppColors.primaryLight.withOpacity(0.3),
+              child: const Icon(Icons.music_note,
+                  color: AppColors.primaryDark),
+            ),
+          ),
+          const SizedBox(width: 12),
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                // "Roland SPD-20" (brand + model)
+                Text(instrument.displayName,
+                    style: const TextStyle(
+                        fontWeight: FontWeight.w600, fontSize: 15)),
+                // "Octapad" (instrument type)
+                if (instrument.typeName.isNotEmpty)
+                  Text(instrument.typeName,
+                      style: const TextStyle(
+                          color: AppColors.textGrey, fontSize: 12)),
+                if (details?.proficiencyLevel != null) ...[
+                  const SizedBox(height: 4),
+                  Container(
+                    padding: const EdgeInsets.symmetric(
+                        horizontal: 8, vertical: 2),
+                    decoration: BoxDecoration(
+                      color: AppColors.primaryLight.withOpacity(0.3),
+                      borderRadius: BorderRadius.circular(6),
+                    ),
+                    child: Text(
+                      details!.proficiencyLevel!,
+                      style: const TextStyle(
+                          fontSize: 10, color: AppColors.primaryDark),
+                    ),
+                  ),
+                ],
+              ],
+            ),
+          ),
+        ],
       ),
     );
   }

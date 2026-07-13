@@ -75,5 +75,23 @@ class ApiConfig {
   //get songs in jam session
   static const String publicSongsUrl = '$baseUrl/api/v1/songs/public';
   static const String mySongsUrl = '$baseUrl/api/v1/songs/mine';
+// Instruments
+  // NOTE: Swagger me ye endpoints "/api/instruments/..." dikh rahe the
+  // (v1 prefix ke bina) — baaki sab APIs "/api/v1/..." use karte hain.
+  // Agar backend me ye bhi v1 ke andar hai to yahan 'api/instruments'
+  // ko 'api/v1/instruments' me badal dena.
+  static const String allInstrumentsUrl = '$baseUrl/api/instruments';
+  static String instrumentByIdUrl(int id) => '$baseUrl/api/instruments/$id';
+  static String userInstrumentsUrl(int userId) =>
+      '$baseUrl/api/instruments/user/$userId';
+  static String searchInstrumentsUrl(String query) =>
+      '$baseUrl/api/instruments/search?query=$query';
+  static const String addUserInstrumentUrl =
+      '$baseUrl/api/instruments/user/add';
 
+  static const String allCategoriesUrl = '$baseUrl/api/categories';
+  static String instrumentTypesByCategoryUrl(int categoryId) =>
+      '$baseUrl/api/instrument-types?categoryId=$categoryId';
+  static String instrumentsByTypeUrl(int typeId, {int page = 0, int size = 20}) =>
+      '$baseUrl/api/instruments/by-type?typeId=$typeId&page=$page&size=$size';
 }

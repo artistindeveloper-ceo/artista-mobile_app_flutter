@@ -2,6 +2,7 @@ import 'dart:async';
 import 'package:flutter/material.dart';
 import '../config/Session.dart';
 import '../service/ConversationService.dart';
+import '../theme/app_theme.dart';
 
 class ChatScreen extends StatefulWidget {
   final int conversationId;
@@ -75,8 +76,7 @@ class _ChatScreenState extends State<ChatScreen> {
 
   void _scrollToBottom() {
     WidgetsBinding.instance.addPostFrameCallback((_) {
-      if (_scrollCtrl.hasClients &&
-          _scrollCtrl.position.hasContentDimensions) {
+      if (_scrollCtrl.hasClients && _scrollCtrl.position.hasContentDimensions) {
         _scrollCtrl.animateTo(
           _scrollCtrl.position.maxScrollExtent,
           duration: const Duration(milliseconds: 300),
@@ -98,7 +98,8 @@ class _ChatScreenState extends State<ChatScreen> {
     } catch (e) {
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text(e.toString()), backgroundColor: Colors.red),
+          SnackBar(
+              content: Text(e.toString()), backgroundColor: AppColors.error),
         );
       }
     }
@@ -146,13 +147,14 @@ class _ChatScreenState extends State<ChatScreen> {
 
     return Scaffold(
       resizeToAvoidBottomInset: true,
-      backgroundColor: const Color(0xFFECE5DD),
+      backgroundColor: AppColors.bgBase,
       appBar: AppBar(
-        backgroundColor: const Color(0xFF1A237E),
-        elevation: 1,
+        backgroundColor: AppColors.bgAppBar,
+        elevation: 0,
+        surfaceTintColor: Colors.transparent,
         leadingWidth: 30,
         leading: IconButton(
-          icon: const Icon(Icons.arrow_back, color: Colors.white),
+          icon: const Icon(Icons.arrow_back, color: AppColors.textPrimary),
           onPressed: () => Navigator.pop(context),
         ),
         title: GestureDetector(
@@ -162,26 +164,26 @@ class _ChatScreenState extends State<ChatScreen> {
             children: [
               CircleAvatar(
                 radius: 20,
-                backgroundColor: Colors.grey[300],
+                backgroundColor: AppColors.gold,
                 backgroundImage: widget.avatarUrl != null
                     ? NetworkImage(widget.avatarUrl!)
                     : null,
                 child: widget.avatarUrl == null
                     ? Text(
-                  widget.username.isNotEmpty
-                      ? widget.username[0].toUpperCase()
-                      : '?',
-                  style: const TextStyle(
-                      color: Colors.white,
-                      fontWeight: FontWeight.bold),
-                )
+                        widget.username.isNotEmpty
+                            ? widget.username[0].toUpperCase()
+                            : '?',
+                        style: const TextStyle(
+                            color: AppColors.textOnGold,
+                            fontWeight: FontWeight.bold),
+                      )
                     : null,
               ),
               const SizedBox(width: 10),
               Text(
                 widget.username,
                 style: const TextStyle(
-                    color: Colors.white,
+                    color: AppColors.textPrimary,
                     fontWeight: FontWeight.bold,
                     fontSize: 16),
               ),
@@ -194,59 +196,61 @@ class _ChatScreenState extends State<ChatScreen> {
           // ── Messages List ──
           Expanded(
             child: _isLoading
-                ? const Center(child: CircularProgressIndicator())
-                : _messages.isEmpty
                 ? const Center(
-                child: Text('No messages yet. Say hi! 👋',
-                    style: TextStyle(color: Colors.grey)))
-                : ListView.builder(
-              controller: _scrollCtrl,
-              padding: const EdgeInsets.symmetric(
-                  horizontal: 10, vertical: 8),
-              itemCount: _messages.length,
-              itemBuilder: (ctx, i) {
-                final msg = _messages[i];
-                final senderId =
-                    msg['sender']?['id'] ?? msg['senderId'];
-                final isMine = senderId == myId;
-                final content =
-                    msg['content'] ?? msg['text'] ?? '';
-                final time = _formatTime(
-                    msg['createdAt'] ?? msg['sentAt']);
-                final isRead = msg['read'] ?? false;
+                    child: CircularProgressIndicator(color: AppColors.gold))
+                : _messages.isEmpty
+                    ? const Center(
+                        child: Text('No messages yet. Say hi! 👋',
+                            style: TextStyle(color: AppColors.textSecondary)))
+                    : ListView.builder(
+                        controller: _scrollCtrl,
+                        padding: const EdgeInsets.symmetric(
+                            horizontal: 10, vertical: 8),
+                        itemCount: _messages.length,
+                        itemBuilder: (ctx, i) {
+                          final msg = _messages[i];
+                          final senderId =
+                              msg['sender']?['id'] ?? msg['senderId'];
+                          final isMine = senderId == myId;
+                          final content = msg['content'] ?? msg['text'] ?? '';
+                          final time =
+                              _formatTime(msg['createdAt'] ?? msg['sentAt']);
+                          final isRead = msg['read'] ?? false;
 
-                return _WhatsAppBubble(
-                  content: content,
-                  time: time,
-                  isMine: isMine,
-                  isRead: isRead,
-                );
-              },
-            ),
+                          return _ChatBubble(
+                            content: content,
+                            time: time,
+                            isMine: isMine,
+                            isRead: isRead,
+                          );
+                        },
+                      ),
           ),
 
           // ── Input Bar ──
           Container(
             padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 6),
-            color: const Color(0xFFECE5DD),
+            color: AppColors.bgAppBar,
             child: Row(
               children: [
                 // Text Field
                 Expanded(
                   child: Container(
                     decoration: BoxDecoration(
-                      color: Colors.white,
+                      color: AppColors.bgSurface,
                       borderRadius: BorderRadius.circular(25),
+                      border: Border.all(color: AppColors.border),
                     ),
                     child: TextField(
                       controller: _msgCtrl,
                       maxLines: null,
+                      style: const TextStyle(color: AppColors.textPrimary),
                       decoration: const InputDecoration(
                         hintText: 'Type a message',
-                        hintStyle: TextStyle(color: Colors.grey),
+                        hintStyle: TextStyle(color: AppColors.textTertiary),
                         border: InputBorder.none,
-                        contentPadding: EdgeInsets.symmetric(
-                            horizontal: 16, vertical: 10),
+                        contentPadding:
+                            EdgeInsets.symmetric(horizontal: 16, vertical: 10),
                       ),
                     ),
                   ),
@@ -259,11 +263,11 @@ class _ChatScreenState extends State<ChatScreen> {
                     width: 46,
                     height: 46,
                     decoration: const BoxDecoration(
-                      color: Color(0xFF1A237E),
+                      color: AppColors.gold,
                       shape: BoxShape.circle,
                     ),
                     child: const Icon(Icons.send,
-                        color: Colors.white, size: 20),
+                        color: AppColors.textOnGold, size: 20),
                   ),
                 ),
               ],
@@ -275,13 +279,13 @@ class _ChatScreenState extends State<ChatScreen> {
   }
 }
 
-class _WhatsAppBubble extends StatelessWidget {
+class _ChatBubble extends StatelessWidget {
   final String content;
   final String time;
   final bool isMine;
   final bool isRead;
 
-  const _WhatsAppBubble({
+  const _ChatBubble({
     required this.content,
     required this.time,
     required this.isMine,
@@ -298,33 +302,33 @@ class _WhatsAppBubble extends StatelessWidget {
           left: isMine ? 60 : 0,
           right: isMine ? 0 : 60,
         ),
-        padding:
-        const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+        padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
         decoration: BoxDecoration(
-          color: isMine ? const Color(0xFFDCF8C6) : Colors.white,
+          color: isMine
+              ? AppColors.gold.withValues(alpha: 0.16)
+              : AppColors.bgSurface,
+          border: Border.all(
+            color: isMine
+                ? AppColors.gold.withValues(alpha: 0.4)
+                : AppColors.border,
+            width: 1,
+          ),
           borderRadius: BorderRadius.only(
             topLeft: const Radius.circular(12),
             topRight: const Radius.circular(12),
             bottomLeft: Radius.circular(isMine ? 12 : 0),
             bottomRight: Radius.circular(isMine ? 0 : 12),
           ),
-          boxShadow: [
-            BoxShadow(
-              color: Colors.black.withOpacity(0.08),
-              blurRadius: 2,
-              offset: const Offset(0, 1),
-            ),
-          ],
         ),
         child: Column(
           crossAxisAlignment:
-          isMine ? CrossAxisAlignment.end : CrossAxisAlignment.start,
+              isMine ? CrossAxisAlignment.end : CrossAxisAlignment.start,
           mainAxisSize: MainAxisSize.min,
           children: [
             Text(
               content,
               style:
-              const TextStyle(color: Colors.black87, fontSize: 15),
+                  const TextStyle(color: AppColors.textPrimary, fontSize: 15),
             ),
             const SizedBox(height: 3),
             Row(
@@ -332,16 +336,15 @@ class _WhatsAppBubble extends StatelessWidget {
               children: [
                 Text(
                   time,
-                  style: const TextStyle(color: Colors.grey, fontSize: 11),
+                  style: const TextStyle(
+                      color: AppColors.textTertiary, fontSize: 11),
                 ),
                 if (isMine) ...[
                   const SizedBox(width: 3),
                   Icon(
                     isRead ? Icons.done_all : Icons.done,
                     size: 14,
-                    color: isRead
-                        ? const Color(0xFF1A237E)
-                        : Colors.grey,
+                    color: isRead ? AppColors.gold : AppColors.textTertiary,
                   ),
                 ],
               ],

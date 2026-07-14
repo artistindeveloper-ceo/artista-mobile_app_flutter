@@ -1,5 +1,7 @@
 import 'dart:io';
 
+
+import 'package:artist_in/screens/profile/ProfileScreen.dart';
 import 'package:flutter/material.dart';
 import 'package:image_picker/image_picker.dart';
 
@@ -9,7 +11,7 @@ import '../model/PostModel.dart';
 import '../service/CommentService.dart';
 import '../service/HelperService.dart';
 import '../service/PostService.dart';
-import 'Profile_Screen.dart';
+import '../theme/app_theme.dart';
 import '../widgets/video_post_player.dart';
 
 // ─── SOCIAL FEED SCREEN (Following + Explore tabs) ────────
@@ -99,7 +101,7 @@ class _SocialFeedScreenState extends State<SocialFeedScreen>
     showModalBottomSheet(
       context: context,
       isScrollControlled: true,
-      backgroundColor: Colors.white,
+      backgroundColor: AppColors.bgSurface,
       shape: const RoundedRectangleBorder(
         borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
       ),
@@ -124,12 +126,12 @@ class _SocialFeedScreenState extends State<SocialFeedScreen>
     return Column(
       children: [
         Material(
-          color: Colors.white,
+          color: AppColors.bgAppBar,
           child: TabBar(
             controller: _tabController,
-            labelColor: const Color(0xFF1A237E),
-            unselectedLabelColor: Colors.grey,
-            indicatorColor: const Color(0xFF1A237E),
+            labelColor: AppColors.gold,
+            unselectedLabelColor: AppColors.textTertiary,
+            indicatorColor: AppColors.gold,
             tabs: const [
               Tab(text: 'Following'),
               Tab(text: 'Explore'),
@@ -152,7 +154,9 @@ class _SocialFeedScreenState extends State<SocialFeedScreen>
   // ── Following tab (Home feed + create-post bar) ──
   Widget _buildFollowingTab() {
     if (_isLoading) {
-      return const Center(child: CircularProgressIndicator());
+      return const Center(
+        child: CircularProgressIndicator(color: AppColors.gold),
+      );
     }
 
     if (_error != null) {
@@ -160,12 +164,13 @@ class _SocialFeedScreenState extends State<SocialFeedScreen>
         child: Column(
           mainAxisSize: MainAxisSize.min,
           children: [
-            const Icon(Icons.error_outline, size: 48, color: Colors.grey),
+            const Icon(Icons.error_outline,
+                size: 48, color: AppColors.textTertiary),
             const SizedBox(height: 12),
             Text(
               _error!,
               textAlign: TextAlign.center,
-              style: const TextStyle(color: Colors.grey),
+              style: const TextStyle(color: AppColors.textSecondary),
             ),
             const SizedBox(height: 16),
             ElevatedButton(
@@ -179,6 +184,8 @@ class _SocialFeedScreenState extends State<SocialFeedScreen>
 
     return RefreshIndicator(
       onRefresh: _loadFeed,
+      color: AppColors.gold,
+      backgroundColor: AppColors.bgSurfaceElevated,
       child: ListView.separated(
         padding: const EdgeInsets.only(bottom: 16),
         itemCount: _posts.isEmpty ? 2 : _posts.length + 1,
@@ -194,9 +201,11 @@ class _SocialFeedScreenState extends State<SocialFeedScreen>
                 child: Column(
                   mainAxisSize: MainAxisSize.min,
                   children: [
-                    Icon(Icons.feed_outlined, size: 64, color: Colors.grey),
+                    Icon(Icons.feed_outlined,
+                        size: 64, color: AppColors.textTertiary),
                     SizedBox(height: 12),
-                    Text('No posts yet', style: TextStyle(color: Colors.grey)),
+                    Text('No posts yet',
+                        style: TextStyle(color: AppColors.textSecondary)),
                   ],
                 ),
               ),
@@ -211,7 +220,9 @@ class _SocialFeedScreenState extends State<SocialFeedScreen>
   // ── Explore tab (public posts, no create-post bar) ──
   Widget _buildExploreTab() {
     if (_isExploreLoading) {
-      return const Center(child: CircularProgressIndicator());
+      return const Center(
+        child: CircularProgressIndicator(color: AppColors.gold),
+      );
     }
 
     if (_exploreError != null) {
@@ -219,12 +230,13 @@ class _SocialFeedScreenState extends State<SocialFeedScreen>
         child: Column(
           mainAxisSize: MainAxisSize.min,
           children: [
-            const Icon(Icons.error_outline, size: 48, color: Colors.grey),
+            const Icon(Icons.error_outline,
+                size: 48, color: AppColors.textTertiary),
             const SizedBox(height: 12),
             Text(
               _exploreError!,
               textAlign: TextAlign.center,
-              style: const TextStyle(color: Colors.grey),
+              style: const TextStyle(color: AppColors.textSecondary),
             ),
             const SizedBox(height: 16),
             ElevatedButton(
@@ -239,6 +251,8 @@ class _SocialFeedScreenState extends State<SocialFeedScreen>
     if (_explorePosts.isEmpty) {
       return RefreshIndicator(
         onRefresh: _loadExplore,
+        color: AppColors.gold,
+        backgroundColor: AppColors.bgSurfaceElevated,
         child: ListView(
           physics: const AlwaysScrollableScrollPhysics(),
           children: const [
@@ -248,11 +262,12 @@ class _SocialFeedScreenState extends State<SocialFeedScreen>
                 child: Column(
                   mainAxisSize: MainAxisSize.min,
                   children: [
-                    Icon(Icons.explore_outlined, size: 64, color: Colors.grey),
+                    Icon(Icons.explore_outlined,
+                        size: 64, color: AppColors.textTertiary),
                     SizedBox(height: 12),
                     Text(
                       'Koi naya post nahi mila abhi',
-                      style: TextStyle(color: Colors.grey),
+                      style: TextStyle(color: AppColors.textSecondary),
                     ),
                   ],
                 ),
@@ -265,6 +280,8 @@ class _SocialFeedScreenState extends State<SocialFeedScreen>
 
     return RefreshIndicator(
       onRefresh: _loadExplore,
+      color: AppColors.gold,
+      backgroundColor: AppColors.bgSurfaceElevated,
       child: ListView.separated(
         padding: const EdgeInsets.only(bottom: 16, top: 8),
         itemCount: _explorePosts.length,
@@ -286,19 +303,19 @@ class _PostBar extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Container(
-      color: Colors.white,
+      color: AppColors.bgSurface,
       padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
       child: Row(
         children: [
           CircleAvatar(
             radius: 20,
-            backgroundColor: Colors.grey[300],
+            backgroundColor: AppColors.bgSurfaceElevated,
             backgroundImage: Session().profilePhotoUrl != null
                 ? NetworkImage(
                     '${ApiConfig.baseUrl}${Session().profilePhotoUrl}')
                 : null,
             child: Session().profilePhotoUrl == null
-                ? const Icon(Icons.person, color: Colors.white)
+                ? const Icon(Icons.person, color: AppColors.textSecondary)
                 : null,
           ),
           const SizedBox(width: 10),
@@ -309,13 +326,13 @@ class _PostBar extends StatelessWidget {
                 padding:
                     const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
                 decoration: BoxDecoration(
-                  color: Colors.grey[100],
+                  color: AppColors.bgSurfaceElevated,
                   borderRadius: BorderRadius.circular(24),
-                  border: Border.all(color: Colors.grey[300]!),
+                  border: Border.all(color: AppColors.border),
                 ),
                 child: const Text(
                   "What's on your mind?",
-                  style: TextStyle(color: Colors.grey, fontSize: 14),
+                  style: TextStyle(color: AppColors.textTertiary, fontSize: 14),
                 ),
               ),
             ),
@@ -326,11 +343,11 @@ class _PostBar extends StatelessWidget {
             child: Container(
               padding: const EdgeInsets.all(8),
               decoration: BoxDecoration(
-                color: Colors.blue[50],
+                color: AppColors.gold.withValues(alpha: 0.12),
                 shape: BoxShape.circle,
               ),
               child: const Icon(Icons.photo_outlined,
-                  color: Colors.blue, size: 22),
+                  color: AppColors.gold, size: 22),
             ),
           ),
           const SizedBox(width: 6),
@@ -339,11 +356,11 @@ class _PostBar extends StatelessWidget {
             child: Container(
               padding: const EdgeInsets.all(8),
               decoration: BoxDecoration(
-                color: Colors.red[50],
+                color: AppColors.magenta.withValues(alpha: 0.12),
                 shape: BoxShape.circle,
               ),
               child: const Icon(Icons.videocam_outlined,
-                  color: Colors.red, size: 22),
+                  color: AppColors.magenta, size: 22),
             ),
           ),
         ],
@@ -460,7 +477,7 @@ class _CreatePostSheetState extends State<CreatePostSheet> {
           width: 40,
           height: 4,
           decoration: BoxDecoration(
-            color: Colors.grey[300],
+            color: AppColors.border,
             borderRadius: BorderRadius.circular(2),
           ),
         ),
@@ -473,21 +490,28 @@ class _CreatePostSheetState extends State<CreatePostSheet> {
             children: [
               const Text(
                 'Create Post',
-                style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
+                style: TextStyle(
+                  fontSize: 18,
+                  fontWeight: FontWeight.bold,
+                  color: AppColors.textPrimary,
+                ),
               ),
               _isPosting
                   ? const SizedBox(
                       width: 24,
                       height: 24,
-                      child: CircularProgressIndicator(strokeWidth: 2),
+                      child: CircularProgressIndicator(
+                        strokeWidth: 2,
+                        color: AppColors.gold,
+                      ),
                     )
                   : SizedBox(
                       width: 80,
                       child: ElevatedButton(
                         onPressed: _submit,
                         style: ElevatedButton.styleFrom(
-                          backgroundColor: const Color(0xFF1A237E),
-                          foregroundColor: Colors.white,
+                          backgroundColor: AppColors.gold,
+                          foregroundColor: AppColors.textOnGold,
                           shape: RoundedRectangleBorder(
                             borderRadius: BorderRadius.circular(20),
                           ),
@@ -502,7 +526,7 @@ class _CreatePostSheetState extends State<CreatePostSheet> {
             ],
           ),
         ),
-        const Divider(height: 1),
+        const Divider(height: 1, color: AppColors.divider),
 
         // Scrollable Body
         Expanded(
@@ -523,9 +547,10 @@ class _CreatePostSheetState extends State<CreatePostSheet> {
                   decoration: const InputDecoration(
                     hintText: "What's on your mind?",
                     border: InputBorder.none,
-                    hintStyle: TextStyle(color: Colors.grey),
+                    hintStyle: TextStyle(color: AppColors.textTertiary),
                   ),
-                  style: const TextStyle(fontSize: 16),
+                  style: const TextStyle(
+                      fontSize: 16, color: AppColors.textPrimary),
                 ),
                 const SizedBox(height: 12),
                 if (_selectedMedia != null) ...[
@@ -536,17 +561,19 @@ class _CreatePostSheetState extends State<CreatePostSheet> {
                         child: _isVideo
                             ? Container(
                                 height: 200,
-                                color: Colors.black87,
+                                color: AppColors.bgSurfaceElevated,
                                 child: const Center(
                                   child: Column(
                                     mainAxisSize: MainAxisSize.min,
                                     children: [
                                       Icon(Icons.videocam,
-                                          color: Colors.white, size: 48),
+                                          color: AppColors.textPrimary,
+                                          size: 48),
                                       SizedBox(height: 8),
                                       Text(
                                         'Video selected',
-                                        style: TextStyle(color: Colors.white),
+                                        style: TextStyle(
+                                            color: AppColors.textPrimary),
                                       ),
                                     ],
                                   ),
@@ -565,14 +592,14 @@ class _CreatePostSheetState extends State<CreatePostSheet> {
                         child: GestureDetector(
                           onTap: () => setState(() => _selectedMedia = null),
                           child: Container(
-                            decoration: const BoxDecoration(
-                              color: Colors.black54,
+                            decoration: BoxDecoration(
+                              color: AppColors.bgBase.withValues(alpha: 0.7),
                               shape: BoxShape.circle,
                             ),
                             padding: const EdgeInsets.all(4),
                             child: const Icon(
                               Icons.close,
-                              color: Colors.white,
+                              color: AppColors.textPrimary,
                               size: 18,
                             ),
                           ),
@@ -586,7 +613,7 @@ class _CreatePostSheetState extends State<CreatePostSheet> {
                   'Add to your post',
                   style: TextStyle(
                     fontWeight: FontWeight.w600,
-                    color: Colors.grey,
+                    color: AppColors.textSecondary,
                     fontSize: 13,
                   ),
                 ),
@@ -596,21 +623,21 @@ class _CreatePostSheetState extends State<CreatePostSheet> {
                     _MediaButton(
                       icon: Icons.photo_library_outlined,
                       label: 'Photo',
-                      color: Colors.green,
+                      color: AppColors.success,
                       onTap: _pickImage,
                     ),
                     const SizedBox(width: 10),
                     _MediaButton(
                       icon: Icons.videocam_outlined,
                       label: 'Video',
-                      color: Colors.red,
+                      color: AppColors.magenta,
                       onTap: _pickVideo,
                     ),
                     const SizedBox(width: 10),
                     _MediaButton(
                       icon: Icons.camera_alt_outlined,
                       label: 'Camera',
-                      color: Colors.blue,
+                      color: AppColors.gold,
                       onTap: _takePhoto,
                     ),
                   ],
@@ -645,9 +672,9 @@ class _MediaButton extends StatelessWidget {
       child: Container(
         padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
         decoration: BoxDecoration(
-          color: color.withOpacity(0.1),
+          color: color.withValues(alpha: 0.12),
           borderRadius: BorderRadius.circular(10),
-          border: Border.all(color: color.withOpacity(0.3)),
+          border: Border.all(color: color.withValues(alpha: 0.35)),
         ),
         child: Row(
           mainAxisSize: MainAxisSize.min,
@@ -711,6 +738,7 @@ class _PostCardState extends State<PostCard> {
     showModalBottomSheet(
       context: context,
       isScrollControlled: true,
+      backgroundColor: AppColors.bgSurface,
       shape: const RoundedRectangleBorder(
         borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
       ),
@@ -738,7 +766,7 @@ class _PostCardState extends State<PostCard> {
     final post = widget.post;
 
     return Container(
-      color: Colors.white,
+      color: AppColors.bgSurface,
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
@@ -751,7 +779,7 @@ class _PostCardState extends State<PostCard> {
                   onTap: () => _openProfile(context, post),
                   child: CircleAvatar(
                     radius: 18,
-                    backgroundColor: Colors.grey[300],
+                    backgroundColor: AppColors.bgSurfaceElevated,
                     backgroundImage: post.userAvatarUrl != null
                         ? NetworkImage(post.userAvatarUrl!)
                         : null,
@@ -760,6 +788,8 @@ class _PostCardState extends State<PostCard> {
                             post.username.isNotEmpty
                                 ? post.username[0].toUpperCase()
                                 : '?',
+                            style:
+                                const TextStyle(color: AppColors.textPrimary),
                           )
                         : null,
                   ),
@@ -776,21 +806,22 @@ class _PostCardState extends State<PostCard> {
                           style: const TextStyle(
                             fontWeight: FontWeight.bold,
                             fontSize: 14,
+                            color: AppColors.textPrimary,
                           ),
                         ),
                         if (post.timeAgo != null)
                           Text(
                             post.timeAgo!,
-                            style: TextStyle(
+                            style: const TextStyle(
                               fontSize: 12,
-                              color: Colors.grey[600],
+                              color: AppColors.textTertiary,
                             ),
                           ),
                       ],
                     ),
                   ),
                 ),
-                const Icon(Icons.more_vert),
+                const Icon(Icons.more_vert, color: AppColors.textSecondary),
               ],
             ),
           ),
@@ -811,15 +842,18 @@ class _PostCardState extends State<PostCard> {
                       loadingBuilder: (context, child, progress) {
                         if (progress == null) return child;
                         return Container(
-                          color: Colors.grey[200],
-                          child:
-                              const Center(child: CircularProgressIndicator()),
+                          color: AppColors.bgSurfaceElevated,
+                          child: const Center(
+                            child: CircularProgressIndicator(
+                                color: AppColors.gold),
+                          ),
                         );
                       },
                       errorBuilder: (_, __, ___) => Container(
-                        color: Colors.grey[300],
+                        color: AppColors.bgSurfaceElevated,
                         child: const Center(
-                          child: Icon(Icons.broken_image, size: 40),
+                          child: Icon(Icons.broken_image,
+                              size: 40, color: AppColors.textTertiary),
                         ),
                       ),
                     ),
@@ -833,21 +867,24 @@ class _PostCardState extends State<PostCard> {
                 IconButton(
                   icon: Icon(
                     _isLiked ? Icons.favorite : Icons.favorite_border,
-                    color: _isLiked ? Colors.red : Colors.black87,
+                    color: _isLiked ? AppColors.magenta : AppColors.textPrimary,
                   ),
                   onPressed: _toggleLike,
                 ),
                 IconButton(
-                  icon: const Icon(Icons.chat_bubble_outline),
+                  icon: const Icon(Icons.chat_bubble_outline,
+                      color: AppColors.textPrimary),
                   onPressed: _openComments,
                 ),
                 IconButton(
-                  icon: const Icon(Icons.send_outlined),
+                  icon: const Icon(Icons.send_outlined,
+                      color: AppColors.textPrimary),
                   onPressed: () {},
                 ),
                 const Spacer(),
                 IconButton(
-                  icon: const Icon(Icons.bookmark_border),
+                  icon: const Icon(Icons.bookmark_border,
+                      color: AppColors.textPrimary),
                   onPressed: () {},
                 ),
               ],
@@ -859,7 +896,11 @@ class _PostCardState extends State<PostCard> {
             padding: const EdgeInsets.symmetric(horizontal: 14),
             child: Text(
               '$_likeCount likes',
-              style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 13),
+              style: const TextStyle(
+                fontWeight: FontWeight.bold,
+                fontSize: 13,
+                color: AppColors.textPrimary,
+              ),
             ),
           ),
 
@@ -869,7 +910,8 @@ class _PostCardState extends State<PostCard> {
               padding: const EdgeInsets.fromLTRB(14, 4, 14, 4),
               child: RichText(
                 text: TextSpan(
-                  style: const TextStyle(fontSize: 13, color: Colors.black87),
+                  style: const TextStyle(
+                      fontSize: 13, color: AppColors.textPrimary),
                   children: [
                     TextSpan(
                       text: '${post.username}  ',
@@ -888,7 +930,8 @@ class _PostCardState extends State<PostCard> {
               padding: const EdgeInsets.fromLTRB(14, 0, 14, 10),
               child: Text(
                 'View all $_commentsCount comments',
-                style: TextStyle(fontSize: 13, color: Colors.grey[600]),
+                style: const TextStyle(
+                    fontSize: 13, color: AppColors.textSecondary),
               ),
             ),
           ),
@@ -954,21 +997,31 @@ class _CommentsSheetState extends State<CommentsSheet> {
             width: 40,
             height: 4,
             decoration: BoxDecoration(
-              color: Colors.grey[300],
+              color: AppColors.border,
               borderRadius: BorderRadius.circular(2),
             ),
           ),
           const SizedBox(height: 12),
           const Text(
             'Comments',
-            style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
+            style: TextStyle(
+              fontSize: 16,
+              fontWeight: FontWeight.bold,
+              color: AppColors.textPrimary,
+            ),
           ),
-          const Divider(),
+          const Divider(color: AppColors.divider),
           Expanded(
             child: _isLoading
-                ? const Center(child: CircularProgressIndicator())
+                ? const Center(
+                    child: CircularProgressIndicator(color: AppColors.gold))
                 : _comments.isEmpty
-                    ? const Center(child: Text('No comments yet'))
+                    ? const Center(
+                        child: Text(
+                          'No comments yet',
+                          style: TextStyle(color: AppColors.textSecondary),
+                        ),
+                      )
                     : ListView.builder(
                         itemCount: _comments.length,
                         itemBuilder: (ctx, i) {
@@ -987,6 +1040,7 @@ class _CommentsSheetState extends State<CommentsSheet> {
 
                           return ListTile(
                             leading: CircleAvatar(
+                              backgroundColor: AppColors.bgSurfaceElevated,
                               backgroundImage: avatarUrl != null
                                   ? NetworkImage(avatarUrl)
                                   : null,
@@ -995,16 +1049,24 @@ class _CommentsSheetState extends State<CommentsSheet> {
                                       username.isNotEmpty
                                           ? username[0].toUpperCase()
                                           : '?',
+                                      style: const TextStyle(
+                                          color: AppColors.textPrimary),
                                     )
                                   : null,
                             ),
-                            title: Text(username),
-                            subtitle: Text(c['content'] ?? c['text'] ?? ''),
+                            title: Text(username,
+                                style: const TextStyle(
+                                    color: AppColors.textPrimary)),
+                            subtitle: Text(
+                              c['content'] ?? c['text'] ?? '',
+                              style: const TextStyle(
+                                  color: AppColors.textSecondary),
+                            ),
                           );
                         },
                       ),
           ),
-          const Divider(height: 1),
+          const Divider(height: 1, color: AppColors.divider),
           Padding(
             padding: EdgeInsets.only(
               left: 16,
@@ -1017,14 +1079,16 @@ class _CommentsSheetState extends State<CommentsSheet> {
                 Expanded(
                   child: TextField(
                     controller: _ctrl,
+                    style: const TextStyle(color: AppColors.textPrimary),
                     decoration: const InputDecoration(
                       hintText: 'Add a comment...',
+                      hintStyle: TextStyle(color: AppColors.textTertiary),
                       border: InputBorder.none,
                     ),
                   ),
                 ),
                 IconButton(
-                  icon: const Icon(Icons.send, color: Colors.blue),
+                  icon: const Icon(Icons.send, color: AppColors.gold),
                   onPressed: _postComment,
                 ),
               ],

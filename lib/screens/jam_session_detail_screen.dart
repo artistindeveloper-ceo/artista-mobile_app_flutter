@@ -253,7 +253,7 @@ class _JamSessionDetailScreenState extends State<JamSessionDetailScreen>
   void _showSnack(String msg, {bool isError = false}) {
     ScaffoldMessenger.of(context).showSnackBar(SnackBar(
       content: Text(msg),
-      backgroundColor: isError ? Colors.red : Colors.green,
+      backgroundColor: isError ? AppColors.error : AppColors.success,
     ));
   }
 
@@ -330,6 +330,7 @@ class _JamSessionDetailScreenState extends State<JamSessionDetailScreen>
     showModalBottomSheet(
       context: context,
       isScrollControlled: true,
+      backgroundColor: AppColors.bgSurface,
       shape: const RoundedRectangleBorder(
         borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
       ),
@@ -346,20 +347,22 @@ class _JamSessionDetailScreenState extends State<JamSessionDetailScreen>
                 width: 40,
                 height: 4,
                 decoration: BoxDecoration(
-                    color: Colors.grey.shade300,
+                    color: AppColors.border,
                     borderRadius: BorderRadius.circular(2)),
               ),
               const Padding(
                 padding: EdgeInsets.symmetric(horizontal: 16),
                 child: Text('Songs',
-                    style:
-                        TextStyle(fontSize: 18, fontWeight: FontWeight.bold)),
+                    style: TextStyle(
+                        fontSize: 18,
+                        fontWeight: FontWeight.bold,
+                        color: AppColors.textPrimary)),
               ),
               const SizedBox(height: 8),
               TabBar(
-                labelColor: AppColors.primaryDark,
-                unselectedLabelColor: Colors.grey,
-                indicatorColor: AppColors.primaryDark,
+                labelColor: AppColors.gold,
+                unselectedLabelColor: AppColors.textSecondary,
+                indicatorColor: AppColors.gold,
                 tabs: const [
                   Tab(icon: Icon(Icons.library_music), text: 'Library'),
                   Tab(icon: Icon(Icons.add), text: 'Add New'),
@@ -385,19 +388,20 @@ class _JamSessionDetailScreenState extends State<JamSessionDetailScreen>
       future: SongService.getPublicSongs(),
       builder: (context, snapshot) {
         if (snapshot.connectionState == ConnectionState.waiting) {
-          return const Center(child: CircularProgressIndicator());
+          return const Center(
+              child: CircularProgressIndicator(color: AppColors.gold));
         }
         if (snapshot.hasError) {
-          return Center(child: Text('Error: ${snapshot.error}'));
+          return Center(
+              child: Text('Error: ${snapshot.error}',
+                  style: const TextStyle(color: AppColors.textSecondary)));
         }
         final allSongs = snapshot.data ?? [];
         if (allSongs.isEmpty) {
           return const Center(
               child: Text('No songs in library yet.',
-                  style: TextStyle(color: Colors.grey)));
+                  style: TextStyle(color: AppColors.textSecondary)));
         }
-
-        final addedSongIds = _songs.map((s) => s['songId']).toSet();
 
         String query = '';
         List<dynamic> filteredSongs = allSongs;
@@ -410,11 +414,13 @@ class _JamSessionDetailScreenState extends State<JamSessionDetailScreen>
                 Padding(
                   padding: const EdgeInsets.fromLTRB(12, 12, 12, 4),
                   child: TextField(
+                    style: const TextStyle(color: AppColors.textPrimary),
                     decoration: InputDecoration(
                       hintText: 'Search songs by title or artist...',
-                      prefixIcon: const Icon(Icons.search),
+                      prefixIcon: const Icon(Icons.search,
+                          color: AppColors.textSecondary),
                       filled: true,
-                      fillColor: Colors.grey.shade100,
+                      fillColor: AppColors.bgSurfaceElevated,
                       border: OutlineInputBorder(
                         borderRadius: BorderRadius.circular(10),
                         borderSide: BorderSide.none,
@@ -441,12 +447,13 @@ class _JamSessionDetailScreenState extends State<JamSessionDetailScreen>
                   child: filteredSongs.isEmpty
                       ? const Center(
                           child: Text('No matching songs.',
-                              style: TextStyle(color: Colors.grey)))
+                              style: TextStyle(color: AppColors.textSecondary)))
                       : ListView.separated(
                           controller: scrollCtrl,
                           padding: const EdgeInsets.all(12),
                           itemCount: filteredSongs.length,
-                          separatorBuilder: (_, __) => const Divider(height: 1),
+                          separatorBuilder: (_, __) => const Divider(
+                              height: 1, color: AppColors.divider),
                           itemBuilder: (context, index) {
                             final song = filteredSongs[index];
                             final songId = song['id'];
@@ -459,18 +466,23 @@ class _JamSessionDetailScreenState extends State<JamSessionDetailScreen>
 
                             return ListTile(
                               leading: CircleAvatar(
-                                backgroundColor: AppColors.primaryDark,
+                                backgroundColor: AppColors.gold,
                                 child: Text(
                                     title.isNotEmpty
                                         ? title[0].toUpperCase()
                                         : '?',
-                                    style:
-                                        const TextStyle(color: Colors.white)),
+                                    style: const TextStyle(
+                                        color: AppColors.textOnGold)),
                               ),
                               title: Text(title,
                                   style: const TextStyle(
-                                      fontWeight: FontWeight.bold)),
-                              subtitle: artist.isNotEmpty ? Text(artist) : null,
+                                      fontWeight: FontWeight.bold,
+                                      color: AppColors.textPrimary)),
+                              subtitle: artist.isNotEmpty
+                                  ? Text(artist,
+                                      style: const TextStyle(
+                                          color: AppColors.textSecondary))
+                                  : null,
                               trailing: Row(
                                 mainAxisSize: MainAxisSize.min,
                                 children: [
@@ -479,13 +491,13 @@ class _JamSessionDetailScreenState extends State<JamSessionDetailScreen>
                                       padding: const EdgeInsets.symmetric(
                                           horizontal: 8, vertical: 4),
                                       decoration: BoxDecoration(
-                                        color: AppColors.primaryDark
-                                            .withOpacity(0.1),
+                                        color: AppColors.gold
+                                            .withValues(alpha: 0.15),
                                         borderRadius: BorderRadius.circular(8),
                                       ),
                                       child: Text(key,
                                           style: const TextStyle(
-                                              color: AppColors.primaryDark,
+                                              color: AppColors.gold,
                                               fontWeight: FontWeight.bold,
                                               fontSize: 12)),
                                     ),
@@ -493,7 +505,8 @@ class _JamSessionDetailScreenState extends State<JamSessionDetailScreen>
                                   isAdded
                                       ? IconButton(
                                           icon: const Icon(Icons.check_circle,
-                                              color: Colors.green, size: 28),
+                                              color: AppColors.success,
+                                              size: 28),
                                           onPressed: () async {
                                             final entry = _songs.firstWhere(
                                               (s) => s['songId'] == songId,
@@ -520,7 +533,7 @@ class _JamSessionDetailScreenState extends State<JamSessionDetailScreen>
                                       : IconButton(
                                           icon: const Icon(
                                               Icons.add_circle_outline,
-                                              color: AppColors.primaryDark,
+                                              color: AppColors.gold,
                                               size: 28),
                                           onPressed: () async {
                                             // Agar already add ho chuka hai to dobara mat karo
@@ -597,42 +610,37 @@ class _JamSessionDetailScreenState extends State<JamSessionDetailScreen>
         children: [
           TextField(
               controller: titleCtrl,
-              decoration: const InputDecoration(
-                  labelText: 'Song Title *', border: OutlineInputBorder())),
+              style: const TextStyle(color: AppColors.textPrimary),
+              decoration: const InputDecoration(labelText: 'Song Title *')),
           const SizedBox(height: 12),
           TextField(
               controller: artistCtrl,
-              decoration: const InputDecoration(
-                  labelText: 'Artist', border: OutlineInputBorder())),
+              style: const TextStyle(color: AppColors.textPrimary),
+              decoration: const InputDecoration(labelText: 'Artist')),
           const SizedBox(height: 12),
           TextField(
               controller: keyCtrl,
-              decoration: const InputDecoration(
-                  labelText: 'Key (e.g. C, G, Am, Abm)',
-                  border: OutlineInputBorder())),
+              style: const TextStyle(color: AppColors.textPrimary),
+              decoration:
+                  const InputDecoration(labelText: 'Key (e.g. C, G, Am, Abm)')),
           const SizedBox(height: 12),
           TextField(
               controller: chordsCtrl,
               maxLines: 3,
-              decoration: const InputDecoration(
-                  labelText: 'Chords (e.g. C G Am F)',
-                  border: OutlineInputBorder())),
+              style: const TextStyle(color: AppColors.textPrimary),
+              decoration:
+                  const InputDecoration(labelText: 'Chords (e.g. C G Am F)')),
           const SizedBox(height: 12),
           TextField(
               controller: lyricsCtrl,
               maxLines: 5,
+              style: const TextStyle(color: AppColors.textPrimary),
               decoration: const InputDecoration(
-                  labelText: 'Lyrics with chords [C]Tujhe [G]dekha to...',
-                  border: OutlineInputBorder())),
+                  labelText: 'Lyrics with chords [C]Tujhe [G]dekha to...')),
           const SizedBox(height: 20),
           SizedBox(
             width: double.infinity,
             child: ElevatedButton(
-              style: ElevatedButton.styleFrom(
-                backgroundColor: AppColors.primaryDark,
-                foregroundColor: Colors.white,
-                minimumSize: const Size(double.infinity, 48),
-              ),
               onPressed: () async {
                 if (titleCtrl.text.trim().isEmpty) return;
                 Navigator.pop(ctx);
@@ -661,7 +669,10 @@ class _JamSessionDetailScreenState extends State<JamSessionDetailScreen>
   @override
   Widget build(BuildContext context) {
     if (_isLoading) {
-      return const Scaffold(body: Center(child: CircularProgressIndicator()));
+      return const Scaffold(
+        backgroundColor: AppColors.bgBase,
+        body: Center(child: CircularProgressIndicator(color: AppColors.gold)),
+      );
     }
 
     final session = _session ?? {};
@@ -671,25 +682,28 @@ class _JamSessionDetailScreenState extends State<JamSessionDetailScreen>
     final isActive = status.toString().toUpperCase() == 'LIVE';
 
     return Scaffold(
+      backgroundColor: AppColors.bgBase,
       appBar: AppBar(
-        backgroundColor: AppColors.primaryDark,
+        backgroundColor: AppColors.bgAppBar,
+        elevation: 0,
+        surfaceTintColor: Colors.transparent,
         leading: IconButton(
-          icon: const Icon(Icons.arrow_back, color: Colors.white),
+          icon: const Icon(Icons.arrow_back, color: AppColors.textPrimary),
           onPressed: () => Navigator.pop(context),
         ),
         title: Text(name,
             style: const TextStyle(
-                color: Colors.white, fontWeight: FontWeight.bold)),
+                color: AppColors.textPrimary, fontWeight: FontWeight.bold)),
         actions: [
           IconButton(
-              icon: const Icon(Icons.share, color: Colors.white),
+              icon: const Icon(Icons.share, color: AppColors.textPrimary),
               onPressed: _copyInviteCode),
         ],
         bottom: TabBar(
           controller: _tabController,
-          indicatorColor: Colors.white,
-          labelColor: Colors.white,
-          unselectedLabelColor: Colors.white60,
+          indicatorColor: AppColors.gold,
+          labelColor: AppColors.gold,
+          unselectedLabelColor: AppColors.textTertiary,
           tabs: const [
             Tab(text: 'Participants'),
             Tab(text: 'Songs'),
@@ -723,19 +737,23 @@ class _JamSessionDetailScreenState extends State<JamSessionDetailScreen>
                   children: [
                     const Text('Status: ',
                         style: TextStyle(
-                            fontWeight: FontWeight.bold, fontSize: 15)),
+                            fontWeight: FontWeight.bold,
+                            fontSize: 15,
+                            color: AppColors.textPrimary)),
                     Container(
                       padding: const EdgeInsets.symmetric(
                           horizontal: 10, vertical: 4),
                       decoration: BoxDecoration(
                         color: isActive
-                            ? Colors.green.withOpacity(0.15)
-                            : Colors.orange.withOpacity(0.15),
+                            ? AppColors.success.withValues(alpha: 0.15)
+                            : AppColors.warning.withValues(alpha: 0.15),
                         borderRadius: BorderRadius.circular(20),
                       ),
                       child: Text(status.toString(),
                           style: TextStyle(
-                              color: isActive ? Colors.green : Colors.orange,
+                              color: isActive
+                                  ? AppColors.success
+                                  : AppColors.warning,
                               fontWeight: FontWeight.bold)),
                     ),
                   ],
@@ -745,13 +763,17 @@ class _JamSessionDetailScreenState extends State<JamSessionDetailScreen>
                   children: [
                     const Text('Invite Code: ',
                         style: TextStyle(
-                            fontWeight: FontWeight.bold, fontSize: 15)),
-                    Text(inviteCode, style: const TextStyle(fontSize: 15)),
+                            fontWeight: FontWeight.bold,
+                            fontSize: 15,
+                            color: AppColors.textPrimary)),
+                    Text(inviteCode,
+                        style: const TextStyle(
+                            fontSize: 15, color: AppColors.gold)),
                     const SizedBox(width: 8),
                     GestureDetector(
                         onTap: _copyInviteCode,
                         child: const Icon(Icons.copy,
-                            size: 18, color: Colors.grey)),
+                            size: 18, color: AppColors.textSecondary)),
                   ],
                 ),
                 const SizedBox(height: 16),
@@ -759,9 +781,12 @@ class _JamSessionDetailScreenState extends State<JamSessionDetailScreen>
                   children: [
                     const Text('Participants: ',
                         style: TextStyle(
-                            fontWeight: FontWeight.bold, fontSize: 15)),
+                            fontWeight: FontWeight.bold,
+                            fontSize: 15,
+                            color: AppColors.textPrimary)),
                     Text('${_participants.length}',
-                        style: const TextStyle(fontSize: 15)),
+                        style: const TextStyle(
+                            fontSize: 15, color: AppColors.textSecondary)),
                   ],
                 ),
                 const Spacer(),
@@ -773,7 +798,7 @@ class _JamSessionDetailScreenState extends State<JamSessionDetailScreen>
                       icon: const Icon(Icons.play_arrow),
                       label: const Text('Start Session'),
                       style: ElevatedButton.styleFrom(
-                          backgroundColor: Colors.green,
+                          backgroundColor: AppColors.success,
                           foregroundColor: Colors.white,
                           minimumSize: const Size(double.infinity, 48)),
                     ),
@@ -786,7 +811,7 @@ class _JamSessionDetailScreenState extends State<JamSessionDetailScreen>
                       icon: const Icon(Icons.stop),
                       label: const Text('End Session'),
                       style: ElevatedButton.styleFrom(
-                          backgroundColor: Colors.red,
+                          backgroundColor: AppColors.error,
                           foregroundColor: Colors.white,
                           minimumSize: const Size(double.infinity, 48)),
                     ),
@@ -799,8 +824,8 @@ class _JamSessionDetailScreenState extends State<JamSessionDetailScreen>
                     icon: const Icon(Icons.exit_to_app),
                     label: const Text('Leave Session'),
                     style: OutlinedButton.styleFrom(
-                        foregroundColor: Colors.red,
-                        side: const BorderSide(color: Colors.red),
+                        foregroundColor: AppColors.error,
+                        side: const BorderSide(color: AppColors.error),
                         minimumSize: const Size(double.infinity, 48)),
                   ),
                 ),
@@ -814,14 +839,16 @@ class _JamSessionDetailScreenState extends State<JamSessionDetailScreen>
 
   Widget _buildSongList() {
     return Scaffold(
+      backgroundColor: AppColors.bgBase,
       body: _songs.isEmpty
           ? const Center(
-              child:
-                  Text('No songs yet.', style: TextStyle(color: Colors.grey)))
+              child: Text('No songs yet.',
+                  style: TextStyle(color: AppColors.textSecondary)))
           : ListView.separated(
               padding: const EdgeInsets.all(12),
               itemCount: _songs.length,
-              separatorBuilder: (_, __) => const Divider(height: 1),
+              separatorBuilder: (_, __) =>
+                  const Divider(height: 1, color: AppColors.divider),
               itemBuilder: (ctx, i) {
                 final entry = _songs[i];
                 final title = entry['title'] ?? 'Untitled';
@@ -830,23 +857,26 @@ class _JamSessionDetailScreenState extends State<JamSessionDetailScreen>
 
                 final tile = ListTile(
                   leading: CircleAvatar(
-                    backgroundColor: AppColors.primaryDark,
+                    backgroundColor: AppColors.gold,
                     child: Text(title.isNotEmpty ? title[0].toUpperCase() : '?',
-                        style: const TextStyle(color: Colors.white)),
+                        style: const TextStyle(color: AppColors.textOnGold)),
                   ),
                   title: Text(title,
-                      style: const TextStyle(fontWeight: FontWeight.bold)),
-                  subtitle: Text(artist),
+                      style: const TextStyle(
+                          fontWeight: FontWeight.bold,
+                          color: AppColors.textPrimary)),
+                  subtitle: Text(artist,
+                      style: const TextStyle(color: AppColors.textSecondary)),
                   trailing: key.toString().isNotEmpty
                       ? Container(
                           padding: const EdgeInsets.symmetric(
                               horizontal: 8, vertical: 4),
                           decoration: BoxDecoration(
-                              color: AppColors.primaryDark.withOpacity(0.1),
+                              color: AppColors.gold.withValues(alpha: 0.15),
                               borderRadius: BorderRadius.circular(8)),
                           child: Text(key.toString(),
                               style: const TextStyle(
-                                  color: AppColors.primaryDark,
+                                  color: AppColors.gold,
                                   fontWeight: FontWeight.bold)),
                         )
                       : null,
@@ -862,15 +892,19 @@ class _JamSessionDetailScreenState extends State<JamSessionDetailScreen>
                   background: Container(
                     alignment: Alignment.centerRight,
                     padding: const EdgeInsets.only(right: 20),
-                    color: Colors.red,
+                    color: AppColors.error,
                     child: const Icon(Icons.delete, color: Colors.white),
                   ),
                   confirmDismiss: (_) async {
                     return await showDialog<bool>(
                           context: ctx,
                           builder: (dctx) => AlertDialog(
-                            title: const Text('Remove song?'),
-                            content: Text('Remove "$title" from this session?'),
+                            backgroundColor: AppColors.bgSurfaceElevated,
+                            title: const Text('Remove song?',
+                                style: TextStyle(color: AppColors.textPrimary)),
+                            content: Text('Remove "$title" from this session?',
+                                style: const TextStyle(
+                                    color: AppColors.textSecondary)),
                             actions: [
                               TextButton(
                                   onPressed: () => Navigator.pop(dctx, false),
@@ -878,7 +912,8 @@ class _JamSessionDetailScreenState extends State<JamSessionDetailScreen>
                               TextButton(
                                   onPressed: () => Navigator.pop(dctx, true),
                                   child: const Text('Remove',
-                                      style: TextStyle(color: Colors.red))),
+                                      style:
+                                          TextStyle(color: AppColors.error))),
                             ],
                           ),
                         ) ??
@@ -903,7 +938,7 @@ class _JamSessionDetailScreenState extends State<JamSessionDetailScreen>
       floatingActionButton: _isLeader
           ? FloatingActionButton.extended(
               onPressed: _openSongPicker,
-              backgroundColor: AppColors.primaryDark,
+              backgroundColor: AppColors.magenta,
               foregroundColor: Colors.white,
               icon: const Icon(Icons.music_note),
               label: const Text('Add Song'),

@@ -50,23 +50,30 @@ class _RegisterScreenState extends State<RegisterScreen> {
 
   void _showSnack(String msg) {
     ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(content: Text(msg)),
+      SnackBar(
+        content: Text(
+          msg,
+          style: AppFonts.body(color: AppColors.textPrimary),
+        ),
+        backgroundColor: AppColors.bgSurfaceElevated,
+      ),
     );
   }
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: AppColors.white,
+      backgroundColor: AppColors.bgBase,
       appBar: AppBar(
-        backgroundColor: AppColors.white,
+        backgroundColor: AppColors.bgBase,
         elevation: 0,
         leading: IconButton(
-          icon: const Icon(Icons.arrow_back, color: AppColors.primaryDark),
+          icon: const Icon(Icons.arrow_back, color: AppColors.textPrimary),
           onPressed: () => Navigator.pop(context),
         ),
-        title: const Text('Create Account',
-            style: TextStyle(color: AppColors.darkText)),
+        title: Text('Create Account',
+            style:
+                AppFonts.heading(fontSize: 20, color: AppColors.textPrimary)),
       ),
       body: SafeArea(
         child: SingleChildScrollView(
@@ -83,6 +90,7 @@ class _RegisterScreenState extends State<RegisterScreen> {
               // Name
               TextField(
                 controller: _nameCtrl,
+                style: AppFonts.body(color: AppColors.textPrimary),
                 decoration: const InputDecoration(labelText: 'Full Name*'),
               ),
               const SizedBox(height: 16),
@@ -91,6 +99,7 @@ class _RegisterScreenState extends State<RegisterScreen> {
               TextField(
                 controller: _emailCtrl,
                 keyboardType: TextInputType.emailAddress,
+                style: AppFonts.body(color: AppColors.textPrimary),
                 decoration: const InputDecoration(labelText: 'Email*'),
               ),
               const SizedBox(height: 16),
@@ -99,6 +108,7 @@ class _RegisterScreenState extends State<RegisterScreen> {
               TextField(
                 controller: _passwordCtrl,
                 obscureText: _obscurePassword,
+                style: AppFonts.body(color: AppColors.textPrimary),
                 decoration: InputDecoration(
                   labelText: 'Password*',
                   suffixIcon: IconButton(
@@ -106,7 +116,7 @@ class _RegisterScreenState extends State<RegisterScreen> {
                         _obscurePassword
                             ? Icons.visibility_off_outlined
                             : Icons.visibility_outlined,
-                        color: AppColors.textGrey),
+                        color: AppColors.textSecondary),
                     onPressed: () =>
                         setState(() => _obscurePassword = !_obscurePassword),
                   ),
@@ -118,6 +128,7 @@ class _RegisterScreenState extends State<RegisterScreen> {
               TextField(
                 controller: _confirmCtrl,
                 obscureText: _obscureConfirm,
+                style: AppFonts.body(color: AppColors.textPrimary),
                 decoration: InputDecoration(
                   labelText: 'Confirm Password*',
                   suffixIcon: IconButton(
@@ -125,7 +136,7 @@ class _RegisterScreenState extends State<RegisterScreen> {
                         _obscureConfirm
                             ? Icons.visibility_off_outlined
                             : Icons.visibility_outlined,
-                        color: AppColors.textGrey),
+                        color: AppColors.textSecondary),
                     onPressed: () =>
                         setState(() => _obscureConfirm = !_obscureConfirm),
                   ),
@@ -141,7 +152,8 @@ class _RegisterScreenState extends State<RegisterScreen> {
                         height: 22,
                         width: 22,
                         child: CircularProgressIndicator(
-                            strokeWidth: 2, color: AppColors.white))
+                            strokeWidth: 2, color: AppColors.textOnGold),
+                      )
                     : const Text('CREATE ACCOUNT'),
               ),
 
@@ -151,15 +163,15 @@ class _RegisterScreenState extends State<RegisterScreen> {
               Row(
                 mainAxisAlignment: MainAxisAlignment.center,
                 children: [
-                  const Text('Already have an account? ',
-                      style:
-                          TextStyle(color: AppColors.darkText, fontSize: 13)),
+                  Text('Already have an account? ',
+                      style: AppFonts.body(
+                          color: AppColors.textSecondary, fontSize: 13)),
                   GestureDetector(
                     onTap: () => Navigator.pop(context),
-                    child: const Text('Login',
-                        style: TextStyle(
-                            color: AppColors.primaryDark,
-                            fontWeight: FontWeight.bold,
+                    child: Text('Login',
+                        style: AppFonts.body(
+                            color: AppColors.gold,
+                            fontWeight: FontWeight.w600,
                             fontSize: 13)),
                   ),
                 ],

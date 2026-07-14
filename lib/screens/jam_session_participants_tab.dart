@@ -22,7 +22,7 @@ class ParticipantsTab extends StatelessWidget {
       return const Center(
         child: Text(
           'No participants yet',
-          style: TextStyle(color: Colors.grey),
+          style: TextStyle(color: AppColors.textSecondary),
         ),
       );
     }
@@ -38,18 +38,19 @@ class ParticipantsTab extends StatelessWidget {
 
         return ListTile(
           leading: CircleAvatar(
-            backgroundColor: AppColors.primaryLight,
+            backgroundColor: AppColors.gold,
             backgroundImage: avatarUrl != null ? NetworkImage(avatarUrl) : null,
             child: avatarUrl == null
                 ? Text(
                     username.isNotEmpty ? username[0].toUpperCase() : '?',
-                    style: const TextStyle(color: Colors.white),
+                    style: const TextStyle(color: AppColors.textOnGold),
                   )
                 : null,
           ),
           title: Text(
             username,
-            style: const TextStyle(fontWeight: FontWeight.bold),
+            style: const TextStyle(
+                fontWeight: FontWeight.bold, color: AppColors.textPrimary),
           ),
           trailing: role.toString().isNotEmpty
               ? _RoleBadge(role: role.toString())
@@ -70,12 +71,12 @@ class _RoleBadge extends StatelessWidget {
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
       decoration: BoxDecoration(
-        color: AppColors.primaryDark.withOpacity(0.1),
+        color: AppColors.gold.withValues(alpha: 0.15),
         borderRadius: BorderRadius.circular(12),
       ),
       child: Text(
         role,
-        style: const TextStyle(fontSize: 11, color: AppColors.primaryDark),
+        style: const TextStyle(fontSize: 11, color: AppColors.gold),
       ),
     );
   }

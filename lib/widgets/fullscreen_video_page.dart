@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import '../model/PostModel.dart';
+import '../theme/app_theme.dart';
 import 'video_post_player.dart';
 
 class FullscreenVideoPage extends StatefulWidget {
@@ -36,7 +37,9 @@ class _FullscreenVideoPageState extends State<FullscreenVideoPage> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: Colors.black,
+      // Kept near-black (matches AppTheme.bgBase) rather than pure
+      // Colors.black — stays immersive for video while staying on-theme.
+      backgroundColor: AppColors.bgBase,
       body: Stack(
         children: [
           PageView.builder(
@@ -50,7 +53,7 @@ class _FullscreenVideoPageState extends State<FullscreenVideoPage> {
               // Sirf current + adjacent pages ko load karo (performance)
               final isNearby = (index - _currentIndex).abs() <= 1;
               if (!isNearby) {
-                return Container(color: Colors.black);
+                return Container(color: AppColors.bgBase);
               }
               return Center(
                 child: VideoPostPlayer(
@@ -67,7 +70,7 @@ class _FullscreenVideoPageState extends State<FullscreenVideoPage> {
             top: MediaQuery.of(context).padding.top + 8,
             left: 8,
             child: IconButton(
-              icon: const Icon(Icons.arrow_back, color: Colors.white),
+              icon: const Icon(Icons.arrow_back, color: AppColors.textPrimary),
               onPressed: () => Navigator.pop(context),
             ),
           ),
@@ -80,10 +83,11 @@ class _FullscreenVideoPageState extends State<FullscreenVideoPage> {
               right: 60,
               child: Text(
                 widget.videoPosts[_currentIndex].caption!,
-                style: const TextStyle(
-                  color: Colors.white,
+                style: AppFonts.body(
+                  color: AppColors.textPrimary,
                   fontSize: 14,
-                  shadows: [Shadow(color: Colors.black87, blurRadius: 6)],
+                ).copyWith(
+                  shadows: const [Shadow(color: Colors.black87, blurRadius: 6)],
                 ),
                 maxLines: 3,
                 overflow: TextOverflow.ellipsis,

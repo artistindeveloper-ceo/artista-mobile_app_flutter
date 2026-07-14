@@ -8,30 +8,30 @@ class HomeContent extends StatelessWidget {
   Widget build(BuildContext context) {
     return Column(
       children: [
-        // Search bar inside blue header
+        // Search bar inside dark header
         Container(
-          color: AppColors.primaryDark,
+          color: AppColors.bgAppBar,
           padding: const EdgeInsets.fromLTRB(16, 0, 16, 16),
           child: Container(
             height: 44,
             decoration: BoxDecoration(
-              color: AppColors.white.withOpacity(0.15),
+              color: AppColors.bgSurfaceElevated,
               borderRadius: BorderRadius.circular(25),
-              border: Border.all(color: AppColors.white.withOpacity(0.3)),
+              border: Border.all(color: AppColors.border),
             ),
             child: Row(
               children: [
                 const SizedBox(width: 14),
                 Text(
                   'Search',
-                  style: TextStyle(
-                    color: AppColors.white.withOpacity(0.7),
+                  style: AppFonts.body(
+                    color: AppColors.textTertiary,
                     fontSize: 15,
                   ),
                 ),
                 const Spacer(),
-                Icon(Icons.search,
-                    color: AppColors.white.withOpacity(0.7), size: 22),
+                const Icon(Icons.search,
+                    color: AppColors.textTertiary, size: 22),
                 const SizedBox(width: 14),
               ],
             ),
@@ -50,22 +50,22 @@ class HomeContent extends StatelessWidget {
                 const SizedBox(height: 20),
 
                 // Categories title
-                const Row(
+                Row(
                   mainAxisAlignment: MainAxisAlignment.spaceBetween,
                   children: [
                     Text(
                       'Categories',
-                      style: TextStyle(
+                      style: AppFonts.body(
                         fontSize: 17,
                         fontWeight: FontWeight.bold,
-                        color: AppColors.darkText,
+                        color: AppColors.textPrimary,
                       ),
                     ),
                     Text(
                       'See all',
-                      style: TextStyle(
+                      style: AppFonts.body(
                         fontSize: 13,
-                        color: AppColors.primaryDark,
+                        color: AppColors.gold,
                         fontWeight: FontWeight.w500,
                       ),
                     ),
@@ -85,38 +85,32 @@ class HomeContent extends StatelessWidget {
                     _CategoryCard(
                       label: 'Community\nServices',
                       icon: Icons.people_outline,
-                      color: Color(0xFFE3F2FD),
-                      iconColor: Color(0xFF1565C0),
+                      iconColor: Color(0xFF64B5F6),
                     ),
                     _CategoryCard(
                       label: 'Sports\nFacility',
                       icon: Icons.sports_soccer_outlined,
-                      color: Color(0xFFE8F5E9),
-                      iconColor: Color(0xFF2E7D32),
+                      iconColor: Color(0xFF81C784),
                     ),
                     _CategoryCard(
                       label: 'Recruitments',
                       icon: Icons.work_outline,
-                      color: Color(0xFFFFF3E0),
-                      iconColor: Color(0xFFE65100),
+                      iconColor: Color(0xFFFFB74D),
                     ),
                     _CategoryCard(
                       label: 'Real Estate',
                       icon: Icons.home_outlined,
-                      color: Color(0xFFF3E5F5),
-                      iconColor: Color(0xFF6A1B9A),
+                      iconColor: Color(0xFFBA68C8),
                     ),
                     _CategoryCard(
                       label: 'Events',
                       icon: Icons.event_outlined,
-                      color: Color(0xFFFFEBEE),
-                      iconColor: Color(0xFFC62828),
+                      iconColor: Color(0xFFE57373),
                     ),
                     _CategoryCard(
                       label: 'Education',
                       icon: Icons.school_outlined,
-                      color: Color(0xFFE0F7FA),
-                      iconColor: Color(0xFF00695C),
+                      iconColor: Color(0xFF4DB6AC),
                     ),
                   ],
                 ),
@@ -124,12 +118,12 @@ class HomeContent extends StatelessWidget {
                 const SizedBox(height: 24),
 
                 // Upcoming concerts
-                const Text(
+                Text(
                   'Upcoming Concerts',
-                  style: TextStyle(
+                  style: AppFonts.body(
                     fontSize: 17,
                     fontWeight: FontWeight.bold,
-                    color: AppColors.darkText,
+                    color: AppColors.textPrimary,
                   ),
                 ),
                 const SizedBox(height: 12),
@@ -161,11 +155,12 @@ class _FeaturedBanner extends StatelessWidget {
         gradient: const LinearGradient(
           begin: Alignment.topLeft,
           end: Alignment.bottomRight,
-          colors: [AppColors.primaryDark, AppColors.primaryLight],
+          colors: [AppColors.bgSurfaceElevated, Color(0xFF3A2E12)],
         ),
+        border: Border.all(color: AppColors.gold.withOpacity(0.25)),
         boxShadow: [
           BoxShadow(
-            color: AppColors.primaryDark.withOpacity(0.3),
+            color: Colors.black.withOpacity(0.4),
             blurRadius: 12,
             offset: const Offset(0, 4),
           ),
@@ -173,7 +168,7 @@ class _FeaturedBanner extends StatelessWidget {
       ),
       child: Stack(
         children: [
-          // Background pattern
+          // Background pattern — subtle gold glow instead of white circles
           Positioned(
             right: -20,
             top: -20,
@@ -182,7 +177,7 @@ class _FeaturedBanner extends StatelessWidget {
               height: 140,
               decoration: BoxDecoration(
                 shape: BoxShape.circle,
-                color: Colors.white.withOpacity(0.05),
+                color: AppColors.gold.withOpacity(0.06),
               ),
             ),
           ),
@@ -194,7 +189,7 @@ class _FeaturedBanner extends StatelessWidget {
               height: 100,
               decoration: BoxDecoration(
                 shape: BoxShape.circle,
-                color: Colors.white.withOpacity(0.05),
+                color: AppColors.gold.withOpacity(0.06),
               ),
             ),
           ),
@@ -209,13 +204,13 @@ class _FeaturedBanner extends StatelessWidget {
                   padding:
                       const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
                   decoration: BoxDecoration(
-                    color: AppColors.accent,
+                    color: AppColors.magenta,
                     borderRadius: BorderRadius.circular(20),
                   ),
-                  child: const Text(
+                  child: Text(
                     'FEATURED',
-                    style: TextStyle(
-                      color: Colors.white,
+                    style: AppFonts.body(
+                      color: AppColors.textOnMagenta,
                       fontSize: 10,
                       fontWeight: FontWeight.bold,
                       letterSpacing: 1,
@@ -223,24 +218,24 @@ class _FeaturedBanner extends StatelessWidget {
                   ),
                 ),
                 const SizedBox(height: 10),
-                const Text(
+                Text(
                   'City Music Festival\n2024',
-                  style: TextStyle(
-                    color: Colors.white,
+                  style: AppFonts.heading(
+                    color: AppColors.textPrimary,
                     fontSize: 20,
-                    fontWeight: FontWeight.bold,
-                    height: 1.3,
-                  ),
+                    fontWeight: FontWeight.w700,
+                  ).copyWith(height: 1.3),
                 ),
                 const SizedBox(height: 6),
                 Row(
                   children: [
                     const Icon(Icons.calendar_today_outlined,
-                        color: Colors.white70, size: 14),
+                        color: AppColors.goldLight, size: 14),
                     const SizedBox(width: 4),
-                    const Text(
+                    Text(
                       'Dec 25 - Dec 31, 2024',
-                      style: TextStyle(color: Colors.white70, fontSize: 12),
+                      style: AppFonts.body(
+                          color: AppColors.textSecondary, fontSize: 12),
                     ),
                   ],
                 ),
@@ -256,13 +251,11 @@ class _FeaturedBanner extends StatelessWidget {
 class _CategoryCard extends StatelessWidget {
   final String label;
   final IconData icon;
-  final Color color;
   final Color iconColor;
 
   const _CategoryCard({
     required this.label,
     required this.icon,
-    required this.color,
     required this.iconColor,
   });
 
@@ -270,8 +263,9 @@ class _CategoryCard extends StatelessWidget {
   Widget build(BuildContext context) {
     return Container(
       decoration: BoxDecoration(
-        color: color,
+        color: AppColors.bgSurface,
         borderRadius: BorderRadius.circular(12),
+        border: Border.all(color: AppColors.border),
       ),
       child: Column(
         mainAxisAlignment: MainAxisAlignment.center,
@@ -289,12 +283,11 @@ class _CategoryCard extends StatelessWidget {
           Text(
             label,
             textAlign: TextAlign.center,
-            style: TextStyle(
-              color: iconColor,
+            style: AppFonts.body(
+              color: AppColors.textPrimary,
               fontSize: 11,
               fontWeight: FontWeight.w600,
-              height: 1.3,
-            ),
+            ).copyWith(height: 1.3),
           ),
         ],
       ),
@@ -314,11 +307,14 @@ class _ConcertCard extends StatelessWidget {
     {'title': 'Classical', 'date': 'Dec 28', 'venue': 'Grand Theatre'},
   ];
 
+  // Deep jewel tones instead of bright saturated ones — read as premium
+  // accent tiles against the charcoal background rather than clashing
+  // with the gold/magenta palette.
   static const _colors = [
-    Color(0xFF7B1FA2),
-    Color(0xFF1565C0),
-    Color(0xFF2E7D32),
-    Color(0xFFBF360C),
+    Color(0xFF4A2E6B),
+    Color(0xFF1F3A5F),
+    Color(0xFF1F4D3A),
+    Color(0xFF6B3416),
   ];
 
   @override
@@ -329,20 +325,22 @@ class _ConcertCard extends StatelessWidget {
       decoration: BoxDecoration(
         color: _colors[index],
         borderRadius: BorderRadius.circular(12),
+        border: Border.all(color: AppColors.gold.withOpacity(0.15)),
       ),
       padding: const EdgeInsets.all(14),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         mainAxisAlignment: MainAxisAlignment.spaceBetween,
         children: [
-          const Icon(Icons.music_note, color: Colors.white54, size: 28),
+          Icon(Icons.music_note,
+              color: AppColors.goldLight.withOpacity(0.7), size: 28),
           Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
               Text(
                 d['title']!,
-                style: const TextStyle(
-                  color: Colors.white,
+                style: AppFonts.body(
+                  color: AppColors.textPrimary,
                   fontWeight: FontWeight.bold,
                   fontSize: 14,
                 ),
@@ -350,11 +348,13 @@ class _ConcertCard extends StatelessWidget {
               const SizedBox(height: 3),
               Text(
                 d['date']!,
-                style: const TextStyle(color: Colors.white70, fontSize: 11),
+                style:
+                    AppFonts.body(color: AppColors.textSecondary, fontSize: 11),
               ),
               Text(
                 d['venue']!,
-                style: const TextStyle(color: Colors.white70, fontSize: 11),
+                style:
+                    AppFonts.body(color: AppColors.textSecondary, fontSize: 11),
               ),
             ],
           ),

@@ -1,9 +1,11 @@
+
+import 'package:artist_in/screens/profile/ProfileScreen.dart';
 import 'package:flutter/material.dart';
 
 import '../config/ApiConfig.dart' as $baseUrl;
 import '../service/NotificationService.dart';
 import '../theme/app_theme.dart';
-import 'Profile_Screen.dart'; // 👈 import your profile screen
+
 
 class NotificationScreen extends StatefulWidget {
   const NotificationScreen({super.key});
@@ -61,19 +63,21 @@ class _NotificationScreenState extends State<NotificationScreen> {
     }
   }
 
+  // Small accent-colored badge icons layered on the avatar — kept vivid
+  // so they still read clearly against the dark surface.
   Color _getIconColor(String? type) {
     switch (type?.toLowerCase()) {
       case 'like':
-        return Colors.red;
+        return AppColors.error;
       case 'comment':
-        return Colors.blue;
+        return AppColors.goldLight;
       case 'follow':
       case 'follow_request':
-        return Colors.green;
+        return AppColors.success;
       case 'message':
-        return Colors.purple;
+        return AppColors.magenta;
       default:
-        return AppColors.primaryDark;
+        return AppColors.gold;
     }
   }
 
@@ -93,12 +97,11 @@ class _NotificationScreenState extends State<NotificationScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: AppColors.white,
+      backgroundColor: AppColors.bgBase,
       appBar: AppBar(
-        backgroundColor: AppColors.primaryDark,
-        foregroundColor: AppColors.white,
         title: const Text('Notifications'),
-        elevation: 0,
+        // backgroundColor / foregroundColor / titleTextStyle inherited
+        // from AppTheme.theme.appBarTheme (gold Playfair Display title).
       ),
       body: _buildBody(),
     );
@@ -106,6 +109,7 @@ class _NotificationScreenState extends State<NotificationScreen> {
 
   Widget _buildBody() {
     if (_isLoading) {
+      // Uses AppTheme.theme.progressIndicatorTheme (gold spinner).
       return const Center(child: CircularProgressIndicator());
     }
 
@@ -114,14 +118,19 @@ class _NotificationScreenState extends State<NotificationScreen> {
         child: Column(
           mainAxisSize: MainAxisSize.min,
           children: [
-            const Icon(Icons.error_outline, size: 48, color: Colors.grey),
+            const Icon(Icons.error_outline,
+                size: 48, color: AppColors.textTertiary),
             const SizedBox(height: 12),
-            Text(_error!,
-                textAlign: TextAlign.center,
-                style: const TextStyle(color: Colors.grey)),
+            Text(
+              _error!,
+              textAlign: TextAlign.center,
+              style: AppFonts.body(color: AppColors.textSecondary),
+            ),
             const SizedBox(height: 16),
             ElevatedButton(
-                onPressed: _loadNotifications, child: const Text('Retry')),
+              onPressed: _loadNotifications,
+              child: const Text('Retry'),
+            ),
           ],
         ),
       );
@@ -132,11 +141,11 @@ class _NotificationScreenState extends State<NotificationScreen> {
         child: Column(
           mainAxisSize: MainAxisSize.min,
           children: [
-            Icon(Icons.notifications_none,
-                size: 64, color: Colors.grey.withOpacity(0.4)),
+            const Icon(Icons.notifications_none,
+                size: 64, color: AppColors.textTertiary),
             const SizedBox(height: 12),
-            const Text('No notifications yet',
-                style: TextStyle(color: Colors.grey)),
+            Text('No notifications yet',
+                style: AppFonts.body(color: AppColors.textSecondary)),
           ],
         ),
       );
@@ -144,9 +153,12 @@ class _NotificationScreenState extends State<NotificationScreen> {
 
     return RefreshIndicator(
       onRefresh: _loadNotifications,
+      color: AppColors.gold,
+      backgroundColor: AppColors.bgSurfaceElevated,
       child: ListView.separated(
         itemCount: _notifications.length,
-        separatorBuilder: (_, __) => const Divider(height: 1),
+        separatorBuilder: (_, __) =>
+            const Divider(height: 1, color: AppColors.divider),
         itemBuilder: (ctx, i) {
           final n = _notifications[i];
           final type = n['type'];
@@ -165,7 +177,9 @@ class _NotificationScreenState extends State<NotificationScreen> {
             // 👈 wrap with InkWell
             onTap: () => _onNotificationTap(n), // 👈 tap goes to profile
             child: Container(
-              color: isRead ? Colors.white : Colors.blue.withOpacity(0.05),
+              color: isRead
+                  ? Colors.transparent
+                  : AppColors.gold.withOpacity(0.06),
               child: ListTile(
                 leading: GestureDetector(
                   // 👈 avatar tap also works
@@ -174,7 +188,7 @@ class _NotificationScreenState extends State<NotificationScreen> {
                     children: [
                       CircleAvatar(
                         radius: 22,
-                        backgroundColor: AppColors.primaryLight,
+                        backgroundColor: AppColors.gold,
                         backgroundImage:
                             avatarUrl != null ? NetworkImage(avatarUrl) : null,
                         child: avatarUrl == null
@@ -182,7 +196,10 @@ class _NotificationScreenState extends State<NotificationScreen> {
                                 username.isNotEmpty
                                     ? username[0].toUpperCase()
                                     : '?',
-                                style: const TextStyle(color: Colors.white),
+                                style: AppFonts.body(
+                                  color: AppColors.textOnGold,
+                                  fontWeight: FontWeight.w600,
+                                ),
                               )
                             : null,
                       ),
@@ -191,7 +208,7 @@ class _NotificationScreenState extends State<NotificationScreen> {
                         right: 0,
                         child: CircleAvatar(
                           radius: 10,
-                          backgroundColor: Colors.white,
+                          backgroundColor: AppColors.bgSurface,
                           child: Icon(
                             _getIcon(type),
                             size: 13,
@@ -204,21 +221,23 @@ class _NotificationScreenState extends State<NotificationScreen> {
                 ),
                 title: Text(
                   message,
-                  style: TextStyle(
+                  style: AppFonts.body(
                     fontSize: 13,
-                    fontWeight: isRead ? FontWeight.normal : FontWeight.bold,
+                    color: AppColors.textPrimary,
+                    fontWeight: isRead ? FontWeight.normal : FontWeight.w600,
                   ),
                 ),
                 subtitle: Text(
                   timeAgo,
-                  style: const TextStyle(fontSize: 11, color: Colors.grey),
+                  style: AppFonts.body(
+                      fontSize: 11, color: AppColors.textTertiary),
                 ),
                 trailing: !isRead
                     ? Container(
                         width: 8,
                         height: 8,
                         decoration: const BoxDecoration(
-                          color: AppColors.primaryDark,
+                          color: AppColors.magenta,
                           shape: BoxShape.circle,
                         ),
                       )

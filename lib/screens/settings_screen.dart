@@ -47,18 +47,26 @@ class _SettingsScreenState extends State<SettingsScreen> {
       await UserService.updatePrivacy(newValue);
       if (!mounted) return;
       ScaffoldMessenger.of(context).showSnackBar(SnackBar(
-        content: Text(newValue
-            ? 'Your account is now Private'
-            : 'Your account is now Public'),
-        backgroundColor: Colors.green,
+        content: Text(
+          newValue
+              ? 'Your account is now Private'
+              : 'Your account is now Public',
+          style: AppFonts.body(
+              color: AppColors.textOnGold, fontWeight: FontWeight.w500),
+        ),
+        backgroundColor: AppColors.success,
       ));
     } catch (e) {
       // Revert on failure
       if (!mounted) return;
       setState(() => _isPrivate = !newValue);
       ScaffoldMessenger.of(context).showSnackBar(SnackBar(
-        content: Text('Could not update privacy setting.'),
-        backgroundColor: Colors.red,
+        content: Text(
+          'Could not update privacy setting.',
+          style: AppFonts.body(
+              color: AppColors.textPrimary, fontWeight: FontWeight.w500),
+        ),
+        backgroundColor: AppColors.error,
       ));
     } finally {
       if (mounted) setState(() => _isSavingPrivacy = false);
@@ -68,12 +76,11 @@ class _SettingsScreenState extends State<SettingsScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: AppColors.white,
+      backgroundColor: AppColors.bgBase,
       appBar: AppBar(
-        backgroundColor: AppColors.primaryDark,
-        foregroundColor: AppColors.white,
         title: const Text('Settings'),
-        elevation: 0,
+        // backgroundColor / foregroundColor / titleTextStyle are inherited
+        // from AppTheme.theme.appBarTheme (gold Playfair Display title).
       ),
       body: ListView(
         padding: const EdgeInsets.symmetric(vertical: 12),
@@ -105,7 +112,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
 
           const Padding(
             padding: EdgeInsets.symmetric(horizontal: 16, vertical: 8),
-            child: Divider(),
+            child: Divider(), // uses AppTheme.dividerTheme (AppColors.divider)
           ),
 
           _SectionHeader(title: 'Preferences'),
@@ -117,34 +124,45 @@ class _SettingsScreenState extends State<SettingsScreen> {
             },
           ),
 
-          // ✅ NEW — Private Account toggle
+          // Private Account toggle
           _isLoadingPrivacy
-              ? const ListTile(
-                  leading: Icon(Icons.privacy_tip_outlined),
-                  title: Text('Privacy & Security'),
-                  trailing: SizedBox(
+              ? ListTile(
+                  leading: const Icon(Icons.privacy_tip_outlined,
+                      color: AppColors.textSecondary),
+                  title: Text('Privacy & Security',
+                      style: AppFonts.body(
+                          fontSize: 15, color: AppColors.textPrimary)),
+                  trailing: const SizedBox(
                     width: 20,
                     height: 20,
-                    child: CircularProgressIndicator(strokeWidth: 2),
+                    child: CircularProgressIndicator(
+                      strokeWidth: 2,
+                      color: AppColors.gold,
+                    ),
                   ),
                   dense: true,
                   contentPadding:
-                      EdgeInsets.symmetric(horizontal: 20, vertical: 2),
+                      const EdgeInsets.symmetric(horizontal: 20, vertical: 2),
                 )
               : SwitchListTile(
-                  secondary: Icon(Icons.privacy_tip_outlined,
-                      color: AppColors.darkText.withOpacity(0.75)),
-                  title: const Text('Private Account',
-                      style: TextStyle(fontSize: 15)),
+                  secondary: const Icon(Icons.privacy_tip_outlined,
+                      color: AppColors.textSecondary),
+                  title: Text('Private Account',
+                      style: AppFonts.body(
+                          fontSize: 15, color: AppColors.textPrimary)),
                   subtitle: Text(
                     _isPrivate
                         ? 'New followers must be approved'
                         : 'Anyone can follow you instantly',
-                    style: const TextStyle(fontSize: 12, color: Colors.grey),
+                    style: AppFonts.body(
+                        fontSize: 12, color: AppColors.textTertiary),
                   ),
                   value: _isPrivate,
                   onChanged: _isSavingPrivacy ? null : _togglePrivacy,
-                  activeColor: AppColors.primaryDark,
+                  activeColor: AppColors.gold,
+                  activeTrackColor: AppColors.goldDim,
+                  inactiveThumbColor: AppColors.textTertiary,
+                  inactiveTrackColor: AppColors.bgSurfaceElevated,
                   dense: true,
                   contentPadding:
                       const EdgeInsets.symmetric(horizontal: 20, vertical: 2),
@@ -167,15 +185,15 @@ class _SettingsScreenState extends State<SettingsScreen> {
           _SettingsTile(
             icon: Icons.delete_outline,
             label: 'Delete Account',
-            iconColor: AppColors.logoutRed,
-            labelColor: AppColors.logoutRed,
+            iconColor: AppColors.error,
+            labelColor: AppColors.error,
             onTap: () => _confirmDeleteAccount(context),
           ),
           _SettingsTile(
             icon: Icons.logout,
             label: 'Logout',
-            iconColor: AppColors.logoutRed,
-            labelColor: AppColors.logoutRed,
+            iconColor: AppColors.error,
+            labelColor: AppColors.error,
             onTap: () async {
               await Session().clear();
               Navigator.pushAndRemoveUntil(
@@ -194,20 +212,26 @@ class _SettingsScreenState extends State<SettingsScreen> {
     showDialog(
       context: context,
       builder: (ctx) => AlertDialog(
+        // backgroundColor / shape / titleTextStyle / contentTextStyle
+        // inherited from AppTheme.theme.dialogTheme.
         title: const Text('Delete Account'),
         content: const Text(
             'This action is permanent and cannot be undone. Are you sure you want to delete your account?'),
         actions: [
           TextButton(
             onPressed: () => Navigator.pop(ctx),
-            child: const Text('Cancel'),
+            child: const Text('Cancel'), // gold via textButtonTheme
           ),
           TextButton(
             onPressed: () {
               Navigator.pop(ctx);
               // TODO: call ApiService.deleteAccount() then navigate to login
             },
-            child: const Text('Delete', style: TextStyle(color: Colors.red)),
+            child: Text(
+              'Delete',
+              style: AppFonts.body(
+                  color: AppColors.error, fontWeight: FontWeight.w600),
+            ),
           ),
         ],
       ),
@@ -225,12 +249,12 @@ class _SectionHeader extends StatelessWidget {
     return Padding(
       padding: const EdgeInsets.fromLTRB(20, 8, 20, 4),
       child: Text(
-        title,
-        style: TextStyle(
+        title.toUpperCase(),
+        style: AppFonts.body(
           fontSize: 12,
-          fontWeight: FontWeight.bold,
-          color: AppColors.darkText.withOpacity(0.5),
-          letterSpacing: 0.5,
+          fontWeight: FontWeight.w600,
+          color: AppColors.textTertiary,
+          letterSpacing: 0.8,
         ),
       ),
     );
@@ -255,16 +279,16 @@ class _SettingsTile extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return ListTile(
-      leading:
-          Icon(icon, color: iconColor ?? AppColors.darkText.withOpacity(0.75)),
+      leading: Icon(icon, color: iconColor ?? AppColors.textSecondary),
       title: Text(
         label,
-        style: TextStyle(
-          color: labelColor ?? AppColors.darkText,
+        style: AppFonts.body(
+          color: labelColor ?? AppColors.textPrimary,
           fontSize: 15,
         ),
       ),
-      trailing: const Icon(Icons.chevron_right, size: 18, color: Colors.grey),
+      trailing: const Icon(Icons.chevron_right,
+          size: 18, color: AppColors.textTertiary),
       onTap: onTap,
       dense: true,
       contentPadding: const EdgeInsets.symmetric(horizontal: 20, vertical: 2),

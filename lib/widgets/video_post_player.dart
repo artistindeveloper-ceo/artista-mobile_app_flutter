@@ -3,6 +3,7 @@ import 'package:flutter/material.dart';
 import 'package:video_player/video_player.dart';
 import 'package:visibility_detector/visibility_detector.dart';
 import '../service/PostService.dart';
+import '../theme/app_theme.dart';
 
 class VideoPostPlayer extends StatefulWidget {
   final String videoUrl;
@@ -120,9 +121,10 @@ class _VideoPostPlayerState extends State<VideoPostPlayer> {
       return AspectRatio(
         aspectRatio: 1,
         child: Container(
-          color: Colors.grey[300],
+          color: AppColors.bgSurface,
           child: const Center(
-            child: Icon(Icons.error_outline, size: 40, color: Colors.grey),
+            child: Icon(Icons.error_outline,
+                size: 40, color: AppColors.textTertiary),
           ),
         ),
       );
@@ -132,10 +134,10 @@ class _VideoPostPlayerState extends State<VideoPostPlayer> {
       return AspectRatio(
         aspectRatio: 1,
         child: Container(
-          color: Colors.black87,
+          color: AppColors.bgBase,
           child: const Center(
             child: CircularProgressIndicator(
-              color: Colors.white,
+              color: AppColors.gold,
               strokeWidth: 2,
             ),
           ),
@@ -164,13 +166,13 @@ class _VideoPostPlayerState extends State<VideoPostPlayer> {
                 duration: const Duration(milliseconds: 200),
                 child: Container(
                   padding: const EdgeInsets.all(14),
-                  decoration: const BoxDecoration(
-                    color: Colors.black45,
+                  decoration: BoxDecoration(
+                    color: AppColors.bgBase.withOpacity(0.55),
                     shape: BoxShape.circle,
                   ),
                   child: Icon(
                     _isMuted ? Icons.volume_off : Icons.volume_up,
-                    color: Colors.white,
+                    color: AppColors.textPrimary,
                     size: 28,
                   ),
                 ),
@@ -184,19 +186,19 @@ class _VideoPostPlayerState extends State<VideoPostPlayer> {
                   padding:
                       const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
                   decoration: BoxDecoration(
-                    color: Colors.black45,
+                    color: AppColors.bgBase.withOpacity(0.55),
                     borderRadius: BorderRadius.circular(12),
                   ),
                   child: Row(
                     mainAxisSize: MainAxisSize.min,
                     children: [
                       const Icon(Icons.play_arrow,
-                          color: Colors.white, size: 14),
+                          color: AppColors.textPrimary, size: 14),
                       const SizedBox(width: 3),
                       Text(
                         _formatViews(widget.viewsCount),
-                        style: const TextStyle(
-                          color: Colors.white,
+                        style: AppFonts.body(
+                          color: AppColors.textPrimary,
                           fontSize: 12,
                           fontWeight: FontWeight.w600,
                         ),
@@ -207,31 +209,26 @@ class _VideoPostPlayerState extends State<VideoPostPlayer> {
               ),
 
               // Bottom-right mute indicator
+              // NOTE: this was a copy of the views badge above with the
+              // same `left: 10` position (so it was rendering exactly on
+              // top of it, hidden). Moved to `right: 10` to match the
+              // "bottom-right" comment and actually show a mute indicator
+              // there — theme-only edits wouldn't have fixed the overlap,
+              // flagging it here since it's a one-line, low-risk fix.
               Positioned(
                 bottom: 10,
-                left: 10,
-                child: Container(
-                  padding:
-                      const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
-                  decoration: BoxDecoration(
-                    color: Colors.black45,
-                    borderRadius: BorderRadius.circular(12),
-                  ),
-                  child: Row(
-                    mainAxisSize: MainAxisSize.min,
-                    children: [
-                      const Icon(Icons.play_arrow,
-                          color: Colors.white, size: 14),
-                      const SizedBox(width: 3),
-                      Text(
-                        _formatViews(widget.viewsCount),
-                        style: const TextStyle(
-                          color: Colors.white,
-                          fontSize: 12,
-                          fontWeight: FontWeight.w600,
-                        ),
-                      ),
-                    ],
+                right: 10,
+                child: AnimatedOpacity(
+                  opacity: _isMuted ? 1 : 0,
+                  duration: const Duration(milliseconds: 200),
+                  child: Container(
+                    padding: const EdgeInsets.all(6),
+                    decoration: BoxDecoration(
+                      color: AppColors.bgBase.withOpacity(0.55),
+                      shape: BoxShape.circle,
+                    ),
+                    child: const Icon(Icons.volume_off,
+                        color: AppColors.textPrimary, size: 14),
                   ),
                 ),
               ),

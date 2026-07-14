@@ -95,7 +95,9 @@ class _ChatListScreenState extends State<ChatListScreen> {
   @override
   Widget build(BuildContext context) {
     if (_isLoading) {
-      return const Center(child: CircularProgressIndicator());
+      return const Center(
+        child: CircularProgressIndicator(color: AppColors.gold),
+      );
     }
 
     if (_error != null) {
@@ -103,11 +105,12 @@ class _ChatListScreenState extends State<ChatListScreen> {
         child: Column(
           mainAxisSize: MainAxisSize.min,
           children: [
-            const Icon(Icons.error_outline, size: 48, color: Colors.grey),
+            const Icon(Icons.error_outline,
+                size: 48, color: AppColors.textTertiary),
             const SizedBox(height: 12),
             Text(_error!,
                 textAlign: TextAlign.center,
-                style: const TextStyle(color: Colors.grey)),
+                style: const TextStyle(color: AppColors.textSecondary)),
             const SizedBox(height: 16),
             ElevatedButton(
                 onPressed: _loadConversations, child: const Text('Retry')),
@@ -122,13 +125,13 @@ class _ChatListScreenState extends State<ChatListScreen> {
           mainAxisSize: MainAxisSize.min,
           children: [
             Icon(Icons.chat_bubble_outline,
-                size: 64, color: Colors.grey.withOpacity(0.4)),
+                size: 64, color: AppColors.textTertiary.withOpacity(0.6)),
             const SizedBox(height: 12),
             const Text('No conversations yet',
-                style: TextStyle(color: Colors.grey)),
+                style: TextStyle(color: AppColors.textSecondary)),
             const SizedBox(height: 8),
             const Text('Search people in Community tab to start chatting',
-                style: TextStyle(color: Colors.grey, fontSize: 12),
+                style: TextStyle(color: AppColors.textTertiary, fontSize: 12),
                 textAlign: TextAlign.center),
           ],
         ),
@@ -137,9 +140,12 @@ class _ChatListScreenState extends State<ChatListScreen> {
 
     return RefreshIndicator(
       onRefresh: _loadConversations,
+      color: AppColors.gold,
+      backgroundColor: AppColors.bgSurfaceElevated,
       child: ListView.separated(
         itemCount: _conversations.length,
-        separatorBuilder: (_, __) => const Divider(height: 1),
+        separatorBuilder: (_, __) =>
+            const Divider(height: 1, color: AppColors.divider),
         itemBuilder: (ctx, i) {
           final convo = _conversations[i];
           final convoId = convo['id'] ?? convo['conversationId'];
@@ -174,7 +180,7 @@ class _ChatListScreenState extends State<ChatListScreen> {
             },
             leading: CircleAvatar(
               radius: 24,
-              backgroundColor: AppColors.primaryLight,
+              backgroundColor: AppColors.gold,
               backgroundImage:
                   avatarUrl != null ? NetworkImage(avatarUrl) : null,
               child: avatarUrl == null
@@ -183,13 +189,15 @@ class _ChatListScreenState extends State<ChatListScreen> {
                           ? displayName[0].toUpperCase()
                           : '?',
                       style: const TextStyle(
-                          color: Colors.white, fontWeight: FontWeight.bold),
+                          color: AppColors.textOnGold,
+                          fontWeight: FontWeight.bold),
                     )
                   : null,
             ),
             title: Text(
               displayName,
               style: TextStyle(
+                color: AppColors.textPrimary,
                 fontWeight:
                     unreadCount > 0 ? FontWeight.bold : FontWeight.normal,
               ),
@@ -199,7 +207,9 @@ class _ChatListScreenState extends State<ChatListScreen> {
               maxLines: 1,
               overflow: TextOverflow.ellipsis,
               style: TextStyle(
-                color: unreadCount > 0 ? Colors.black87 : Colors.grey,
+                color: unreadCount > 0
+                    ? AppColors.textPrimary
+                    : AppColors.textSecondary,
                 fontWeight:
                     unreadCount > 0 ? FontWeight.w600 : FontWeight.normal,
               ),
@@ -212,8 +222,9 @@ class _ChatListScreenState extends State<ChatListScreen> {
                   timeAgo,
                   style: TextStyle(
                     fontSize: 11,
-                    color:
-                        unreadCount > 0 ? AppColors.primaryDark : Colors.grey,
+                    color: unreadCount > 0
+                        ? AppColors.gold
+                        : AppColors.textTertiary,
                     fontWeight:
                         unreadCount > 0 ? FontWeight.bold : FontWeight.normal,
                   ),
@@ -222,14 +233,14 @@ class _ChatListScreenState extends State<ChatListScreen> {
                 if (unreadCount > 0)
                   Container(
                     padding: const EdgeInsets.all(5),
-                    decoration: BoxDecoration(
-                      color: AppColors.primaryDark,
+                    decoration: const BoxDecoration(
+                      color: AppColors.magenta,
                       shape: BoxShape.circle,
                     ),
                     child: Text(
                       unreadCount > 99 ? '99+' : '$unreadCount',
                       style: const TextStyle(
-                          color: Colors.white,
+                          color: AppColors.textOnMagenta,
                           fontSize: 11,
                           fontWeight: FontWeight.bold),
                     ),

@@ -2,9 +2,10 @@ import 'package:flutter/material.dart';
 
 import '../config/ApiConfig.dart';
 import '../config/Session.dart';
-import '../screens/Profile_Screen.dart';
 import '../screens/jamming_screen.dart';
 import '../screens/login_screen.dart';
+
+import '../screens/profile/ProfileScreen.dart';
 import '../screens/settings_screen.dart';
 import '../theme/app_theme.dart';
 
@@ -44,8 +45,11 @@ class _AppDrawerState extends State<AppDrawer> {
   @override
   Widget build(BuildContext context) {
     return Drawer(
-      backgroundColor: AppColors.white,
-      width: MediaQuery.of(context).size.width * 0.72,
+      backgroundColor: AppColors.bgSurface,
+      width: MediaQuery
+          .of(context)
+          .size
+          .width * 0.72,
       child: Column(
         children: [
           // ── Header — tap to open own profile ──
@@ -56,7 +60,7 @@ class _AppDrawerState extends State<AppDrawer> {
                 context,
                 MaterialPageRoute(
                   builder: (_) =>
-                      const ProfileScreen(), // no userId/username = own profile
+                  const ProfileScreen(), // no userId/username = own profile
                 ),
               );
             },
@@ -67,7 +71,7 @@ class _AppDrawerState extends State<AppDrawer> {
                 gradient: LinearGradient(
                   begin: Alignment.topLeft,
                   end: Alignment.bottomRight,
-                  colors: [AppColors.primaryDark, AppColors.primaryLight],
+                  colors: AppColors.goldGradient,
                 ),
               ),
               child: Row(
@@ -75,12 +79,12 @@ class _AppDrawerState extends State<AppDrawer> {
                   // Profile photo or fallback icon
                   CircleAvatar(
                     radius: 26,
-                    backgroundColor: AppColors.skyBlue,
+                    backgroundColor: AppColors.bgSurfaceElevated,
                     backgroundImage:
-                        _photoUrl != null ? NetworkImage(_photoUrl!) : null,
+                    _photoUrl != null ? NetworkImage(_photoUrl!) : null,
                     child: _photoUrl == null
                         ? const Icon(Icons.person,
-                            color: AppColors.primaryDark, size: 32)
+                        color: AppColors.gold, size: 32)
                         : null,
                   ),
                   const SizedBox(width: 14),
@@ -91,25 +95,25 @@ class _AppDrawerState extends State<AppDrawer> {
                         Text(
                           _name,
                           style: const TextStyle(
-                            color: AppColors.white,
+                            color: AppColors.textOnGold,
                             fontWeight: FontWeight.bold,
                             fontSize: 16,
                           ),
                           overflow: TextOverflow.ellipsis,
                         ),
                         const SizedBox(height: 2),
-                        const Text(
+                        Text(
                           'View Profile',
                           style: TextStyle(
-                            color: Colors.white70,
+                            color: AppColors.textOnGold.withOpacity(0.7),
                             fontSize: 12,
                           ),
                         ),
                       ],
                     ),
                   ),
-                  const Icon(Icons.arrow_forward_ios,
-                      color: Colors.white70, size: 14),
+                  Icon(Icons.arrow_forward_ios,
+                      color: AppColors.textOnGold.withOpacity(0.7), size: 14),
                 ],
               ),
             ),
@@ -153,9 +157,10 @@ class _AppDrawerState extends State<AppDrawer> {
                   label: 'Rate this app',
                   onTap: () => Navigator.pop(context),
                 ),
-                const Padding(
-                  padding: EdgeInsets.symmetric(horizontal: 16, vertical: 4),
-                  child: Divider(),
+                Padding(
+                  padding:
+                  const EdgeInsets.symmetric(horizontal: 16, vertical: 4),
+                  child: Divider(color: AppColors.divider),
                 ),
                 _DrawerItem(
                   icon: Icons.logout,
@@ -167,7 +172,7 @@ class _AppDrawerState extends State<AppDrawer> {
                     Navigator.pushAndRemoveUntil(
                       context,
                       MaterialPageRoute(builder: (_) => const LoginScreen()),
-                      (_) => false,
+                          (_) => false,
                     );
                   },
                 ),
@@ -200,13 +205,13 @@ class _DrawerItem extends StatelessWidget {
     return ListTile(
       leading: Icon(
         icon,
-        color: iconColor ?? AppColors.darkText.withOpacity(0.75),
+        color: iconColor ?? AppColors.textPrimary.withOpacity(0.75),
         size: 22,
       ),
       title: Text(
         label,
         style: TextStyle(
-          color: labelColor ?? AppColors.darkText,
+          color: labelColor ?? AppColors.textPrimary,
           fontSize: 15,
           fontWeight: FontWeight.w400,
         ),

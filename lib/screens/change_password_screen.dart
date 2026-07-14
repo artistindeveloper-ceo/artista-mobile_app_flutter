@@ -39,31 +39,35 @@ class _ChangePasswordScreenState extends State<ChangePasswordScreen> {
         newPassword: _newCtrl.text,
       );
       if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text('Password changed successfully')),
-        );
+        _showSnack('Password changed successfully', success: true);
         Navigator.pop(context);
       }
     } catch (e) {
       if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('Failed to change password: $e')),
-        );
+        _showSnack('Failed to change password: $e', success: false);
       }
     } finally {
       if (mounted) setState(() => _isSubmitting = false);
     }
   }
 
+  void _showSnack(String msg, {required bool success}) {
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(
+        content: Text(msg, style: AppFonts.body(color: AppColors.textPrimary)),
+        backgroundColor: success ? AppColors.success : AppColors.error,
+      ),
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: AppColors.white,
+      backgroundColor: AppColors.bgBase,
       appBar: AppBar(
-        backgroundColor: AppColors.primaryDark,
-        foregroundColor: AppColors.white,
         title: const Text('Change Password'),
-        elevation: 0,
+        // backgroundColor / foregroundColor / titleTextStyle inherited
+        // from AppTheme.theme.appBarTheme (gold Playfair Display title).
       ),
       body: Form(
         key: _formKey,
@@ -111,20 +115,15 @@ class _ChangePasswordScreenState extends State<ChangePasswordScreen> {
               height: 48,
               child: ElevatedButton(
                 onPressed: _isSubmitting ? null : _submit,
-                style: ElevatedButton.styleFrom(
-                  backgroundColor: AppColors.primaryDark,
-                  foregroundColor: AppColors.white,
-                  shape: RoundedRectangleBorder(
-                    borderRadius: BorderRadius.circular(10),
-                  ),
-                ),
+                // backgroundColor / foregroundColor / shape inherited from
+                // AppTheme.theme.elevatedButtonTheme (gold button).
                 child: _isSubmitting
                     ? const SizedBox(
                         width: 22,
                         height: 22,
                         child: CircularProgressIndicator(
                           strokeWidth: 2,
-                          color: Colors.white,
+                          color: AppColors.textOnGold,
                         ),
                       )
                     : const Text('Update Password'),
@@ -158,11 +157,16 @@ class _PasswordField extends StatelessWidget {
       controller: controller,
       obscureText: obscure,
       validator: validator,
+      style: AppFonts.body(color: AppColors.textPrimary),
       decoration: InputDecoration(
         labelText: label,
-        border: OutlineInputBorder(borderRadius: BorderRadius.circular(10)),
+        // border / enabledBorder / focusedBorder inherited from
+        // AppTheme.theme.inputDecorationTheme (gold focus outline).
         suffixIcon: IconButton(
-          icon: Icon(obscure ? Icons.visibility_off : Icons.visibility),
+          icon: Icon(
+            obscure ? Icons.visibility_off : Icons.visibility,
+            color: AppColors.textSecondary,
+          ),
           onPressed: onToggle,
         ),
       ),

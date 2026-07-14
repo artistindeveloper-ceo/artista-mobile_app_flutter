@@ -1,5 +1,6 @@
 import 'dart:async';
 
+import 'package:artist_in/screens/profile/ProfileScreen.dart';
 import 'package:flutter/material.dart';
 
 import '../service/ConversationService.dart';
@@ -11,9 +12,9 @@ import 'chat_list_screen.dart';
 import 'community_screen.dart';
 import 'jamming_screen.dart';
 import 'notification_screen.dart';
-import 'profile_screen.dart';
+
 import 'social_feed_screen.dart';
-import 'jamming_screen.dart';
+
 
 class HomeScreen extends StatefulWidget {
   const HomeScreen({super.key});
@@ -25,8 +26,8 @@ class HomeScreen extends StatefulWidget {
 class _HomeScreenState extends State<HomeScreen> {
   int _currentIndex = 0;
   int _unreadCount = 0; // notifications
-  int _chatUnreadCount = 0; // ← NEW: total unread chat messages
-  Timer? _chatBadgeTimer; // ← NEW
+  int _chatUnreadCount = 0; // total unread chat messages
+  Timer? _chatBadgeTimer;
   final GlobalKey<ScaffoldState> _scaffoldKey = GlobalKey<ScaffoldState>();
 
   final List<String> _titles = [
@@ -48,23 +49,15 @@ class _HomeScreenState extends State<HomeScreen> {
   void initState() {
     super.initState();
     _loadUnreadCount();
-    _loadChatUnreadCount(); // initial load
+    _loadChatUnreadCount();
 
-    // Real-time: connects once for the whole app session. On every new
-    // message pushed from backend, bump the badge instantly.
     ChatSocketService().connect((message) {
       if (!mounted) return;
-      // If user is already inside the Chats tab, skip the bump — the
-      // conversation screen itself will mark-as-read and the count will
-      // resync when they leave that tab (see onTap below).
       if (_currentIndex != 1) {
         setState(() => _chatUnreadCount++);
       }
     });
 
-    // Fallback polling every 30 sec — safety net in case the socket drops
-    // (e.g. app backgrounded/foregrounded, network blip). Kept infrequent
-    // since the socket handles the real-time case now.
     _chatBadgeTimer = Timer.periodic(const Duration(seconds: 30), (_) {
       _loadChatUnreadCount();
     });
@@ -73,7 +66,7 @@ class _HomeScreenState extends State<HomeScreen> {
   @override
   void dispose() {
     _chatBadgeTimer?.cancel();
-    ChatSocketService().disconnect(); // ← NEW
+    ChatSocketService().disconnect();
     super.dispose();
   }
 
@@ -83,7 +76,6 @@ class _HomeScreenState extends State<HomeScreen> {
     setState(() => _unreadCount = count);
   }
 
-  // ← NEW: sums unreadCount across all conversations
   Future<void> _loadChatUnreadCount() async {
     try {
       final convos = await ConversationService.getConversations();
@@ -115,7 +107,7 @@ class _HomeScreenState extends State<HomeScreen> {
     }
   }
 
-  // ← NEW: builds a nav icon, adding a red badge on top-right if count > 0
+  // Badge dot uses theme's error/notification color, not a hardcoded hex.
   Widget _buildNavIcon(IconData icon, int count) {
     return Stack(
       clipBehavior: Clip.none,
@@ -129,7 +121,7 @@ class _HomeScreenState extends State<HomeScreen> {
               padding: const EdgeInsets.symmetric(horizontal: 5, vertical: 2),
               constraints: const BoxConstraints(minWidth: 16, minHeight: 16),
               decoration: const BoxDecoration(
-                color: AppColors.accent,
+                color: AppColors.notification,
                 shape: BoxShape.circle,
               ),
               alignment: Alignment.center,
@@ -152,41 +144,35 @@ class _HomeScreenState extends State<HomeScreen> {
   Widget build(BuildContext context) {
     return Scaffold(
       key: _scaffoldKey,
-      backgroundColor: AppColors.white,
+      // FIXED: removed `backgroundColor: AppColors.white`.
+      // Scaffold now inherits `scaffoldBackgroundColor` from AppTheme
+      // (AppColors.bgBase) automatically — no more white feed area.
       drawer: const AppDrawer(),
       appBar: AppBar(
-        backgroundColor: AppColors.primaryDark,
+        // FIXED: removed explicit backgroundColor/foregroundColor overrides.
+        // AppBarTheme in app_theme.dart already sets these — single source
+        // of truth, so a future theme swap updates this screen for free.
         leading: IconButton(
-          icon: const Icon(Icons.menu, color: AppColors.white),
+          icon: const Icon(Icons.menu),
           onPressed: () => _scaffoldKey.currentState?.openDrawer(),
         ),
-        title: Text(
-          _titles[_currentIndex],
-          style: const TextStyle(
-            color: AppColors.white,
-            fontWeight: FontWeight.bold,
-            fontSize: 18,
-          ),
-        ),
+        title: Text(_titles[_currentIndex]),
         actions: [
-          // Translate icon
           IconButton(
-            icon: const Icon(Icons.translate, color: AppColors.white),
+            icon: const Icon(Icons.translate),
             onPressed: () {},
           ),
-          // Notification icon with count
           Stack(
             alignment: Alignment.center,
             children: [
               IconButton(
-                icon: const Icon(Icons.notifications_outlined,
-                    color: AppColors.white),
+                icon: const Icon(Icons.notifications_outlined),
                 onPressed: () {
                   Navigator.push(
                     context,
                     MaterialPageRoute(
                         builder: (_) => const NotificationScreen()),
-                  ).then((_) => _loadUnreadCount()); // reload after back
+                  ).then((_) => _loadUnreadCount());
                 },
               ),
               if (_unreadCount > 0)
@@ -196,7 +182,7 @@ class _HomeScreenState extends State<HomeScreen> {
                   child: Container(
                     padding: const EdgeInsets.all(3),
                     decoration: const BoxDecoration(
-                      color: AppColors.accent,
+                      color: AppColors.notification,
                       shape: BoxShape.circle,
                     ),
                     child: Text(
@@ -217,24 +203,22 @@ class _HomeScreenState extends State<HomeScreen> {
         currentIndex: _currentIndex,
         onTap: (index) {
           setState(() => _currentIndex = index);
-          // Jab user Chats tab kholta hai, thodi der baad badge refresh
-          // (chat screen mark-as-read kar chuka hoga)
           if (index == 1) {
             Future.delayed(const Duration(milliseconds: 600), () {
               if (mounted) _loadChatUnreadCount();
             });
           }
         },
-        backgroundColor: AppColors.primaryDark,
-        selectedItemColor: AppColors.white,
-        unselectedItemColor: const Color(0xFF7986CB),
+        // FIXED: removed backgroundColor / selectedItemColor /
+        // unselectedItemColor overrides (the old `0xFF7986CB` navy-purple
+        // leftover is gone). BottomNavigationBarTheme now fully controls
+        // this — gold for selected, muted grey for unselected.
         type: BottomNavigationBarType.fixed,
         selectedFontSize: 11,
         unselectedFontSize: 11,
         items: List.generate(
           5,
           (i) => BottomNavigationBarItem(
-            // ← CHANGED: index 1 (Chats) now shows badge via _buildNavIcon
             icon: i == 1
                 ? _buildNavIcon(_icons[i], _chatUnreadCount)
                 : Icon(_icons[i], size: 22),
@@ -253,16 +237,20 @@ class _EmptyTab extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final theme = Theme.of(context);
     return Center(
       child: Column(
         mainAxisAlignment: MainAxisAlignment.center,
         children: [
-          Icon(Icons.construction_outlined,
-              size: 64, color: AppColors.textGrey.withOpacity(0.4)),
+          Icon(
+            Icons.construction_outlined,
+            size: 64,
+            color: theme.colorScheme.onSurface.withValues(alpha: 0.4),
+          ),
           const SizedBox(height: 16),
           Text(
             '$label Coming Soon',
-            style: const TextStyle(color: AppColors.textGrey, fontSize: 16),
+            style: theme.textTheme.bodyMedium,
           ),
         ],
       ),

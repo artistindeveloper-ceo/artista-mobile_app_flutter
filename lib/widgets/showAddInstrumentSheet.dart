@@ -9,12 +9,15 @@ import '../theme/app_theme.dart';
 /// Shows the Add Instrument bottom sheet. Calls [onAdded] after a
 /// successful save so the caller can refresh the instrument list.
 Future<void> showAddInstrumentSheet(
-    BuildContext context, {
-      required VoidCallback onAdded,
-    }) {
+  BuildContext context, {
+  required VoidCallback onAdded,
+}) {
   return showModalBottomSheet(
     context: context,
     isScrollControlled: true,
+    // backgroundColor / shape inherited from AppTheme.theme.bottomSheetTheme
+    // (bgSurface, rounded top corners) — no need to repeat the shape here,
+    // but keeping it explicit doesn't hurt since it matches the theme value.
     shape: const RoundedRectangleBorder(
       borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
     ),
@@ -22,12 +25,18 @@ Future<void> showAddInstrumentSheet(
   );
 }
 
-const _proficiencyLevels = ['BEGINNER', 'INTERMEDIATE', 'ADVANCED', 'PROFESSIONAL'];
+const _proficiencyLevels = [
+  'BEGINNER',
+  'INTERMEDIATE',
+  'ADVANCED',
+  'PROFESSIONAL'
+];
 
 enum _Step { category, type, model, details }
 
 class _AddInstrumentSheet extends StatefulWidget {
   final VoidCallback onAdded;
+
   const _AddInstrumentSheet({required this.onAdded});
 
   @override
@@ -181,12 +190,13 @@ class _AddInstrumentSheetState extends State<_AddInstrumentSheet> {
             const SizedBox(height: 6),
             _buildBreadcrumb(),
             const SizedBox(height: 12),
-            const Divider(height: 1),
+            const Divider(height: 1, color: AppColors.divider),
             const SizedBox(height: 12),
             Flexible(child: _buildStepContent()),
             if (_error != null) ...[
               const SizedBox(height: 8),
-              Text(_error!, style: const TextStyle(color: Colors.red, fontSize: 12)),
+              Text(_error!,
+                  style: AppFonts.body(color: AppColors.error, fontSize: 12)),
             ],
           ],
         ),
@@ -199,14 +209,16 @@ class _AddInstrumentSheetState extends State<_AddInstrumentSheet> {
       children: [
         if (_step != _Step.category)
           IconButton(
-            icon: const Icon(Icons.arrow_back, size: 20),
+            icon: const Icon(Icons.arrow_back,
+                size: 20, color: AppColors.textPrimary),
             onPressed: _goBack,
             padding: EdgeInsets.zero,
             constraints: const BoxConstraints(),
           ),
         if (_step != _Step.category) const SizedBox(width: 8),
-        const Text('Add Instrument',
-            style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold)),
+        Text('Add Instrument',
+            style:
+                AppFonts.heading(fontSize: 18, color: AppColors.textPrimary)),
       ],
     );
   }
@@ -219,12 +231,13 @@ class _AddInstrumentSheetState extends State<_AddInstrumentSheet> {
     if (parts.isEmpty) return const SizedBox.shrink();
     return Text(
       parts.join(' → '),
-      style: TextStyle(color: AppColors.textGrey, fontSize: 12),
+      style: AppFonts.body(color: AppColors.textTertiary, fontSize: 12),
     );
   }
 
   Widget _buildStepContent() {
     if (_isLoading) {
+      // Uses AppTheme.theme.progressIndicatorTheme (gold spinner).
       return const SizedBox(
           height: 200, child: Center(child: CircularProgressIndicator()));
     }
@@ -243,9 +256,12 @@ class _AddInstrumentSheetState extends State<_AddInstrumentSheet> {
 
   Widget _buildCategoryList() {
     if (_categories.isEmpty) {
-      return const Padding(
-        padding: EdgeInsets.symmetric(vertical: 40),
-        child: Center(child: Text('Koi category nahi mili')),
+      return Padding(
+        padding: const EdgeInsets.symmetric(vertical: 40),
+        child: Center(
+          child: Text('Koi category nahi mili',
+              style: AppFonts.body(color: AppColors.textSecondary)),
+        ),
       );
     }
     return ListView.builder(
@@ -254,9 +270,12 @@ class _AddInstrumentSheetState extends State<_AddInstrumentSheet> {
       itemBuilder: (ctx, i) {
         final cat = _categories[i];
         return ListTile(
-          leading: const Icon(Icons.category_outlined),
-          title: Text(cat.name),
-          trailing: const Icon(Icons.chevron_right, size: 18),
+          leading: const Icon(Icons.category_outlined,
+              color: AppColors.textSecondary),
+          title: Text(cat.name,
+              style: AppFonts.body(color: AppColors.textPrimary)),
+          trailing: const Icon(Icons.chevron_right,
+              size: 18, color: AppColors.textTertiary),
           onTap: () => _loadTypes(cat),
         );
       },
@@ -265,9 +284,12 @@ class _AddInstrumentSheetState extends State<_AddInstrumentSheet> {
 
   Widget _buildTypeList() {
     if (_types.isEmpty) {
-      return const Padding(
-        padding: EdgeInsets.symmetric(vertical: 40),
-        child: Center(child: Text('Is category me koi type nahi mila')),
+      return Padding(
+        padding: const EdgeInsets.symmetric(vertical: 40),
+        child: Center(
+          child: Text('Is category me koi type nahi mila',
+              style: AppFonts.body(color: AppColors.textSecondary)),
+        ),
       );
     }
     return ListView.builder(
@@ -276,9 +298,12 @@ class _AddInstrumentSheetState extends State<_AddInstrumentSheet> {
       itemBuilder: (ctx, i) {
         final type = _types[i];
         return ListTile(
-          leading: const Icon(Icons.piano_outlined),
-          title: Text(type.name),
-          trailing: const Icon(Icons.chevron_right, size: 18),
+          leading:
+              const Icon(Icons.piano_outlined, color: AppColors.textSecondary),
+          title: Text(type.name,
+              style: AppFonts.body(color: AppColors.textPrimary)),
+          trailing: const Icon(Icons.chevron_right,
+              size: 18, color: AppColors.textTertiary),
           onTap: () => _loadModels(type),
         );
       },
@@ -287,9 +312,12 @@ class _AddInstrumentSheetState extends State<_AddInstrumentSheet> {
 
   Widget _buildModelList() {
     if (_models.isEmpty) {
-      return const Padding(
-        padding: EdgeInsets.symmetric(vertical: 40),
-        child: Center(child: Text('Is type me koi model nahi mila')),
+      return Padding(
+        padding: const EdgeInsets.symmetric(vertical: 40),
+        child: Center(
+          child: Text('Is type me koi model nahi mila',
+              style: AppFonts.body(color: AppColors.textSecondary)),
+        ),
       );
     }
     return ListView.builder(
@@ -300,11 +328,13 @@ class _AddInstrumentSheetState extends State<_AddInstrumentSheet> {
         return ListTile(
           leading: model.displayImageUrl != null
               ? ClipRRect(
-              borderRadius: BorderRadius.circular(6),
-              child: Image.network(model.displayImageUrl!,
-                  width: 36, height: 36, fit: BoxFit.cover))
-              : const Icon(Icons.music_note),
-          title: Text(model.displayName),
+                  borderRadius: BorderRadius.circular(6),
+                  child: Image.network(model.displayImageUrl!,
+                      width: 36, height: 36, fit: BoxFit.cover),
+                )
+              : const Icon(Icons.music_note, color: AppColors.textSecondary),
+          title: Text(model.displayName,
+              style: AppFonts.body(color: AppColors.textPrimary)),
           onTap: () => _selectModel(model),
         );
       },
@@ -317,7 +347,9 @@ class _AddInstrumentSheetState extends State<_AddInstrumentSheet> {
         mainAxisSize: MainAxisSize.min,
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          const Text('Type', style: TextStyle(fontWeight: FontWeight.w600)),
+          Text('Type',
+              style: AppFonts.body(
+                  fontWeight: FontWeight.w600, color: AppColors.textPrimary)),
           const SizedBox(height: 8),
           Row(
             children: [
@@ -339,8 +371,9 @@ class _AddInstrumentSheetState extends State<_AddInstrumentSheet> {
             ],
           ),
           const SizedBox(height: 16),
-          const Text('Proficiency (optional)',
-              style: TextStyle(fontWeight: FontWeight.w600)),
+          Text('Proficiency (optional)',
+              style: AppFonts.body(
+                  fontWeight: FontWeight.w600, color: AppColors.textPrimary)),
           const SizedBox(height: 8),
           Wrap(
             spacing: 8,
@@ -352,9 +385,15 @@ class _AddInstrumentSheetState extends State<_AddInstrumentSheet> {
                 selected: selected,
                 onSelected: (_) =>
                     setState(() => _proficiency = selected ? null : level),
-                selectedColor: AppColors.primaryDark,
-                labelStyle: TextStyle(
-                    color: selected ? Colors.white : Colors.black87),
+                backgroundColor: AppColors.bgSurface,
+                selectedColor: AppColors.gold,
+                side: BorderSide(
+                    color: selected ? AppColors.gold : AppColors.border),
+                labelStyle: AppFonts.body(
+                  color:
+                      selected ? AppColors.textOnGold : AppColors.textSecondary,
+                  fontWeight: FontWeight.w500,
+                ),
               );
             }).toList(),
           ),
@@ -364,16 +403,20 @@ class _AddInstrumentSheetState extends State<_AddInstrumentSheet> {
             child: ElevatedButton(
               onPressed: _isSaving ? null : _submit,
               style: ElevatedButton.styleFrom(
-                backgroundColor: AppColors.primaryDark,
-                foregroundColor: Colors.white,
+                // Keep the shorter form-button padding, but inherit the
+                // themed gold background / dark foreground rather than
+                // overriding with primaryDark / white.
+                backgroundColor: AppColors.gold,
+                foregroundColor: AppColors.textOnGold,
                 padding: const EdgeInsets.symmetric(vertical: 12),
               ),
               child: _isSaving
                   ? const SizedBox(
-                  width: 18,
-                  height: 18,
-                  child: CircularProgressIndicator(
-                      strokeWidth: 2, color: Colors.white))
+                      width: 18,
+                      height: 18,
+                      child: CircularProgressIndicator(
+                          strokeWidth: 2, color: AppColors.textOnGold),
+                    )
                   : const Text('Save Instrument'),
             ),
           ),
@@ -400,15 +443,15 @@ class _TypeChip extends StatelessWidget {
         padding: const EdgeInsets.symmetric(vertical: 10),
         alignment: Alignment.center,
         decoration: BoxDecoration(
-          color: selected ? AppColors.primaryDark : Colors.grey[100],
+          color: selected ? AppColors.gold : AppColors.bgSurface,
           borderRadius: BorderRadius.circular(8),
-          border: Border.all(
-              color: selected ? AppColors.primaryDark : Colors.grey[300]!),
+          border:
+              Border.all(color: selected ? AppColors.gold : AppColors.border),
         ),
         child: Text(
           label,
-          style: TextStyle(
-            color: selected ? Colors.white : Colors.black87,
+          style: AppFonts.body(
+            color: selected ? AppColors.textOnGold : AppColors.textSecondary,
             fontWeight: FontWeight.w600,
           ),
         ),

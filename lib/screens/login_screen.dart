@@ -30,10 +30,7 @@ class _LoginScreenState extends State<LoginScreen> {
     final password = _passwordController.text.trim();
 
     if (credential.isEmpty || password.isEmpty) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(
-            content: Text('Please enter your mobile/email and password')),
-      );
+      _showSnack('Please enter your mobile/email and password');
       return;
     }
 
@@ -48,18 +45,25 @@ class _LoginScreenState extends State<LoginScreen> {
       _goToHome();
     } catch (e) {
       if (!mounted) return;
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text(e.toString())),
-      );
+      _showSnack(e.toString());
     } finally {
       if (mounted) setState(() => _isLoading = false);
     }
   }
 
+  void _showSnack(String msg) {
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(
+        content: Text(msg, style: AppFonts.body(color: AppColors.textPrimary)),
+        backgroundColor: AppColors.bgSurfaceElevated,
+      ),
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: AppColors.white,
+      backgroundColor: AppColors.bgBase,
       body: SafeArea(
         child: SingleChildScrollView(
           padding: const EdgeInsets.symmetric(horizontal: 24),
@@ -67,12 +71,10 @@ class _LoginScreenState extends State<LoginScreen> {
             children: [
               const SizedBox(height: 40),
 
-              // Logo box with border
-              Container(
-                child: Image.asset(
-                  'assets/images/Artist.inlogo.png',
-                  width: 220,
-                ),
+              // Logo
+              Image.asset(
+                'assets/images/Artist.inlogo.png',
+                width: 220,
               ),
 
               const SizedBox(height: 45),
@@ -81,6 +83,7 @@ class _LoginScreenState extends State<LoginScreen> {
               TextField(
                 controller: _mobileController,
                 keyboardType: TextInputType.text,
+                style: AppFonts.body(color: AppColors.textPrimary),
                 decoration: const InputDecoration(
                   labelText: 'Mobile Number*',
                 ),
@@ -92,6 +95,7 @@ class _LoginScreenState extends State<LoginScreen> {
               TextField(
                 controller: _passwordController,
                 obscureText: _obscurePassword,
+                style: AppFonts.body(color: AppColors.textPrimary),
                 decoration: InputDecoration(
                   labelText: 'Password*',
                   suffixIcon: IconButton(
@@ -99,7 +103,7 @@ class _LoginScreenState extends State<LoginScreen> {
                       _obscurePassword
                           ? Icons.visibility_off_outlined
                           : Icons.visibility_outlined,
-                      color: AppColors.textGrey,
+                      color: AppColors.textSecondary,
                     ),
                     onPressed: () =>
                         setState(() => _obscurePassword = !_obscurePassword),
@@ -114,10 +118,10 @@ class _LoginScreenState extends State<LoginScreen> {
                 alignment: Alignment.centerRight,
                 child: TextButton(
                   onPressed: () {},
-                  child: const Text(
+                  child: Text(
                     'Forgot Password?',
-                    style: TextStyle(
-                      color: AppColors.primaryDark,
+                    style: AppFonts.body(
+                      color: AppColors.gold,
                       fontWeight: FontWeight.w500,
                     ),
                   ),
@@ -135,7 +139,7 @@ class _LoginScreenState extends State<LoginScreen> {
                         width: 22,
                         child: CircularProgressIndicator(
                           strokeWidth: 2,
-                          color: AppColors.white,
+                          color: AppColors.textOnGold,
                         ),
                       )
                     : const Text('LOGIN'),
@@ -144,17 +148,18 @@ class _LoginScreenState extends State<LoginScreen> {
               const SizedBox(height: 20),
 
               // Or Sign in with
-              const Row(
+              Row(
                 children: [
-                  Expanded(child: Divider(color: AppColors.textGrey)),
+                  const Expanded(child: Divider(color: AppColors.divider)),
                   Padding(
-                    padding: EdgeInsets.symmetric(horizontal: 12),
+                    padding: const EdgeInsets.symmetric(horizontal: 12),
                     child: Text(
                       'Or Sign in with',
-                      style: TextStyle(color: AppColors.textGrey, fontSize: 13),
+                      style: AppFonts.body(
+                          color: AppColors.textTertiary, fontSize: 13),
                     ),
                   ),
-                  Expanded(child: Divider(color: AppColors.textGrey)),
+                  const Expanded(child: Divider(color: AppColors.divider)),
                 ],
               ),
 
@@ -186,17 +191,18 @@ class _LoginScreenState extends State<LoginScreen> {
                 onPressed: _goToHome,
                 style: OutlinedButton.styleFrom(
                   minimumSize: const Size(double.infinity, 48),
-                  side: BorderSide.none,
-                  backgroundColor: AppColors.lightGrey,
-                  foregroundColor: AppColors.textGrey,
+                  side: const BorderSide(color: AppColors.border),
+                  backgroundColor: AppColors.bgSurface,
+                  foregroundColor: AppColors.textSecondary,
                   shape: RoundedRectangleBorder(
                       borderRadius: BorderRadius.circular(8)),
                 ),
-                child: const Text(
+                child: Text(
                   'SKIP LOGIN',
-                  style: TextStyle(
+                  style: AppFonts.body(
                     fontWeight: FontWeight.bold,
                     letterSpacing: 1.2,
+                    color: AppColors.textSecondary,
                   ),
                 ),
               ),
@@ -207,9 +213,10 @@ class _LoginScreenState extends State<LoginScreen> {
               Row(
                 mainAxisAlignment: MainAxisAlignment.center,
                 children: [
-                  const Text(
+                  Text(
                     "Don't have an account? ",
-                    style: TextStyle(color: AppColors.darkText, fontSize: 13),
+                    style: AppFonts.body(
+                        color: AppColors.textSecondary, fontSize: 13),
                   ),
                   GestureDetector(
                     onTap: () {
@@ -219,11 +226,11 @@ class _LoginScreenState extends State<LoginScreen> {
                             builder: (_) => const RegisterScreen()),
                       );
                     },
-                    child: const Text(
+                    child: Text(
                       'Register',
-                      style: TextStyle(
-                        color: AppColors.primaryDark,
-                        fontWeight: FontWeight.bold,
+                      style: AppFonts.body(
+                        color: AppColors.gold,
+                        fontWeight: FontWeight.w600,
                         fontSize: 13,
                       ),
                     ),
@@ -265,8 +272,8 @@ class _SocialButton extends StatelessWidget {
           color: color,
           boxShadow: [
             BoxShadow(
-              color: color.withOpacity(0.3),
-              blurRadius: 8,
+              color: color.withOpacity(0.35),
+              blurRadius: 10,
               offset: const Offset(0, 3),
             ),
           ],

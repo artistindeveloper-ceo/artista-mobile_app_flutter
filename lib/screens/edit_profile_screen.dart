@@ -7,13 +7,18 @@ class EditProfileScreen extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: AppColors.white,
+      backgroundColor: AppColors.bgBase,
       appBar: AppBar(
-        backgroundColor: AppColors.primaryDark,
-        foregroundColor: AppColors.white,
         title: const Text('Edit Profile'),
+        // backgroundColor / foregroundColor / titleTextStyle inherited
+        // from AppTheme.theme.appBarTheme (gold Playfair Display title).
       ),
-      body: const Center(child: Text('Profile fields go here')),
+      body: Center(
+        child: Text(
+          'Profile fields go here',
+          style: AppFonts.body(color: AppColors.textSecondary),
+        ),
+      ),
     );
   }
 }

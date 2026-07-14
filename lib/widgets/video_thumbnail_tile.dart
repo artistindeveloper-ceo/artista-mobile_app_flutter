@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:video_player/video_player.dart';
+import '../theme/app_theme.dart';
 
 class VideoThumbnailTile extends StatefulWidget {
   final String videoUrl;
@@ -75,19 +76,20 @@ class _VideoThumbnailTileState extends State<VideoThumbnailTile> {
         children: [
           if (_hasError)
             Container(
-              color: Colors.grey[300],
-              child: const Icon(Icons.error_outline, color: Colors.grey),
+              color: AppColors.bgSurface,
+              child: const Icon(Icons.error_outline,
+                  color: AppColors.textTertiary),
             )
           else if (!_isReady)
             Container(
-              color: Colors.black87,
+              color: AppColors.bgBase,
               child: const Center(
                 child: SizedBox(
                   width: 18,
                   height: 18,
                   child: CircularProgressIndicator(
                     strokeWidth: 2,
-                    color: Colors.white,
+                    color: AppColors.gold,
                   ),
                 ),
               ),
@@ -108,7 +110,7 @@ class _VideoThumbnailTileState extends State<VideoThumbnailTile> {
             right: 6,
             child: Icon(
               Icons.play_arrow_rounded,
-              color: Colors.white,
+              color: AppColors.textPrimary,
               size: 20,
               shadows: [
                 Shadow(color: Colors.black.withOpacity(0.6), blurRadius: 4),
@@ -125,7 +127,7 @@ class _VideoThumbnailTileState extends State<VideoThumbnailTile> {
               children: [
                 Icon(
                   Icons.play_arrow,
-                  color: Colors.white,
+                  color: AppColors.textPrimary,
                   size: 14,
                   shadows: [
                     Shadow(color: Colors.black.withOpacity(0.6), blurRadius: 4),
@@ -134,10 +136,11 @@ class _VideoThumbnailTileState extends State<VideoThumbnailTile> {
                 const SizedBox(width: 2),
                 Text(
                   _formatViews(widget.viewsCount),
-                  style: TextStyle(
-                    color: Colors.white,
+                  style: AppFonts.body(
+                    color: AppColors.textPrimary,
                     fontSize: 12,
                     fontWeight: FontWeight.w600,
+                  ).copyWith(
                     shadows: [
                       Shadow(
                           color: Colors.black.withOpacity(0.6), blurRadius: 4),

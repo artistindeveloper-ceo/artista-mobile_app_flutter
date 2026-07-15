@@ -3,9 +3,9 @@ import 'dart:async';
 import 'package:artist_in/service/ConversationService.dart';
 import 'package:flutter/material.dart';
 
-import '../config/ApiConfig.dart';
-import '../service/HelperService.dart';
-import '../theme/app_theme.dart';
+import '../../config/ApiConfig.dart';
+import '../../service/HelperService.dart';
+import '../../theme/app_theme.dart';
 import 'chat_screen.dart';
 
 class ChatListScreen extends StatefulWidget {

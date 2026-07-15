@@ -1,8 +1,8 @@
 import 'package:flutter/material.dart';
 
-import '../service/HelperService.dart';
-import '../service/JamSessionService.dart';
-import '../theme/app_theme.dart';
+import '../../service/HelperService.dart';
+import '../../service/JamSessionService.dart';
+import '../../theme/app_theme.dart';
 import 'jam_session_detail_screen.dart';
 
 class JammingScreen extends StatefulWidget {

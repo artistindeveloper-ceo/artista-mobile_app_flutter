@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
 
-import '../theme/app_theme.dart';
+import '../../theme/app_theme.dart';
 
 /// Participants tab — shown inside JamSessionDetailScreen's TabBarView.
 /// Renders the list of session participants, each with their username,

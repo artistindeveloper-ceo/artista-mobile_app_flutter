@@ -2,8 +2,8 @@ import 'package:flutter/material.dart';
 
 import '../config/ApiConfig.dart';
 import '../config/Session.dart';
-import '../screens/jamming_screen.dart';
-import '../screens/login_screen.dart';
+import '../screens/jamming_room/jamming_screen.dart';
+import '../screens/auth/login_screen.dart';
 
 import '../screens/profile/ProfileScreen.dart';
 import '../screens/settings_screen.dart';

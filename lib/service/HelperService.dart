@@ -5,7 +5,7 @@ import 'package:flutter/material.dart';
 
 import '../Exception/ApiException.dart';
 import '../config/Session.dart';
-import '../screens/login_screen.dart';
+import '../screens/auth/login_screen.dart';
 
 class HelperService {
   // ─── HELPER ─────────────────────────────────────────────────────

@@ -5,11 +5,6 @@ import '../../theme/app_theme.dart';
 import '../../widgets/fullscreen_video_page.dart';
 import '../../widgets/video_thumbnail_tile.dart';
 
-
-/// Renders the "Posts" tab: a 3-column grid of images/videos/text posts.
-///
-/// Returns a list of slivers so it can be dropped straight into a
-/// CustomScrollView alongside the rest of the profile page.
 class PhotoGridView extends StatelessWidget {
   final List<PostModel> posts;
   final bool isLoading;

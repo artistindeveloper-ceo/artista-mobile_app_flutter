@@ -1,6 +1,7 @@
 import 'dart:async';
 
 import 'package:artist_in/screens/profile/ProfileScreen.dart';
+import 'package:artist_in/screens/social_feed/social_feed_screen.dart';
 import 'package:flutter/material.dart';
 
 import '../service/ConversationService.dart';
@@ -8,13 +9,10 @@ import '../service/NotificationService.dart';
 import '../theme/app_theme.dart';
 import '../websocket/ChatSocketService.dart';
 import '../widgets/app_drawer.dart';
-import 'chat_list_screen.dart';
-import 'community_screen.dart';
-import 'jamming_screen.dart';
+import 'chat/chat_list_screen.dart';
+import 'community/community_screen.dart';
+import 'jamming_room/jamming_screen.dart';
 import 'notification_screen.dart';
-
-import 'social_feed_screen.dart';
-
 
 class HomeScreen extends StatefulWidget {
   const HomeScreen({super.key});

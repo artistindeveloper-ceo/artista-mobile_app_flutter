@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 import '../theme/app_theme.dart';
 import '../config/Session.dart';
-import 'login_screen.dart';
+import 'auth/login_screen.dart';
 import 'home_screen.dart';
 
 class SplashScreen extends StatefulWidget {
@@ -66,7 +66,7 @@ class _SplashScreenState extends State<SplashScreen>
           child: ScaleTransition(
             scale: _scaleAnim,
             child: Image.asset(
-              'assets/images/Artist.inlogo.png',
+              '',
               width: 220,
             ),
           ),

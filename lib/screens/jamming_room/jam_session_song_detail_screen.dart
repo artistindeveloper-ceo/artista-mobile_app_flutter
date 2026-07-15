@@ -1,5 +1,5 @@
 import 'package:flutter/material.dart';
-import '../theme/app_theme.dart';
+import '../../theme/app_theme.dart';
 
 /// Displays the currently active song's transposed lyrics/chords, plus a
 /// leader-only transpose control bar and a song-switcher sidebar.

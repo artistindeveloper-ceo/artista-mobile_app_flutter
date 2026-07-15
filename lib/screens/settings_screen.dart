@@ -2,9 +2,9 @@ import 'package:flutter/material.dart';
 import '../theme/app_theme.dart';
 import '../config/Session.dart';
 import '../service/UserService.dart';
-import '../screens/login_screen.dart';
-import 'change_password_screen.dart';
-import 'edit_profile_screen.dart';
+import 'auth/login_screen.dart';
+import 'auth/change_password_screen.dart';
+import 'profile/edit_profile_screen.dart';
 
 class SettingsScreen extends StatefulWidget {
   const SettingsScreen({super.key});

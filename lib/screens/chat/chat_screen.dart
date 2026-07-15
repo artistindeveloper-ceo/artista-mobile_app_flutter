@@ -1,8 +1,8 @@
 import 'dart:async';
 import 'package:flutter/material.dart';
-import '../config/Session.dart';
-import '../service/ConversationService.dart';
-import '../theme/app_theme.dart';
+import '../../config/Session.dart';
+import '../../service/ConversationService.dart';
+import '../../theme/app_theme.dart';
 
 class ChatScreen extends StatefulWidget {
   final int conversationId;

@@ -16,8 +16,10 @@ import '../../service/PostService.dart';
 import '../../service/UserProfileService.dart';
 import '../../service/UserService.dart';
 import '../../theme/app_theme.dart';
+import '../../widgets/app_drawer.dart';
 import '../chat/chat_screen.dart';
 import 'comingsoonview.dart';
+import 'FollowListScreen.dart';
 import 'InstrumentShowcaseView.dart';
 import 'InstrumentsView.dart';
 import 'PhotoGridView.dart';
@@ -47,6 +49,8 @@ class _ProfileScreenState extends State<ProfileScreen> {
   int _selectedTabIndex = 0;
   List<InstrumentModel> _instruments = [];
   bool _isLoadingInstruments = true;
+
+  final GlobalKey<ScaffoldState> _scaffoldKey = GlobalKey<ScaffoldState>();
 
   bool get _isOwnProfile => widget.username == null && widget.userId == null;
 
@@ -372,16 +376,24 @@ class _ProfileScreenState extends State<ProfileScreen> {
     final user = _user!;
 
     return Scaffold(
+      key: _scaffoldKey,
       backgroundColor: AppColors.bgBase,
+      // Drawer now lives here instead of the Home screen.
+      // Only relevant for your own profile — visiting someone else's
+      // profile keeps the back-arrow leading icon instead.
+      // endDrawer (not drawer) so it slides in from the right, matching
+      // the hamburger button's position in the AppBar.
+      endDrawer: _isOwnProfile ? const AppDrawer() : null,
       appBar: AppBar(
         backgroundColor: AppColors.bgAppBar,
         elevation: 0,
-        leading: !_isOwnProfile
-            ? IconButton(
+        automaticallyImplyLeading: false,
+        leading: _isOwnProfile
+            ? null
+            : IconButton(
                 icon:
                     const Icon(Icons.arrow_back, color: AppColors.textPrimary),
-                onPressed: () => Navigator.pop(context))
-            : null,
+                onPressed: () => Navigator.pop(context)),
         title: Text(user.username ?? user.name,
             style: const TextStyle(
                 color: AppColors.gold,
@@ -390,23 +402,9 @@ class _ProfileScreenState extends State<ProfileScreen> {
         centerTitle: false,
         actions: [
           if (_isOwnProfile)
-            PopupMenuButton<String>(
+            IconButton(
               icon: const Icon(Icons.menu, color: AppColors.textPrimary),
-              color: AppColors.bgSurfaceElevated,
-              onSelected: (val) {
-                if (val == 'password') _openChangePassword();
-              },
-              itemBuilder: (_) => [
-                PopupMenuItem(
-                    value: 'password',
-                    child: Row(children: [
-                      const Icon(Icons.lock_outline,
-                          size: 18, color: AppColors.textPrimary),
-                      const SizedBox(width: 8),
-                      const Text('Change Password',
-                          style: TextStyle(color: AppColors.textPrimary))
-                    ])),
-              ],
+              onPressed: () => _scaffoldKey.currentState?.openEndDrawer(),
             ),
         ],
       ),
@@ -499,11 +497,37 @@ class _ProfileScreenState extends State<ProfileScreen> {
                             children: [
                               StatTile(label: 'Posts', count: _posts.length),
                               StatTile(
-                                  label: 'Followers',
-                                  count: user.followersCount),
+                                label: 'Followers',
+                                count: user.followersCount,
+                                onTap: () {
+                                  Navigator.push(
+                                    context,
+                                    MaterialPageRoute(
+                                      builder: (_) => FollowListScreen(
+                                        userId: user.id,
+                                        username: user.username ?? user.name,
+                                        initialTab: 0,
+                                      ),
+                                    ),
+                                  );
+                                },
+                              ),
                               StatTile(
-                                  label: 'Following',
-                                  count: user.followingCount),
+                                label: 'Following',
+                                count: user.followingCount,
+                                onTap: () {
+                                  Navigator.push(
+                                    context,
+                                    MaterialPageRoute(
+                                      builder: (_) => FollowListScreen(
+                                        userId: user.id,
+                                        username: user.username ?? user.name,
+                                        initialTab: 1,
+                                      ),
+                                    ),
+                                  );
+                                },
+                              ),
                             ],
                           ),
                         ),

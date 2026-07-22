@@ -2,6 +2,7 @@ import 'package:http/http.dart' as http;
 
 import '../Exception/ApiException.dart';
 import '../config/ApiConfig.dart';
+import '../model/UserModel.dart';
 
 import 'HelperService.dart';
 import 'ApiClient.dart'; // ← NAYA IMPORT
@@ -95,5 +96,61 @@ class FollowUserservice {
     } catch (e) {
       throw ApiException('Could not reach server.');
     }
+  }
+
+  // ─── GET FOLLOWERS LIST ──────────────────────────────────
+  // ✅ NEW — used by the Instagram-style Followers/Following screen.
+  static Future<List<UserModel>> getFollowers(int userId) async {
+    final uri = Uri.parse(ApiConfig.followersUrl(userId));
+    http.Response response;
+    try {
+      response = await ApiClient.authorizedRequest(
+          () => http.get(uri, headers: HelperService.authHeaders()));
+    } catch (e) {
+      throw ApiException('Could not reach server.');
+    }
+
+    final decoded = HelperService.safeDecode(response.body);
+    if (response.statusCode != 200) {
+      final message = (decoded is Map && decoded['message'] != null)
+          ? decoded['message'].toString()
+          : 'Could not load followers.';
+      throw ApiException(message);
+    }
+
+    final List<dynamic> list = decoded is Map
+        ? (decoded['data'] ?? decoded['content'] ?? [])
+        : (decoded is List ? decoded : []);
+    return list
+        .map((e) => UserModel.fromJson(Map<String, dynamic>.from(e)))
+        .toList();
+  }
+
+  // ─── GET FOLLOWING LIST ──────────────────────────────────
+  // ✅ NEW
+  static Future<List<UserModel>> getFollowing(int userId) async {
+    final uri = Uri.parse(ApiConfig.followingUrl(userId));
+    http.Response response;
+    try {
+      response = await ApiClient.authorizedRequest(
+          () => http.get(uri, headers: HelperService.authHeaders()));
+    } catch (e) {
+      throw ApiException('Could not reach server.');
+    }
+
+    final decoded = HelperService.safeDecode(response.body);
+    if (response.statusCode != 200) {
+      final message = (decoded is Map && decoded['message'] != null)
+          ? decoded['message'].toString()
+          : 'Could not load following.';
+      throw ApiException(message);
+    }
+
+    final List<dynamic> list = decoded is Map
+        ? (decoded['data'] ?? decoded['content'] ?? [])
+        : (decoded is List ? decoded : []);
+    return list
+        .map((e) => UserModel.fromJson(Map<String, dynamic>.from(e)))
+        .toList();
   }
 }

@@ -8,7 +8,6 @@ import '../service/ConversationService.dart';
 import '../service/NotificationService.dart';
 import '../theme/app_theme.dart';
 import '../websocket/ChatSocketService.dart';
-import '../widgets/app_drawer.dart';
 import 'chat/chat_list_screen.dart';
 import 'community/community_screen.dart';
 import 'jamming_room/jamming_screen.dart';
@@ -26,7 +25,6 @@ class _HomeScreenState extends State<HomeScreen> {
   int _unreadCount = 0; // notifications
   int _chatUnreadCount = 0; // total unread chat messages
   Timer? _chatBadgeTimer;
-  final GlobalKey<ScaffoldState> _scaffoldKey = GlobalKey<ScaffoldState>();
 
   final List<String> _titles = [
     'Home',
@@ -141,25 +139,16 @@ class _HomeScreenState extends State<HomeScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      key: _scaffoldKey,
       // FIXED: removed `backgroundColor: AppColors.white`.
       // Scaffold now inherits `scaffoldBackgroundColor` from AppTheme
       // (AppColors.bgBase) automatically — no more white feed area.
-      drawer: const AppDrawer(),
+      // Drawer removed from Home — it now lives on the Profile screen.
       appBar: AppBar(
         // FIXED: removed explicit backgroundColor/foregroundColor overrides.
         // AppBarTheme in app_theme.dart already sets these — single source
         // of truth, so a future theme swap updates this screen for free.
-        leading: IconButton(
-          icon: const Icon(Icons.menu),
-          onPressed: () => _scaffoldKey.currentState?.openDrawer(),
-        ),
         title: Text(_titles[_currentIndex]),
         actions: [
-          IconButton(
-            icon: const Icon(Icons.translate),
-            onPressed: () {},
-          ),
           Stack(
             alignment: Alignment.center,
             children: [

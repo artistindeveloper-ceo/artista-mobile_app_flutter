@@ -1,5 +1,4 @@
 import 'package:artist_in/screens/community/requests_tab.dart';
-import 'package:artist_in/screens/community/search_tab.dart';
 import 'package:flutter/material.dart';
 
 import '../../model/UserModel.dart';
@@ -25,7 +24,7 @@ class _CommunityScreenState extends State<CommunityScreen>
   List<UserModel> _allUsers = [];
   bool _isLoadingUsers = true;
 
-  // Search
+  // Search (now lives inside the Discover tab instead of its own tab)
   List<UserModel> _searchResults = [];
   bool _isSearching = false;
   String? _searchError;
@@ -37,7 +36,7 @@ class _CommunityScreenState extends State<CommunityScreen>
   @override
   void initState() {
     super.initState();
-    _tabController = TabController(length: 3, vsync: this);
+    _tabController = TabController(length: 2, vsync: this);
     _loadAllUsers();
     _loadFollowRequests();
   }
@@ -201,7 +200,6 @@ class _CommunityScreenState extends State<CommunityScreen>
             unselectedLabelColor: Colors.white60,
             tabs: const [
               Tab(text: 'Discover'),
-              Tab(text: 'Search'),
               Tab(text: 'Requests'),
             ],
           ),
@@ -215,13 +213,10 @@ class _CommunityScreenState extends State<CommunityScreen>
                 users: _allUsers,
                 onRefresh: _loadAllUsers,
                 onFollow: _followUser,
-              ),
-              SearchTab(
                 isSearching: _isSearching,
                 searchError: _searchError,
                 searchResults: _searchResults,
                 onSearch: _searchUsers,
-                onFollow: _followUser,
               ),
               RequestsTab(
                 isLoading: _isLoadingRequests,

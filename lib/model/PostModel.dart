@@ -7,7 +7,7 @@ class PostModel {
   final String? imageUrl;
   final bool isVideo;
   final String? caption;
-  final String? timeAgo;
+  final String? timeAgo; // raw ISO string from backend
   final int likesCount;
   final int commentsCount;
   final bool likedByMe;
@@ -19,7 +19,7 @@ class PostModel {
     required this.username,
     this.userAvatarUrl,
     this.imageUrl,
-    this.isVideo = false, // ← NEW
+    this.isVideo = false,
     this.caption,
     this.timeAgo,
     this.viewsCount = 0,
@@ -29,7 +29,38 @@ class PostModel {
     required this.authorId,
   });
 
-  // ── Relative path ko full URL banata hai ──
+  // ── Instagram-style relative time ──
+  // e.g. "now", "5m", "2h", "3d", "1w", "2mo", "1y"
+  String get formattedTimeAgo {
+    if (timeAgo == null || timeAgo!.isEmpty) return '';
+
+    final parsed = DateTime.tryParse(timeAgo!);
+    if (parsed == null) return timeAgo!; // fallback if not a valid date
+
+    final date = parsed.toLocal();
+    final now = DateTime.now();
+    final diff = now.difference(date);
+
+    if (diff.inSeconds < 60) {
+      return 'now';
+    } else if (diff.inMinutes < 60) {
+      return '${diff.inMinutes}m';
+    } else if (diff.inHours < 24) {
+      return '${diff.inHours}h';
+    } else if (diff.inDays < 7) {
+      return '${diff.inDays}d';
+    } else if (diff.inDays < 30) {
+      final weeks = (diff.inDays / 7).floor();
+      return '${weeks}w';
+    } else if (diff.inDays < 365) {
+      final months = (diff.inDays / 30).floor();
+      return '${months}mo';
+    } else {
+      final years = (diff.inDays / 365).floor();
+      return '${years}y';
+    }
+  }
+
   static String? _buildUrl(String? path) {
     if (path == null || path.isEmpty) return null;
     if (path.startsWith('http')) return path;
@@ -37,7 +68,6 @@ class PostModel {
     return '${ApiConfig.baseUrl}/$clean';
   }
 
-  // ── URL extension se video detect karta hai (backend fallback) ──
   static bool _detectIsVideo(String? mediaType, String? url) {
     if (mediaType != null) {
       return mediaType.toUpperCase() == 'VIDEO';

@@ -119,9 +119,9 @@ class _PostCardState extends State<PostCard> {
                             color: AppColors.textPrimary,
                           ),
                         ),
-                        if (post.timeAgo != null)
+                        if (post.formattedTimeAgo != null)
                           Text(
-                            post.timeAgo!,
+                            post.formattedTimeAgo!,
                             style: const TextStyle(
                               fontSize: 12,
                               color: AppColors.textTertiary,

@@ -15,7 +15,7 @@ class UserModel {
   final int postsCount;
   final bool isFollowing;
   final bool isPrivate;
-  final bool hasPendingFollowRequest; // ✅ NEW
+  final bool hasPendingFollowRequest;
   final String? profilePhotoUrl;
 
   UserModel({
@@ -33,7 +33,7 @@ class UserModel {
     this.postsCount = 0,
     this.isFollowing = false,
     this.isPrivate = false,
-    this.hasPendingFollowRequest = false, // ✅ NEW
+    this.hasPendingFollowRequest = false,
     this.profilePhotoUrl,
   });
 
@@ -41,7 +41,7 @@ class UserModel {
     bool? isFollowing,
     String? profilePhotoUrl,
     bool? isPrivate,
-    bool? hasPendingFollowRequest, // ✅ NEW
+    bool? hasPendingFollowRequest,
   }) {
     return UserModel(
       id: id,
@@ -60,7 +60,6 @@ class UserModel {
       isPrivate: isPrivate ?? this.isPrivate,
       hasPendingFollowRequest:
           hasPendingFollowRequest ?? this.hasPendingFollowRequest,
-      // ✅ NEW
       profilePhotoUrl: profilePhotoUrl ?? this.profilePhotoUrl,
     );
   }
@@ -102,7 +101,6 @@ class UserModel {
           false,
       isPrivate: json['isPrivate'] ?? false,
       hasPendingFollowRequest: json['hasPendingFollowRequest'] ?? false,
-      // ✅ NEW
       profilePhotoUrl: json['profilePhotoUrl'] ??
           json['avatarUrl'] ??
           json['profile_photo_url'],

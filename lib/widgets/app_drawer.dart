@@ -46,10 +46,7 @@ class _AppDrawerState extends State<AppDrawer> {
   Widget build(BuildContext context) {
     return Drawer(
       backgroundColor: AppColors.bgSurface,
-      width: MediaQuery
-          .of(context)
-          .size
-          .width * 0.72,
+      width: MediaQuery.of(context).size.width * 0.6,
       child: Column(
         children: [
           // ── Header — tap to open own profile ──
@@ -60,13 +57,18 @@ class _AppDrawerState extends State<AppDrawer> {
                 context,
                 MaterialPageRoute(
                   builder: (_) =>
-                  const ProfileScreen(), // no userId/username = own profile
+                      const ProfileScreen(), // no userId/username = own profile
                 ),
               );
             },
             child: Container(
               width: double.infinity,
-              padding: const EdgeInsets.fromLTRB(20, 50, 20, 20),
+              padding: EdgeInsets.fromLTRB(
+                20,
+                MediaQuery.of(context).padding.top + 16,
+                20,
+                20,
+              ),
               decoration: const BoxDecoration(
                 gradient: LinearGradient(
                   begin: Alignment.topLeft,
@@ -81,10 +83,10 @@ class _AppDrawerState extends State<AppDrawer> {
                     radius: 26,
                     backgroundColor: AppColors.bgSurfaceElevated,
                     backgroundImage:
-                    _photoUrl != null ? NetworkImage(_photoUrl!) : null,
+                        _photoUrl != null ? NetworkImage(_photoUrl!) : null,
                     child: _photoUrl == null
                         ? const Icon(Icons.person,
-                        color: AppColors.gold, size: 32)
+                            color: AppColors.gold, size: 32)
                         : null,
                   ),
                   const SizedBox(width: 14),
@@ -159,7 +161,7 @@ class _AppDrawerState extends State<AppDrawer> {
                 ),
                 Padding(
                   padding:
-                  const EdgeInsets.symmetric(horizontal: 16, vertical: 4),
+                      const EdgeInsets.symmetric(horizontal: 16, vertical: 4),
                   child: Divider(color: AppColors.divider),
                 ),
                 _DrawerItem(
@@ -172,7 +174,7 @@ class _AppDrawerState extends State<AppDrawer> {
                     Navigator.pushAndRemoveUntil(
                       context,
                       MaterialPageRoute(builder: (_) => const LoginScreen()),
-                          (_) => false,
+                      (_) => false,
                     );
                   },
                 ),

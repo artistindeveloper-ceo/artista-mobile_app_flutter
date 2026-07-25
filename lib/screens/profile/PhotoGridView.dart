@@ -55,7 +55,7 @@ class PhotoGridView extends StatelessWidget {
             crossAxisCount: 3,
             crossAxisSpacing: 2,
             mainAxisSpacing: 2,
-            childAspectRatio: 1.0),
+            childAspectRatio: 0.8),
       ),
     ];
   }
@@ -81,44 +81,50 @@ class _PostTile extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Container(
+      clipBehavior: Clip.hardEdge,
+      // ← NEW: prevent overflow painting outside the tile
       decoration: BoxDecoration(
           color: AppColors.bgSurface,
           border: Border.all(color: AppColors.bgBase, width: 1)),
-      child: post.imageUrl == null
-          ? Container(
-              color: AppColors.gold.withValues(alpha: 0.15),
-              child: const Icon(Icons.text_snippet_outlined,
-                  color: AppColors.gold),
-            )
-          : post.isVideo
-              ? VideoThumbnailTile(
-                  videoUrl: post.imageUrl!,
-                  viewsCount: post.viewsCount,
-                  onTap: () => _openFullscreenVideo(context),
-                )
-              : Image.network(
-                  post.imageUrl!,
-                  fit: BoxFit.cover,
-                  loadingBuilder: (context, child, progress) {
-                    if (progress == null) return child;
-                    return Container(
-                      color: AppColors.bgSurface,
-                      child: const Center(
-                        child: SizedBox(
-                          width: 18,
-                          height: 18,
-                          child: CircularProgressIndicator(
-                              strokeWidth: 2, color: AppColors.gold),
+      child: AspectRatio(
+        // ← force square
+        aspectRatio: 0.8,
+        child: post.imageUrl == null
+            ? Container(
+                color: AppColors.gold.withValues(alpha: 0.15),
+                child: const Icon(Icons.text_snippet_outlined,
+                    color: AppColors.gold),
+              )
+            : post.isVideo
+                ? VideoThumbnailTile(
+                    videoUrl: post.imageUrl!,
+                    viewsCount: post.viewsCount,
+                    onTap: () => _openFullscreenVideo(context),
+                  )
+                : Image.network(
+                    post.imageUrl!,
+                    fit: BoxFit.cover,
+                    loadingBuilder: (context, child, progress) {
+                      if (progress == null) return child;
+                      return Container(
+                        color: AppColors.bgSurface,
+                        child: const Center(
+                          child: SizedBox(
+                            width: 18,
+                            height: 18,
+                            child: CircularProgressIndicator(
+                                strokeWidth: 2, color: AppColors.gold),
+                          ),
                         ),
-                      ),
-                    );
-                  },
-                  errorBuilder: (ctx, e, s) => Container(
-                    color: AppColors.bgSurface,
-                    child: const Icon(Icons.broken_image,
-                        color: AppColors.textTertiary),
+                      );
+                    },
+                    errorBuilder: (ctx, e, s) => Container(
+                      color: AppColors.bgSurface,
+                      child: const Icon(Icons.broken_image,
+                          color: AppColors.textTertiary),
+                    ),
                   ),
-                ),
+      ),
     );
   }
 

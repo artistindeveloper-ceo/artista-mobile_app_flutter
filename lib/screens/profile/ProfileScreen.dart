@@ -19,12 +19,13 @@ import '../../theme/app_theme.dart';
 import '../../widgets/app_drawer.dart';
 import '../chat/chat_screen.dart';
 import 'comingsoonview.dart';
+import 'edit_profile_screen.dart';
 import 'FollowListScreen.dart';
 import 'InstrumentShowcaseView.dart';
-import 'InstrumentsView.dart';
 import 'PhotoGridView.dart';
 import 'ProfileTabBar.dart';
 import 'StatTile.dart';
+import '../../service/ProfileService.dart';
 
 class ProfileScreen extends StatefulWidget {
   final int? userId;
@@ -38,6 +39,9 @@ class ProfileScreen extends StatefulWidget {
 
 class _ProfileScreenState extends State<ProfileScreen> {
   UserModel? _user;
+  String? _cityName;
+  String? _stateName;
+  String? _countryName;
   List<PostModel> _posts = [];
   bool _isLoading = true;
   bool _isLoadingPosts = true;
@@ -79,6 +83,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
       });
       _loadUserPosts(user.id);
       _loadUserInstruments(user.id);
+      _loadCityName(user.id); // ← ADDED
     } catch (e, stack) {
       print("❌ PROFILE ERROR: $e\n$stack");
       if (HelperService.isAuthError(e)) {
@@ -148,6 +153,19 @@ class _ProfileScreenState extends State<ProfileScreen> {
     }
   }
 
+  Future<void> _loadCityName(int userId) async {
+    try {
+      final profile = await ProfileService.getProfile(userId);
+      if (mounted) {
+        setState(() {
+          _cityName = profile?.cityName;
+          _stateName = profile?.stateName; //
+          _countryName = profile?.countryName;
+        });
+      }
+    } catch (e) {}
+  }
+
   Future<void> _pickAndUploadProfilePhoto() async {
     if (!_isOwnProfile) return;
     final picker = ImagePicker();
@@ -191,74 +209,23 @@ class _ProfileScreenState extends State<ProfileScreen> {
     }
   }
 
-  void _openEditProfile() {
-    final nameCtrl = TextEditingController(text: _user?.name);
-    final usernameCtrl = TextEditingController(text: _user?.username);
-    final bioCtrl = TextEditingController(text: _user?.bio);
-    showModalBottomSheet(
-      context: context,
-      isScrollControlled: true,
-      backgroundColor: AppColors.bgSurface,
-      shape: const RoundedRectangleBorder(
-        borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
-      ),
-      builder: (ctx) => Padding(
-        padding: EdgeInsets.only(
-          left: 24,
-          right: 24,
-          top: 24,
-          bottom: MediaQuery.of(ctx).viewInsets.bottom + 24,
-        ),
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            const Text('Edit Profile',
-                style: TextStyle(
-                    fontSize: 18,
-                    fontWeight: FontWeight.bold,
-                    color: AppColors.textPrimary)),
-            const SizedBox(height: 16),
-            TextField(
-                controller: nameCtrl,
-                style: const TextStyle(color: AppColors.textPrimary),
-                decoration: const InputDecoration(labelText: 'Name')),
-            const SizedBox(height: 12),
-            TextField(
-                controller: usernameCtrl,
-                style: const TextStyle(color: AppColors.textPrimary),
-                decoration: const InputDecoration(labelText: 'Username')),
-            const SizedBox(height: 12),
-            TextField(
-                controller: bioCtrl,
-                maxLines: 3,
-                style: const TextStyle(color: AppColors.textPrimary),
-                decoration: const InputDecoration(labelText: 'Bio')),
-            const SizedBox(height: 20),
-            SizedBox(
-              width: double.infinity,
-              child: ElevatedButton(
-                onPressed: () async {
-                  Navigator.pop(ctx);
-                  try {
-                    final updated = await UserService.updateMe(
-                      name: nameCtrl.text.trim(),
-                      username: usernameCtrl.text.trim(),
-                      bio: bioCtrl.text.trim(),
-                    );
-                    setState(() => _user = updated);
-                    _showSnack('Profile updated!');
-                  } catch (e) {
-                    _showSnack(e.toString(), isError: true);
-                  }
-                },
-                child: const Text('Save Changes'),
-              ),
-            ),
-          ],
+  // ── EDIT PROFILE: now opens the full EditProfileScreen (city/state/
+  // country/instrument/photographer details), not the old bottom sheet. ──
+  Future<void> _openEditProfile() async {
+    final user = _user;
+    if (user == null) return;
+    final saved = await Navigator.push<bool>(
+      context,
+      MaterialPageRoute(
+        builder: (_) => EditProfileScreen(
+          user: user,
+          professionalType: user.professionalType ?? 'MUSICIAN',
         ),
       ),
     );
+    if (saved == true) {
+      _loadProfile();
+    }
   }
 
   void _openChangePassword() {
@@ -546,6 +513,27 @@ class _ProfileScreenState extends State<ProfileScreen> {
                       Text('@${user.username}',
                           style: const TextStyle(
                               color: AppColors.textGrey, fontSize: 13)),
+                    if (_cityName != null && _cityName!.isNotEmpty) ...[
+                      const SizedBox(height: 2),
+                      Row(
+                        children: [
+                          const Icon(Icons.location_on_outlined,
+                              size: 14, color: AppColors.textGrey),
+                          const SizedBox(width: 4),
+                          Expanded(
+                            child: Text(
+                              [_cityName, _stateName, _countryName]
+                                  .where((s) => s != null && s.isNotEmpty)
+                                  .join(', '),
+                              style: const TextStyle(
+                                  color: AppColors.textGrey, fontSize: 13),
+                              maxLines: 1,
+                              overflow: TextOverflow.ellipsis,
+                            ),
+                          ),
+                        ],
+                      ),
+                    ],
                     if (user.role != null)
                       Text(user.role!,
                           style: const TextStyle(

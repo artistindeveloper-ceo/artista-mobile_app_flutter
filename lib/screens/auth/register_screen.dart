@@ -19,6 +19,21 @@ class _RegisterScreenState extends State<RegisterScreen> {
   bool _obscureConfirm = true;
   bool _isLoading = false;
 
+  // Profession type dropdown
+  String? _selectedProfessionType;
+  final List<String> _professionTypes = [
+    'MUSICIAN',
+    'PHOTOGRAPHER',
+    'EVENT MANAGER',
+    // 'Dancer',
+    // 'DJ',
+    // 'Makeup Artist',
+    // 'Painter',
+    // 'Actor',
+    // 'Choreographer',
+    // 'Other',
+  ];
+
   Future<void> _register() async {
     final name = _nameCtrl.text.trim();
     final email = _emailCtrl.text.trim();
@@ -33,10 +48,19 @@ class _RegisterScreenState extends State<RegisterScreen> {
       _showSnack('Passwords do not match!');
       return;
     }
+    if (_selectedProfessionType == null) {
+      _showSnack('Please select your profession type');
+      return;
+    }
 
     setState(() => _isLoading = true);
     try {
-      await AuthService.register(name: name, email: email, password: password);
+      await AuthService.register(
+        name: name,
+        email: email,
+        password: password,
+        professionalType: _selectedProfessionType!,
+      );
       if (!mounted) return;
       _showSnack('Account created! Please login.');
       Navigator.pop(context); // Login screen pe wapas
@@ -101,6 +125,31 @@ class _RegisterScreenState extends State<RegisterScreen> {
                 keyboardType: TextInputType.emailAddress,
                 style: AppFonts.body(color: AppColors.textPrimary),
                 decoration: const InputDecoration(labelText: 'Email*'),
+              ),
+              const SizedBox(height: 16),
+
+              // Profession Type Dropdown
+              DropdownButtonFormField<String>(
+                value: _selectedProfessionType,
+                dropdownColor: AppColors.bgSurfaceElevated,
+                style: AppFonts.body(color: AppColors.textPrimary),
+                icon: const Icon(Icons.arrow_drop_down,
+                    color: AppColors.textSecondary),
+                decoration: const InputDecoration(
+                  labelText: 'Profession Type*',
+                ),
+                items: _professionTypes
+                    .map((type) => DropdownMenuItem<String>(
+                          value: type,
+                          child: Text(
+                            type,
+                            style: AppFonts.body(color: AppColors.textPrimary),
+                          ),
+                        ))
+                    .toList(),
+                onChanged: (value) {
+                  setState(() => _selectedProfessionType = value);
+                },
               ),
               const SizedBox(height: 16),
 

@@ -7,7 +7,11 @@ class ApiClient {
     Future<http.Response> Function() requestFn,
   ) async {
     http.Response response = await requestFn();
-    print('🔍 First attempt status: ${response.statusCode}');
+    print(
+        '🔍 First attempt status: ${response.statusCode} | url: ${response.request?.url}');
+    if (response.statusCode >= 400) {
+      print('🔍 Body: ${response.body}');
+    }
 
     if (response.statusCode == 401) {
       print('🔄 401 detected, trying refresh...');
@@ -16,7 +20,11 @@ class ApiClient {
 
       if (refreshed) {
         response = await requestFn();
-        print('🔍 Retry status: ${response.statusCode}');
+        print(
+            '🔍 Retry status: ${response.statusCode} | url: ${response.request?.url}');
+        if (response.statusCode >= 400) {
+          print('🔍 Retry Body: ${response.body}');
+        }
       } else {
         print('❌ Refresh failed, logging out');
         await Session().clear();

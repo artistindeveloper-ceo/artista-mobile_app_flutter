@@ -73,6 +73,52 @@ class _SettingsScreenState extends State<SettingsScreen> {
     }
   }
 
+  // ─── EDIT PROFILE: fetch current user, then navigate with real ids ────
+  Future<void> _openEditProfile() async {
+    showDialog(
+      context: context,
+      barrierDismissible: false,
+      builder: (_) => const Center(child: CircularProgressIndicator()),
+    );
+
+    try {
+      final user = await UserService.getMe();
+      if (!mounted) return;
+      Navigator.pop(context); // close loading dialog
+
+      if (user.professionalType == null || user.professionalType!.isEmpty) {
+        ScaffoldMessenger.of(context).showSnackBar(SnackBar(
+          content: Text(
+            'Profession type not set on this account.',
+            style: AppFonts.body(color: AppColors.textPrimary),
+          ),
+          backgroundColor: AppColors.error,
+        ));
+        return;
+      }
+
+      Navigator.push(
+        context,
+        MaterialPageRoute(
+          builder: (_) => EditProfileScreen(
+            user: user, // 👈 badla: pehle "userId: user.id" tha
+            professionalType: user.professionalType!,
+          ),
+        ),
+      );
+    } catch (e) {
+      if (!mounted) return;
+      Navigator.pop(context); // close loading dialog
+      ScaffoldMessenger.of(context).showSnackBar(SnackBar(
+        content: Text(
+          'Could not load your profile. Please try again.',
+          style: AppFonts.body(color: AppColors.textPrimary),
+        ),
+        backgroundColor: AppColors.error,
+      ));
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -89,10 +135,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
           _SettingsTile(
             icon: Icons.person_outline,
             label: 'Edit Profile',
-            onTap: () => Navigator.push(
-              context,
-              MaterialPageRoute(builder: (_) => const EditProfileScreen()),
-            ),
+            onTap: _openEditProfile,
           ),
           _SettingsTile(
             icon: Icons.lock_outline,

@@ -55,6 +55,7 @@ class UserService {
     required String name,
     String? username,
     String? bio,
+    String? mobileNumber,
   }) async {
     final uri = Uri.parse(ApiConfig.updateMeUrl);
     http.Response response;
@@ -66,6 +67,7 @@ class UserService {
               'name': name,
               if (username != null) 'username': username,
               if (bio != null) 'bio': bio,
+              if (mobileNumber != null) 'mobileNumber': mobileNumber,
             }),
           ));
     } catch (e) {

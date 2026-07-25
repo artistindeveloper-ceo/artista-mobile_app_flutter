@@ -5,6 +5,8 @@ class UserModel {
   final String name;
   final String email;
   final String? role;
+  final String?
+      professionalType; // MUSICIAN, PHOTOGRAPHER, etc. (backend: roleType)
   final String? createdAt;
   final String? avatarUrl;
   final String? coverPhotoUrl;
@@ -17,12 +19,14 @@ class UserModel {
   final bool isPrivate;
   final bool hasPendingFollowRequest;
   final String? profilePhotoUrl;
+  final String? mobileNumber;
 
   UserModel({
     required this.id,
     required this.name,
     required this.email,
     this.role,
+    this.professionalType,
     this.createdAt,
     this.avatarUrl,
     this.coverPhotoUrl,
@@ -35,6 +39,7 @@ class UserModel {
     this.isPrivate = false,
     this.hasPendingFollowRequest = false,
     this.profilePhotoUrl,
+    this.mobileNumber,
   });
 
   UserModel copyWith({
@@ -42,12 +47,15 @@ class UserModel {
     String? profilePhotoUrl,
     bool? isPrivate,
     bool? hasPendingFollowRequest,
+    String? professionalType,
+    String? mobileNumber,
   }) {
     return UserModel(
       id: id,
       name: name,
       email: email,
       role: role,
+      professionalType: professionalType ?? this.professionalType,
       createdAt: createdAt,
       avatarUrl: avatarUrl,
       coverPhotoUrl: coverPhotoUrl,
@@ -61,6 +69,7 @@ class UserModel {
       hasPendingFollowRequest:
           hasPendingFollowRequest ?? this.hasPendingFollowRequest,
       profilePhotoUrl: profilePhotoUrl ?? this.profilePhotoUrl,
+      mobileNumber: mobileNumber ?? this.mobileNumber,
     );
   }
 
@@ -77,6 +86,10 @@ class UserModel {
       name: json['displayName'] ?? json['name'] ?? json['fullName'] ?? '',
       email: json['email'] ?? '',
       role: json['role'],
+      // Backend field is called "roleType" on the User entity
+      // (MUSICIAN, PHOTOGRAPHER, etc.) — kept as a separate professionalType
+      // key here so it never gets confused with the USER/ADMIN `role` enum.
+      professionalType: json['roleType'] ?? json['professionalType'],
       createdAt: json['createdAt'],
       avatarUrl: _buildUrl(
         json['profilePhotoUrl'] ??
@@ -104,6 +117,7 @@ class UserModel {
       profilePhotoUrl: json['profilePhotoUrl'] ??
           json['avatarUrl'] ??
           json['profile_photo_url'],
+      mobileNumber: json['mobileNumber'] ?? json['mobile_number'],
     );
   }
 }

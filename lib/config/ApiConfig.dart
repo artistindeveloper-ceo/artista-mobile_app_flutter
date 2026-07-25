@@ -162,4 +162,8 @@ class ApiConfig {
 
   static String cityByIdUrl(int cityId) =>
       '$baseUrl/api/locations/cities/$cityId';
+
+
+  // Media (presigned S3 upload)
+  static const String presignUrl = '$baseUrl/api/v1/media/presign';
 }

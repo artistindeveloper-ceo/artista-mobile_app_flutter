@@ -9,6 +9,7 @@ import '../config/Session.dart';
 import '../model/PostModel.dart';
 import 'HelperService.dart';
 import 'ApiClient.dart'; // ← NAYA IMPORT
+import 'MediaUploadService.dart';
 
 class PostService {
   // ─── GET USER POSTS ──────────────────────────────────────
@@ -33,56 +34,48 @@ class PostService {
         .toList();
   }
 
-  // ─── CREATE POST ──────────────────────────────────────────
+  // ─── CREATE POST (presigned S3 upload) ────────────────────
   static Future<void> createPost({
     String? caption,
     File? mediaFile,
+    bool isVideo = false,
   }) async {
-    final uri = Uri.parse(ApiConfig.createPostUrl).replace(
-      queryParameters: {
-        if (caption != null && caption.isNotEmpty) 'caption': caption,
-      },
-    );
+    String? mediaKey;
+    String mediaType = 'NONE';
 
-    // Multipart request ko ek function mein wrap kiya taki ApiClient
-    // ise retry kar sake (401 aane par) — Bearer token hamesha fresh
-    // Session().token se uthaya jayega, refresh ke baad bhi
-    Future<http.Response> sendMultipart() async {
-      final token = Session().token;
-      if (token == null) throw ApiException('Not logged in.');
-
-      final request = http.MultipartRequest('POST', uri)
-        ..headers['Authorization'] = 'Bearer $token';
-
-      if (mediaFile != null) {
-        final ext = mediaFile.path.split('.').last.toLowerCase();
-        // mimeType filhal use nahi ho raha, future mime package ke liye rakha hai
-
-        request.files.add(
-          await http.MultipartFile.fromPath(
-            'media',
-            mediaFile.path,
-            // contentType: MediaType.parse(mimeType),
-          ),
-        );
-      }
-
-      final streamed = await request.send();
-      return http.Response.fromStream(streamed);
+    if (mediaFile != null) {
+      final result = await MediaUploadService.uploadFile(
+        mediaFile,
+        mediaType: 'post',
+        isVideo: isVideo,
+      );
+      mediaKey = result.key;
+      mediaType = isVideo ? 'VIDEO' : 'IMAGE';
     }
 
+    final uri = Uri.parse(ApiConfig.createPostUrl);
     http.Response response;
     try {
-      response = await ApiClient.authorizedRequest(sendMultipart);
+      response = await ApiClient.authorizedRequest(
+        () => http.post(
+          uri,
+          headers: {
+            ...HelperService.authHeaders(),
+            'Content-Type': 'application/json',
+          },
+          body: jsonEncode({
+            'caption': caption,
+            'mediaKey': mediaKey,
+            'mediaType': mediaType,
+          }),
+        ),
+      );
     } catch (e) {
       throw ApiException('Could not reach server. Check your connection.');
     }
 
+    final body = HelperService.safeDecode(response.body);
     if (response.statusCode != 200 && response.statusCode != 201) {
-      Map<String, dynamic> body = {};
-      try {
-        body = jsonDecode(response.body) as Map<String, dynamic>;
-      } catch (_) {}
       throw ApiException(body['message'] ?? 'Failed to create post.');
     }
   }

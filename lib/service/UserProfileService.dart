@@ -1,3 +1,4 @@
+import 'dart:convert';
 import 'dart:io';
 
 import 'package:http/http.dart' as http;
@@ -7,28 +8,29 @@ import '../config/ApiConfig.dart';
 import '../config/Session.dart';
 import '../model/UserModel.dart';
 import 'HelperService.dart';
-import 'ApiClient.dart'; // ← NAYA IMPORT
+import 'ApiClient.dart';
+import 'MediaUploadService.dart'; // ← NAYA IMPORT
 
 class UserProfileService {
-  // ─── UPLOAD PROFILE PHOTO (POST /api/v1/users/me/profile-photo) ─
+  // ─── UPLOAD PROFILE PHOTO (presigned S3) ─────────────────────
   static Future<UserModel> uploadProfilePhoto(File imageFile) async {
+    final result = await MediaUploadService.uploadFile(
+      imageFile,
+      mediaType: 'profile',
+      isVideo: false,
+    );
+
     final uri = Uri.parse(ApiConfig.uploadProfilePhotoUrl);
-
-    Future<http.Response> sendMultipart() async {
-      final token = Session().token;
-      if (token == null) throw ApiException('Not logged in.');
-
-      final request = http.MultipartRequest('POST', uri)
-        ..headers['Authorization'] = 'Bearer $token'
-        ..files.add(await http.MultipartFile.fromPath('file', imageFile.path));
-
-      final streamed = await request.send();
-      return http.Response.fromStream(streamed);
-    }
-
     http.Response response;
     try {
-      response = await ApiClient.authorizedRequest(sendMultipart);
+      response = await ApiClient.authorizedRequest(() => http.post(
+            uri,
+            headers: {
+              ...HelperService.authHeaders(),
+              'Content-Type': 'application/json',
+            },
+            body: jsonEncode({'mediaKey': result.key}),
+          ));
     } catch (e) {
       throw ApiException(
           'Could not reach server. Check your internet connection.');
@@ -43,25 +45,25 @@ class UserProfileService {
     return UserModel.fromJson(userJson);
   }
 
-  // ─── UPLOAD COVER PHOTO (POST /api/v1/users/me/cover-photo) ─────
+  // ─── UPLOAD COVER PHOTO (presigned S3) ───────────────────────
   static Future<UserModel> uploadCoverPhoto(File imageFile) async {
+    final result = await MediaUploadService.uploadFile(
+      imageFile,
+      mediaType: 'cover',
+      isVideo: false,
+    );
+
     final uri = Uri.parse(ApiConfig.uploadCoverPhotoUrl);
-
-    Future<http.Response> sendMultipart() async {
-      final token = Session().token;
-      if (token == null) throw ApiException('Not logged in.');
-
-      final request = http.MultipartRequest('POST', uri)
-        ..headers['Authorization'] = 'Bearer $token'
-        ..files.add(await http.MultipartFile.fromPath('file', imageFile.path));
-
-      final streamed = await request.send();
-      return http.Response.fromStream(streamed);
-    }
-
     http.Response response;
     try {
-      response = await ApiClient.authorizedRequest(sendMultipart);
+      response = await ApiClient.authorizedRequest(() => http.post(
+            uri,
+            headers: {
+              ...HelperService.authHeaders(),
+              'Content-Type': 'application/json',
+            },
+            body: jsonEncode({'mediaKey': result.key}),
+          ));
     } catch (e) {
       throw ApiException(
           'Could not reach server. Check your internet connection.');

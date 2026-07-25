@@ -80,6 +80,7 @@ class _CreatePostSheetState extends State<CreatePostSheet> {
       await PostService.createPost(
         caption: caption.isNotEmpty ? caption : null,
         mediaFile: _selectedMedia,
+        isVideo: _isVideo,
       );
       if (mounted) {
         Navigator.pop(context);

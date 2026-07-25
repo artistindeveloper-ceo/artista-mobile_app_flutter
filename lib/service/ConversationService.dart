@@ -1,11 +1,13 @@
 import 'dart:convert';
+import 'dart:io';
 
 import 'package:artist_in/service/HelperService.dart';
 import 'package:http/http.dart' as http;
 
 import '../Exception/ApiException.dart';
 import '../config/ApiConfig.dart';
-import 'ApiClient.dart'; // ← NAYA IMPORT
+import 'ApiClient.dart';
+import 'MediaUploadService.dart'; // ← NAYA IMPORT
 
 class ConversationService {
   // ─── GET CONVERSATIONS ───────────────────────────────────
@@ -48,15 +50,29 @@ class ConversationService {
 
 // ─── SEND MESSAGE ────────────────────────────────────────
   static Future<void> sendMessage({
-    required int recipientId, // ✅ conversationId → recipientId
+    required int recipientId,
     required String content,
+    File? attachmentFile,
   }) async {
-    final uri = Uri.parse(ApiConfig.sendMessageUrl(recipientId)); // ✅ correct
+    String? attachmentUrl;
+    if (attachmentFile != null) {
+      final result = await MediaUploadService.uploadFile(
+        attachmentFile,
+        mediaType: 'chat',
+        isVideo: false,
+      );
+      attachmentUrl = result.cdnUrl;
+    }
+
+    final uri = Uri.parse(ApiConfig.sendMessageUrl(recipientId));
     try {
       final response = await ApiClient.authorizedRequest(() => http.post(
             uri,
             headers: HelperService.authHeaders(),
-            body: jsonEncode({'content': content}),
+            body: jsonEncode({
+              'content': content,
+              if (attachmentUrl != null) 'attachmentUrl': attachmentUrl,
+            }),
           ));
       print('📤 SEND MSG status: ${response.statusCode}');
       print('📤 SEND MSG body: ${response.body}');

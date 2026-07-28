@@ -10,7 +10,12 @@ import '../screens/settings_screen.dart';
 import '../theme/app_theme.dart';
 
 class AppDrawer extends StatefulWidget {
-  const AppDrawer({super.key});
+  /// True jab AppDrawer khud ProfileScreen ke andar (endDrawer ke
+  /// roop mein) use ho raha ho. Us case mein header tap par sirf
+  /// drawer close hoga — naya ProfileScreen push NAHI hoga.
+  final bool isOwnProfileScreen;
+
+  const AppDrawer({super.key, this.isOwnProfileScreen = false});
 
   @override
   State<AppDrawer> createState() => _AppDrawerState();
@@ -30,14 +35,16 @@ class _AppDrawerState extends State<AppDrawer> {
     final session = Session();
     final name = await session.getDisplayName();
     final photo = await session.getProfilePhotoUrl();
-    print("🖼️ Drawer photo URL: $photo"); // ← add karo
-    print("👤 Drawer name: $name"); // ← add karo
+    print("🖼️ Drawer photo URL: $photo");
+    print("👤 Drawer name: $name");
     if (mounted) {
       setState(() {
         _name = name ?? 'Artista';
-        _photoUrl = photo != null
-            ? '${ApiConfig.baseUrl}$photo' // ← base URL add karo
-            : null;
+        _photoUrl = (photo == null || photo.isEmpty)
+            ? null
+            : (photo.startsWith('http://') || photo.startsWith('https://'))
+                ? photo
+                : '${ApiConfig.baseUrl}$photo';
       });
     }
   }
@@ -52,12 +59,16 @@ class _AppDrawerState extends State<AppDrawer> {
           // ── Header — tap to open own profile ──
           GestureDetector(
             onTap: () {
-              Navigator.pop(context);
+              Navigator.pop(context); // drawer close
+
+              // ✅ Agar already apni ProfileScreen ke andar ho
+              // (endDrawer se khula), toh dobara push mat karo.
+              if (widget.isOwnProfileScreen) return;
+
               Navigator.push(
                 context,
                 MaterialPageRoute(
-                  builder: (_) =>
-                      const ProfileScreen(), // no userId/username = own profile
+                  builder: (_) => const ProfileScreen(),
                 ),
               );
             },
@@ -78,7 +89,6 @@ class _AppDrawerState extends State<AppDrawer> {
               ),
               child: Row(
                 children: [
-                  // Profile photo or fallback icon
                   CircleAvatar(
                     radius: 26,
                     backgroundColor: AppColors.bgSurfaceElevated,

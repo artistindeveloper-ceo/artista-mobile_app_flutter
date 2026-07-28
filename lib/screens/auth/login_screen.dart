@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 
 import '../../service/AuthService.dart';
+import '../../service/NotificationService.dart';
 import '../../theme/app_theme.dart';
 import '../home_screen.dart';
 import 'register_screen.dart';
@@ -42,6 +43,10 @@ class _LoginScreenState extends State<LoginScreen> {
       // value typed matches what's stored against that user on the backend.
       await AuthService.login(emailOrMobile: credential, password: password);
       if (!mounted) return;
+
+      // ✅ Login successful — FCM setup karo (permission + token + backend register)
+      NotificationService.init(); // await mat karo — background mein chalne do
+
       _goToHome();
     } catch (e) {
       if (!mounted) return;

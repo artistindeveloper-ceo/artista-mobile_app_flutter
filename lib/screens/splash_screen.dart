@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import '../theme/app_theme.dart';
 import '../config/Session.dart';
+import '../service/NotificationService.dart';
 import 'auth/login_screen.dart';
 import 'home_screen.dart';
 
@@ -30,12 +31,20 @@ class _SplashScreenState extends State<SplashScreen>
     );
     _controller.forward();
 
-    Future.delayed(const Duration(seconds: 3), () {
+    Future.delayed(const Duration(seconds: 3), () async {
       if (mounted) {
         // ✅ Session check — logged in hai to Home, nahi to Login
-        final nextScreen = Session().isLoggedIn
-            ? const HomeScreen()
-            : const LoginScreen();
+        final isLoggedIn = Session().isLoggedIn;
+
+        // Sirf logged-in user ke liye FCM init karo
+        // (kyunki register-device call ko auth token chahiye)
+        if (isLoggedIn) {
+          NotificationService
+              .init(); // await mat karo — background mein chalne do
+        }
+
+        final nextScreen =
+            isLoggedIn ? const HomeScreen() : const LoginScreen();
 
         Navigator.pushReplacement(
           context,

@@ -9,8 +9,18 @@ class PostBar extends StatelessWidget {
 
   const PostBar({super.key, required this.onTap});
 
+  String? _resolvedAvatarUrl() {
+    final url = Session().profilePhotoUrl;
+    if (url == null || url.isEmpty) return null;
+    if (url.startsWith('http://') || url.startsWith('https://')) {
+      return url; // already absolute CDN URL
+    }
+    return '${ApiConfig.baseUrl}$url'; // relative path
+  }
+
   @override
   Widget build(BuildContext context) {
+    final avatarUrl = _resolvedAvatarUrl();
     return Container(
       color: AppColors.bgSurface,
       padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
@@ -19,11 +29,8 @@ class PostBar extends StatelessWidget {
           CircleAvatar(
             radius: 20,
             backgroundColor: AppColors.bgSurfaceElevated,
-            backgroundImage: Session().profilePhotoUrl != null
-                ? NetworkImage(
-                    '${ApiConfig.baseUrl}${Session().profilePhotoUrl}')
-                : null,
-            child: Session().profilePhotoUrl == null
+            backgroundImage: avatarUrl != null ? NetworkImage(avatarUrl) : null,
+            child: avatarUrl == null
                 ? const Icon(Icons.person, color: AppColors.textSecondary)
                 : null,
           ),

@@ -4,6 +4,7 @@ import 'package:artist_in/service/ConversationService.dart';
 import 'package:flutter/material.dart';
 
 import '../../config/ApiConfig.dart';
+import '../../config/UrlHelper.dart';
 import '../../service/HelperService.dart';
 import '../../theme/app_theme.dart';
 import 'chat_screen.dart';
@@ -153,9 +154,9 @@ class _ChatListScreenState extends State<ChatListScreen> {
           final otherUserId = otherUser['id'] as int? ?? 0;
           final displayName =
               otherUser['displayName'] ?? otherUser['username'] ?? 'Unknown';
-          final rawAvatarUrl = otherUser['profilePhotoUrl'];
+          final rawAvatarUrl = otherUser['profilePhotoUrl'] as String?;
           final avatarUrl =
-              rawAvatarUrl != null ? '${ApiConfig.baseUrl}$rawAvatarUrl' : null;
+              UrlHelper.resolveMediaUrl(otherUser['profilePhotoUrl']);
           final lastMessage = convo['lastMessagePreview'] ?? '';
           final unreadCount = convo['unreadCount'] ?? 0;
           final timeAgo = _formatTime(convo['lastMessageAt']);

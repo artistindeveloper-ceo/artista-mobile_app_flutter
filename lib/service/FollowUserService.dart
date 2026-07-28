@@ -35,12 +35,13 @@ class FollowUserservice {
     final raw = response.body.trim();
     if (raw.isEmpty) return 'FOLLOWING'; // fallback if backend sends empty 200
 
-    // Backend may return a plain string ("REQUEST_PENDING") or JSON
-    // wrapped like {"data":"REQUEST_PENDING"}. Handle both.
+// Backend may return a plain string ("REQUEST_PENDING") or JSON
+// wrapped like {"data":"REQUEST_PENDING"} or {"message":"FOLLOWING"}.
     try {
       final decoded = HelperService.safeDecode(raw);
-      if (decoded is Map && decoded['data'] != null) {
-        return decoded['data'].toString();
+      if (decoded is Map) {
+        if (decoded['data'] != null) return decoded['data'].toString();
+        if (decoded['message'] != null) return decoded['message'].toString();
       }
     } catch (_) {
       // not JSON — it's a plain string body

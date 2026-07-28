@@ -350,7 +350,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
       // profile keeps the back-arrow leading icon instead.
       // endDrawer (not drawer) so it slides in from the right, matching
       // the hamburger button's position in the AppBar.
-      endDrawer: _isOwnProfile ? const AppDrawer() : null,
+      endDrawer: _isOwnProfile ? AppDrawer(isOwnProfileScreen: _isOwnProfile) : null,
       appBar: AppBar(
         backgroundColor: AppColors.bgAppBar,
         elevation: 0,

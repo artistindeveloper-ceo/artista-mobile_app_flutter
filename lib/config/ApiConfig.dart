@@ -73,6 +73,8 @@ class ApiConfig {
       '$baseUrl/api/v1/notifications/unread-count';
   static const String markAllReadUrl =
       '$baseUrl/api/v1/notifications/mark-all-read';
+  static const String registerDeviceUrl =
+      '$baseUrl/api/v1/notifications/register-device'; // ← NAYA (FCM token)
 
   // Jam Sessions
   static const String mySessionsUrl = '$baseUrl/api/v1/jam-sessions/mine';
@@ -162,7 +164,6 @@ class ApiConfig {
 
   static String cityByIdUrl(int cityId) =>
       '$baseUrl/api/locations/cities/$cityId';
-
 
   // Media (presigned S3 upload)
   static const String presignUrl = '$baseUrl/api/v1/media/presign';

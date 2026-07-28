@@ -1,6 +1,6 @@
 import 'package:shared_preferences/shared_preferences.dart';
 
-import 'package:shared_preferences/shared_preferences.dart';
+import 'ApiConfig.dart';
 
 class Session {
   static final Session _instance = Session._internal();
@@ -90,5 +90,12 @@ class Session {
     await prefs.remove('userId');
     await prefs.remove('profilePhotoUrl');
     await prefs.remove('displayName');
+  }
+
+  // Home screen par jo upar Post ka laga he vaha profile ke leay use ho rahah he
+  String? get resolvedProfilePhotoUrl {
+    if (profilePhotoUrl == null || profilePhotoUrl!.isEmpty) return null;
+    if (profilePhotoUrl!.startsWith('http')) return profilePhotoUrl;
+    return '${ApiConfig.baseUrl}$profilePhotoUrl';
   }
 }

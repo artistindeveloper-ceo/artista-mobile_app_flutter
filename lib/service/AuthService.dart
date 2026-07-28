@@ -55,11 +55,45 @@ class AuthService {
   }
 
   // ─── REGISTER ───────────────────────────────────────────
+  // static Future<void> register({
+  //   required String name,
+  //   required String email,
+  //   required String password,
+  //   required String professionalType,
+  // }) async {
+  //   final uri = Uri.parse('${ApiConfig.baseUrl}/api/v1/auth/register');
+  //   http.Response response;
+  //   try {
+  //     response = await http.post(
+  //       uri,
+  //       headers: {'Content-Type': 'application/json'},
+  //       body: jsonEncode({
+  //         'username': name.replaceAll(' ', '_').toLowerCase(),
+  //         'displayName': name,
+  //         'email': email,
+  //         'password': password,
+  //         'professionalType': professionalType,
+  //       }),
+  //     );
+  //   } catch (e) {
+  //     throw ApiException(
+  //         'Could not reach server. Check your internet connection.');
+  //   }
+  //
+  //   final body = HelperService.safeDecode(response.body);
+  //   if (response.statusCode != 200 && response.statusCode != 201) {
+  //     throw ApiException(body['message'] ?? 'Registration failed.');
+  //   }
+  // }
+
   static Future<void> register({
     required String name,
     required String email,
     required String password,
-    required String professionalType,
+    required String accountType,
+    String? professionalType,
+    String? businessType,
+    String? businessName,
   }) async {
     final uri = Uri.parse('${ApiConfig.baseUrl}/api/v1/auth/register');
     http.Response response;
@@ -72,7 +106,10 @@ class AuthService {
           'displayName': name,
           'email': email,
           'password': password,
-          'professionalType': professionalType,
+          'accountType': accountType,
+          if (professionalType != null) 'professionalType': professionalType,
+          if (businessType != null) 'businessType': businessType,
+          if (businessName != null) 'businessName': businessName,
         }),
       );
     } catch (e) {

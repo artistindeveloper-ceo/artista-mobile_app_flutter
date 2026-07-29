@@ -69,8 +69,6 @@ class AuthService {
 
   // ─── REGISTER ───────────────────────────────────────────────────
   // Note: register auto-login nahi karta (session save nahi hoti).
-  // Agar future me auto-login chahiye, isme bhi deviceId/deviceType/fcmToken
-  // add karna padega jaise login() me hai.
   static Future<void> register({
     required String name,
     required String email,
@@ -81,6 +79,13 @@ class AuthService {
     String? businessName,
   }) async {
     final uri = Uri.parse('${ApiConfig.baseUrl}/api/v1/auth/register');
+
+    print('📤 Register URL: $uri');
+    print(
+        '📤 Register payload: username=${name.replaceAll(' ', '_').toLowerCase()}, '
+        'email=$email, accountType=$accountType, professionalType=$professionalType, '
+        'businessType=$businessType, businessName=$businessName');
+
     http.Response response;
     try {
       response = await http.post(
@@ -97,7 +102,11 @@ class AuthService {
           if (businessName != null) 'businessName': businessName,
         }),
       );
-    } catch (e) {
+      print('📥 Register status: ${response.statusCode}');
+      print('📥 Register body: ${response.body}');
+    } catch (e, stack) {
+      print('❌ Register network/exception error: $e');
+      print('❌ Stack: $stack');
       throw ApiException(
           'Could not reach server. Check your internet connection.');
     }
@@ -183,10 +192,6 @@ class AuthService {
   }
 
   // ─── FCM TOKEN SYNC (device.register endpoint) ───────────
-  // Firebase token background me refresh ho sakta hai — is method ko
-  // FirebaseMessaging.instance.onTokenRefresh listener me call karo
-  // (jaise NotificationService.init() ke andar), taaki backend ka
-  // LoginDevice row hamesha latest fcmToken rakhe.
   static Future<void> syncFcmToken(String newFcmToken) async {
     if (!Session().isLoggedIn) return;
 

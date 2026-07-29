@@ -1,11 +1,13 @@
 class BusinessModel {
   final int id;
-  final String businessType; // SHOP, ACADEMY, SCHOOL, INSTITUTE
+  final String businessType;
   final String name;
   final String? description;
+  final int? cityId;
   final String? cityName;
   final String? contactEmail;
   final String? contactPhone;
+  final String? profilePhotoUrl;
   final String? coverPhotoUrl;
   final bool isVerified;
   final double? avgRating;
@@ -19,9 +21,11 @@ class BusinessModel {
     required this.businessType,
     required this.name,
     this.description,
+    this.cityId,
     this.cityName,
     this.contactEmail,
     this.contactPhone,
+    this.profilePhotoUrl,
     this.coverPhotoUrl,
     this.isVerified = false,
     this.avgRating,
@@ -34,16 +38,20 @@ class BusinessModel {
   BusinessModel copyWith({
     int? followerCount,
     bool? isFollowedByViewer,
+    String? profilePhotoUrl,
+    String? coverPhotoUrl,
   }) {
     return BusinessModel(
       id: id,
       businessType: businessType,
       name: name,
       description: description,
+      cityId: cityId,
       cityName: cityName,
       contactEmail: contactEmail,
       contactPhone: contactPhone,
-      coverPhotoUrl: coverPhotoUrl,
+      profilePhotoUrl: profilePhotoUrl ?? this.profilePhotoUrl,
+      coverPhotoUrl: coverPhotoUrl ?? this.coverPhotoUrl,
       isVerified: isVerified,
       avgRating: avgRating,
       ratingCount: ratingCount,
@@ -59,13 +67,16 @@ class BusinessModel {
       businessType: json['businessType'] ?? '',
       name: json['name'] ?? '',
       description: json['description'],
+      cityId: json['cityId'],
       cityName: json['cityName'],
       contactEmail: json['contactEmail'],
       contactPhone: json['contactPhone'],
+      profilePhotoUrl: json['profilePhotoUrl'],
       coverPhotoUrl: json['coverPhotoUrl'],
       isVerified: json['isVerified'] ?? false,
-      avgRating: json['avgRating'] == null ? null : (json['avgRating'] as num)
-          .toDouble(),
+      avgRating: json['avgRating'] == null
+          ? null
+          : (json['avgRating'] as num).toDouble(),
       ratingCount: json['ratingCount'],
       details: json['details'] is Map<String, dynamic> ? json['details'] : null,
       followerCount: json['followerCount'] ?? 0,

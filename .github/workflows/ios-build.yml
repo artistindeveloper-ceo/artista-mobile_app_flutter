@@ -29,7 +29,7 @@ jobs:
       - name: Create unsigned IPA
         run: |
           mkdir -p build/ios/iphoneos/Payload
-          cp -r build/ios/iphoneos/Runner.app build/ios/iphoneos/Payload/Runner.app
+          cp -r build/ios_derived/Build/Products/Release-iphoneos/Runner.app build/ios/iphoneos/Payload/Runner.app
           cd build/ios/iphoneos
           zip -r app-unsigned.ipa Payload
       - name: Upload IPA artifact

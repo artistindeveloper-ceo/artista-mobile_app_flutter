@@ -200,12 +200,7 @@ class ProfileDto {
     required this.details,
   });
 
-  // NOTE: ProfileController returns the raw JPA Profile entity, so `city`
-  // arrives as a NESTED object (city -> state -> country), not flat
-  // cityName/stateName/countryName fields. Parsing that shape here:
-  //   { "city": { "id":5, "name":"Indore",
-  //               "state": { "name":"Madhya Pradesh",
-  //                          "country": { "name":"India" } } } }
+
   factory ProfileDto.fromJson(Map<String, dynamic> json) {
     final city = json['city'] as Map<String, dynamic>?;
     final state = city?['state'] as Map<String, dynamic>?;

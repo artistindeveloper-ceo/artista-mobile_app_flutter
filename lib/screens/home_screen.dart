@@ -4,10 +4,14 @@ import 'package:artist_in/screens/profile/ProfileScreen.dart';
 import 'package:artist_in/screens/social_feed/social_feed_screen.dart';
 import 'package:flutter/material.dart';
 
+import '../config/Session.dart';
+import '../model/UserModel.dart';
 import '../service/ConversationService.dart';
 import '../service/NotificationService.dart';
+import '../service/UserService.dart';
 import '../theme/app_theme.dart';
 import '../websocket/ChatSocketService.dart';
+import 'Business_Profile/BusinessProfileScreen.dart';
 import 'chat/chat_list_screen.dart';
 import 'community/community_screen.dart';
 import 'jamming_room/jamming_screen.dart';
@@ -25,6 +29,10 @@ class _HomeScreenState extends State<HomeScreen> {
   int _unreadCount = 0; // notifications
   int _chatUnreadCount = 0; // total unread chat messages
   Timer? _chatBadgeTimer;
+
+  // Business vs individual account decide karne ke liye — ek baar fetch
+  // karke rakh lete hain, taaki har Profile-tab tap pe API call na ho.
+  UserModel? _currentUser;
 
   final List<String> _titles = [
     'Home',
@@ -46,6 +54,7 @@ class _HomeScreenState extends State<HomeScreen> {
     super.initState();
     _loadUnreadCount();
     _loadChatUnreadCount();
+    _loadCurrentUser();
 
     ChatSocketService().connect((message) {
       if (!mounted) return;
@@ -64,6 +73,17 @@ class _HomeScreenState extends State<HomeScreen> {
     _chatBadgeTimer?.cancel();
     ChatSocketService().disconnect();
     super.dispose();
+  }
+
+  Future<void> _loadCurrentUser() async {
+    try {
+      final user = await UserService.getMe();
+      if (!mounted) return;
+      setState(() => _currentUser = user);
+    } catch (_) {
+      // Silent fail — Profile tab apne aap _loadProfile() karke retry
+      // kar lega, ye sirf tab-routing decide karne ke liye hai
+    }
   }
 
   Future<void> _loadUnreadCount() async {
@@ -97,6 +117,13 @@ class _HomeScreenState extends State<HomeScreen> {
       case 3:
         return const JammingScreen();
       case 4:
+        // Business account ke liye BusinessProfileScreen, warna normal
+        // ProfileScreen. _currentUser abhi load ho raha ho to (null) tab
+        // tak normal ProfileScreen dikhate hain — wo khud apna loading
+        // state handle karta hai.
+        if (_currentUser != null && _currentUser!.isBusinessAccount) {
+          return BusinessProfileScreen(businessId: _currentUser!.id);
+        }
         return const ProfileScreen();
       default:
         return _EmptyTab(label: _titles[_currentIndex]);
@@ -139,14 +166,7 @@ class _HomeScreenState extends State<HomeScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      // FIXED: removed `backgroundColor: AppColors.white`.
-      // Scaffold now inherits `scaffoldBackgroundColor` from AppTheme
-      // (AppColors.bgBase) automatically — no more white feed area.
-      // Drawer removed from Home — it now lives on the Profile screen.
       appBar: AppBar(
-        // FIXED: removed explicit backgroundColor/foregroundColor overrides.
-        // AppBarTheme in app_theme.dart already sets these — single source
-        // of truth, so a future theme swap updates this screen for free.
         title: Text(_titles[_currentIndex]),
         actions: [
           Stack(
@@ -196,10 +216,6 @@ class _HomeScreenState extends State<HomeScreen> {
             });
           }
         },
-        // FIXED: removed backgroundColor / selectedItemColor /
-        // unselectedItemColor overrides (the old `0xFF7986CB` navy-purple
-        // leftover is gone). BottomNavigationBarTheme now fully controls
-        // this — gold for selected, muted grey for unselected.
         type: BottomNavigationBarType.fixed,
         selectedFontSize: 11,
         unselectedFontSize: 11,

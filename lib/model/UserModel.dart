@@ -42,6 +42,20 @@ class UserModel {
     this.mobileNumber,
   });
 
+  // Business account types jo roleType me aa sakte hain — inke against
+  // check karke individual vs business decide karte hain, kyunki backend
+  // response me abhi ek separate "accountType" field nahi hai.
+  static const Set<String> _businessRoleTypes = {
+    'SHOP',
+    'ACADEMY',
+    'SCHOOL',
+    'INSTITUTE',
+  };
+
+  bool get isBusinessAccount =>
+      professionalType != null &&
+      _businessRoleTypes.contains(professionalType!.toUpperCase());
+
   UserModel copyWith({
     bool? isFollowing,
     String? profilePhotoUrl,

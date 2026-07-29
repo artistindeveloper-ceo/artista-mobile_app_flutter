@@ -1,0 +1,29 @@
+{
+  "project_info": {
+    "project_number": "401598862863",
+    "project_id": "artist-in-app",
+    "storage_bucket": "artist-in-app.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:401598862863:android:c691550bf064e3c66c357a",
+        "android_client_info": {
+          "package_name": "com.example.artista"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyBuvlqqMzrMtpDXmnaijDyWvG4ToV60xYg"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}

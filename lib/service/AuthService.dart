@@ -1,13 +1,16 @@
 import 'dart:convert';
 
+import 'package:firebase_messaging/firebase_messaging.dart';
 import 'package:http/http.dart' as http;
 
 import '../Exception/ApiException.dart';
 import '../config/ApiConfig.dart';
 import '../config/Session.dart';
 import '../model/UserModel.dart';
+import '../utils/DeviceInfoHelper.dart';
 import 'HelperService.dart';
 import 'ApiClient.dart';
+import 'NotificationService.dart';
 
 class AuthService {
   // ─── LOGIN ──────────────────────────────────────────────────────
@@ -16,14 +19,24 @@ class AuthService {
     required String password,
   }) async {
     final uri = Uri.parse(ApiConfig.loginUrl);
+
+    final deviceId = await DeviceInfoHelper.getDeviceId();
+    final deviceDetails = await DeviceInfoHelper.getDeviceDetails();
+    final fcmToken = await FirebaseMessaging.instance.getToken();
+
     http.Response response;
     try {
       response = await http.post(
         uri,
         headers: {'Content-Type': 'application/json'},
         body: jsonEncode({
-          'usernameOrEmail': emailOrMobile, // ← 'email' → 'usernameOrEmail'
+          'usernameOrEmail': emailOrMobile,
           'password': password,
+          'deviceId': deviceId,
+          'deviceType': deviceDetails['deviceType'],
+          'deviceModel': deviceDetails['deviceModel'],
+          'deviceOs': deviceDetails['deviceOs'],
+          'fcmToken': fcmToken,
         }),
       );
     } catch (e) {
@@ -33,12 +46,10 @@ class AuthService {
 
     final body = HelperService.safeDecode(response.body);
 
-    // Backend direct response deta hai, 'success' field nahi hai
     if (response.statusCode != 200) {
       throw ApiException(body['message'] ?? 'Login failed. Please try again.');
     }
 
-    // Swagger se: accessToken, refreshToken aur user direct root mein hain
     final token = body['accessToken'] as String;
     final refreshTokenValue = body['refreshToken'] as String?;
     final userJson = body['user'] as Map<String, dynamic>;
@@ -51,41 +62,15 @@ class AuthService {
       profilePhotoUrl: user.profilePhotoUrl,
       displayName: user.name,
     );
+
+    await NotificationService.init();
     return user;
   }
 
-  // ─── REGISTER ───────────────────────────────────────────
-  // static Future<void> register({
-  //   required String name,
-  //   required String email,
-  //   required String password,
-  //   required String professionalType,
-  // }) async {
-  //   final uri = Uri.parse('${ApiConfig.baseUrl}/api/v1/auth/register');
-  //   http.Response response;
-  //   try {
-  //     response = await http.post(
-  //       uri,
-  //       headers: {'Content-Type': 'application/json'},
-  //       body: jsonEncode({
-  //         'username': name.replaceAll(' ', '_').toLowerCase(),
-  //         'displayName': name,
-  //         'email': email,
-  //         'password': password,
-  //         'professionalType': professionalType,
-  //       }),
-  //     );
-  //   } catch (e) {
-  //     throw ApiException(
-  //         'Could not reach server. Check your internet connection.');
-  //   }
-  //
-  //   final body = HelperService.safeDecode(response.body);
-  //   if (response.statusCode != 200 && response.statusCode != 201) {
-  //     throw ApiException(body['message'] ?? 'Registration failed.');
-  //   }
-  // }
-
+  // ─── REGISTER ───────────────────────────────────────────────────
+  // Note: register auto-login nahi karta (session save nahi hoti).
+  // Agar future me auto-login chahiye, isme bhi deviceId/deviceType/fcmToken
+  // add karna padega jaise login() me hai.
   static Future<void> register({
     required String name,
     required String email,
@@ -150,7 +135,7 @@ class AuthService {
     }
   }
 
-// ─── REFRESH TOKEN ──────────────────────────────────────
+  // ─── REFRESH TOKEN ──────────────────────────────────────
   static Future<bool> refreshAccessToken() async {
     final oldRefreshToken = Session().refreshToken;
     if (oldRefreshToken == null) return false;
@@ -182,17 +167,41 @@ class AuthService {
   // ─── LOGOUT ─────────────────────────────────────────────
   static Future<void> logout() async {
     final refreshToken = Session().refreshToken;
-    if (refreshToken != null) {
-      try {
-        await http.post(
-          Uri.parse('${ApiConfig.baseUrl}/api/v1/auth/logout'),
-          headers: {'Content-Type': 'application/json'},
-          body: jsonEncode({'refreshToken': refreshToken}),
-        );
-      } catch (e) {
-        // ignore, local clear to hoga hi
-      }
+
+    try {
+      await http.post(
+        Uri.parse('${ApiConfig.baseUrl}/api/v1/auth/logout'),
+        headers: {'Content-Type': 'application/json'},
+        body: jsonEncode({'refreshToken': refreshToken}),
+      );
+    } catch (e) {
+      // ignore, local clear to hoga hi
     }
+
+    await FirebaseMessaging.instance.deleteToken();
     await Session().clear();
+  }
+
+  // ─── FCM TOKEN SYNC (device.register endpoint) ───────────
+  // Firebase token background me refresh ho sakta hai — is method ko
+  // FirebaseMessaging.instance.onTokenRefresh listener me call karo
+  // (jaise NotificationService.init() ke andar), taaki backend ka
+  // LoginDevice row hamesha latest fcmToken rakhe.
+  static Future<void> syncFcmToken(String newFcmToken) async {
+    if (!Session().isLoggedIn) return;
+
+    try {
+      final deviceId = await DeviceInfoHelper.getDeviceId();
+      await ApiClient.authorizedRequest(() => http.post(
+            Uri.parse('${ApiConfig.baseUrl}/api/v1/auth/device/register'),
+            headers: HelperService.authHeaders(),
+            body: jsonEncode({
+              'deviceId': deviceId,
+              'fcmToken': newFcmToken,
+            }),
+          ));
+    } catch (e) {
+      // silent fail — agla app-open pe retry ho jayega
+    }
   }
 }

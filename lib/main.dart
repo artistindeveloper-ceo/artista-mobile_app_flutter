@@ -1,3 +1,4 @@
+import 'package:artist_in/service/NotificationService.dart';
 import 'package:flutter/material.dart';
 import 'package:firebase_core/firebase_core.dart';
 import 'package:firebase_messaging/firebase_messaging.dart';
@@ -20,10 +21,14 @@ void main() async {
     options: DefaultFirebaseOptions.currentPlatform,
   );
 
-  // Background message handler register karna
   FirebaseMessaging.onBackgroundMessage(_firebaseMessagingBackgroundHandler);
 
   await Session().load();
+
+  if (Session().isLoggedIn) {
+    await NotificationService.init();
+  }
+
   runApp(const MyApp());
 }
 

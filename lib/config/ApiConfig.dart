@@ -1,9 +1,10 @@
 class ApiConfig {
-  static const String baseUrl = 'http://43.205.146.248:8081'; // ← 9090 → 8081
+  static const String baseUrl = 'http://43.205.146.248:8081';
 
   // Auth
-  static const String loginUrl = '$baseUrl/api/v1/auth/login'; // ← v1 add kiya
-  static const String refreshTokenUrl = '$baseUrl/api/v1/auth/refresh-token';
+  static const String loginUrl = '$baseUrl/api/v1/auth/login';
+  static const String refreshTokenUrl =
+      '$baseUrl/api/v1/auth/refresh'; // ← FIXED path
 
   // User v1 endpoints
   static const String getMeUrl = '$baseUrl/api/v1/users/me';
@@ -74,7 +75,7 @@ class ApiConfig {
   static const String markAllReadUrl =
       '$baseUrl/api/v1/notifications/mark-all-read';
   static const String registerDeviceUrl =
-      '$baseUrl/api/v1/notifications/register-device'; // ← NAYA (FCM token)
+      '$baseUrl/api/v1/auth/device/register'; // ← FIXED path (auth controller me hai)
 
   // Jam Sessions
   static const String mySessionsUrl = '$baseUrl/api/v1/jam-sessions/mine';
@@ -100,9 +101,6 @@ class ApiConfig {
   static String userByUsernameUrl(String username) =>
       '$baseUrl/api/v1/users/$username';
 
-  // Old (keep for backward compat)
-  // static String userByIdUrl(int id) => '$baseUrl/api/v2/user/getById/$id';
-
   static String userByIdUrl(int id) => '$baseUrl/api/v1/users/$id';
   static const String createPostUrl = '$baseUrl/api/v1/posts';
 
@@ -111,10 +109,6 @@ class ApiConfig {
   static const String mySongsUrl = '$baseUrl/api/v1/songs/mine';
 
 // Instruments
-  // NOTE: Swagger me ye endpoints "/api/instruments/..." dikh rahe the
-  // (v1 prefix ke bina) — baaki sab APIs "/api/v1/..." use karte hain.
-  // Agar backend me ye bhi v1 ke andar hai to yahan 'api/instruments'
-  // ko 'api/v1/instruments' me badal dena.
   static const String allInstrumentsUrl = '$baseUrl/api/instruments';
 
   static String instrumentByIdUrl(int id) => '$baseUrl/api/instruments/$id';
@@ -137,9 +131,6 @@ class ApiConfig {
       '$baseUrl/api/instruments/by-type?typeId=$typeId&page=$page&size=$size';
 
   // Profiles
-  // NOTE: ProfileController @RequestMapping("/api/profiles") — v1 prefix ke
-  // bina, categories/instrument-types ki tarah. Agar backend me v1 ke andar
-  // move ho to yahan 'api/profiles' ko 'api/v1/profiles' me badal dena.
   static String profileByUserIdUrl(int userId) =>
       '$baseUrl/api/profiles/$userId';
 

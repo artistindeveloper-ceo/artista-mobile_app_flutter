@@ -1,13 +1,19 @@
+import 'dart:convert';
 import 'package:http/http.dart' as http;
 import 'package:firebase_messaging/firebase_messaging.dart';
+import 'package:flutter_local_notifications/flutter_local_notifications.dart';
 
 import '../Exception/ApiException.dart';
 import '../config/ApiConfig.dart';
+import '../config/Session.dart';
+import '../utils/DeviceInfoHelper.dart';
 import 'HelperService.dart';
 import 'ApiClient.dart';
-import 'dart:convert';
+
 class NotificationService {
   static final FirebaseMessaging _messaging = FirebaseMessaging.instance;
+  static final FlutterLocalNotificationsPlugin _localNotifications =
+      FlutterLocalNotificationsPlugin();
 
   // ─── GET NOTIFICATIONS ───────────────────────────────────
   static Future<List<dynamic>> getNotifications() async {
@@ -73,20 +79,28 @@ class NotificationService {
   }
 
   // ─── FCM: REGISTER TOKEN WITH BACKEND ───────────────────────
+  // deviceId zaroori hai ab — backend isi se decide karta hai
+  // kis LoginDevice row ka fcmToken update karna hai.
   static Future<void> registerDeviceToken() async {
+    if (!Session().isLoggedIn) return;
+
     final token = await getDeviceToken();
     if (token == null) return;
 
+    final deviceId = await DeviceInfoHelper.getDeviceId();
     final uri = Uri.parse(ApiConfig.registerDeviceUrl);
     try {
       await ApiClient.authorizedRequest(
-            () => http.post(
+        () => http.post(
           uri,
           headers: {
             ...HelperService.authHeaders(),
             'Content-Type': 'application/json',
           },
-          body: jsonEncode({'fcmToken': token}),
+          body: jsonEncode({
+            'deviceId': deviceId,
+            'fcmToken': token,
+          }),
         ),
       );
       print('✅ Device token registered with backend');
@@ -95,12 +109,52 @@ class NotificationService {
     }
   }
 
-  // ─── FCM: SETUP LISTENERS (foreground + tap) ────────────────
+// ─── CREATE ANDROID NOTIFICATION CHANNEL ───────────────────
+  static Future<void> _createNotificationChannel() async {
+    const AndroidNotificationChannel channel = AndroidNotificationChannel(
+      'high_importance_channel',
+      'High Importance Notifications',
+      description: 'Ye channel important notifications ke liye hai.',
+      importance: Importance.high,
+    );
+    await _localNotifications
+        .resolvePlatformSpecificImplementation<
+            AndroidFlutterLocalNotificationsPlugin>()
+        ?.createNotificationChannel(channel);
+  }
+
+  // ─── SHOW LOCAL NOTIFICATION (foreground ke liye) ───────────
+  static Future<void> _showLocalNotification(RemoteMessage message) async {
+    RemoteNotification? notification = message.notification;
+
+    if (notification != null) {
+      await _localNotifications.show(
+        notification.hashCode,
+        notification.title,
+        notification.body,
+        NotificationDetails(
+          android: const AndroidNotificationDetails(
+            'high_importance_channel',
+            'High Importance Notifications',
+            importance: Importance.high,
+            priority: Priority.high,
+          ),
+          iOS: const DarwinNotificationDetails(
+            presentAlert: true,
+            presentBadge: true,
+            presentSound: true,
+          ),
+        ),
+      );
+    }
+  }
+
+  // ─── FCM: SETUP LISTENERS (foreground + tap + token refresh) ────
   static void setupListeners() {
     // App foreground mein ho aur notification aaye
     FirebaseMessaging.onMessage.listen((RemoteMessage message) {
       print('🔔 Foreground notification: ${message.notification?.title}');
-      // yahan apna in-app banner/snackbar dikha sakte ho
+      _showLocalNotification(message);
     });
 
     // User ne notification tap kiya aur app background se open hui
@@ -108,10 +162,28 @@ class NotificationService {
       print('🔔 Notification tapped: ${message.data}');
       // yahan navigation logic daalo (jaise specific screen pe le jaana)
     });
+
+    // 🔴 YE NAYA HAI — background me FCM token refresh hone par backend update karo
+    FirebaseMessaging.instance.onTokenRefresh.listen((newToken) {
+      print('🔔 FCM token refreshed, syncing with backend');
+      registerDeviceToken();
+    });
   }
 
   // ─── FCM: FULL INIT (ek hi call mein sab) ───────────────────
   static Future<void> init() async {
+    const androidSettings =
+        AndroidInitializationSettings('@mipmap/ic_launcher');
+    const iosSettings = DarwinInitializationSettings(
+      requestAlertPermission: true,
+      requestBadgePermission: true,
+      requestSoundPermission: true,
+    );
+    const initSettings =
+        InitializationSettings(android: androidSettings, iOS: iosSettings);
+    await _localNotifications.initialize(initSettings);
+
+    await _createNotificationChannel();
     await requestPermission();
     await registerDeviceToken();
     setupListeners();

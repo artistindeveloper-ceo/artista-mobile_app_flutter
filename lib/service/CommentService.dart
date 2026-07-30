@@ -18,6 +18,7 @@ class CommentService {
             body: jsonEncode({'content': text}),
           ));
     } catch (e) {
+      if (e is ApiException) rethrow;
       throw ApiException('Could not reach server.');
     }
   }
@@ -30,6 +31,7 @@ class CommentService {
       response = await ApiClient.authorizedRequest(
           () => http.get(uri, headers: HelperService.authHeaders()));
     } catch (e) {
+      if (e is ApiException) rethrow;
       throw ApiException('Could not reach server.');
     }
 

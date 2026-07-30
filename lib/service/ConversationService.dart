@@ -18,6 +18,7 @@ class ConversationService {
       response = await ApiClient.authorizedRequest(
           () => http.get(uri, headers: HelperService.authHeaders()));
     } catch (e) {
+      if (e is ApiException) rethrow;
       throw ApiException('Could not reach server.');
     }
     final body = HelperService.safeDecode(response.body);
@@ -39,6 +40,7 @@ class ConversationService {
       response = await ApiClient.authorizedRequest(
           () => http.get(uri, headers: HelperService.authHeaders()));
     } catch (e) {
+      if (e is ApiException) rethrow;
       throw ApiException('Could not reach server.');
     }
     final body = HelperService.safeDecode(response.body);
@@ -77,6 +79,7 @@ class ConversationService {
       print('📤 SEND MSG status: ${response.statusCode}');
       print('📤 SEND MSG body: ${response.body}');
     } catch (e) {
+      if (e is ApiException) rethrow;
       throw ApiException('Could not reach server.');
     }
   }
@@ -88,6 +91,7 @@ class ConversationService {
       await ApiClient.authorizedRequest(
           () => http.post(uri, headers: HelperService.authHeaders()));
     } catch (e) {
+      if (e is ApiException) rethrow;
       // Silent fail
     }
   }
@@ -105,6 +109,7 @@ class ConversationService {
                 {'content': '👋'}), // sends a hi to open the conversation
           ));
     } catch (e) {
+      if (e is ApiException) rethrow;
       throw ApiException('Could not reach server.');
     }
 

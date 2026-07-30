@@ -18,6 +18,7 @@ class JamSessionService {
       response = await ApiClient.authorizedRequest(
           () => http.get(uri, headers: HelperService.authHeaders()));
     } catch (e) {
+      if (e is ApiException) rethrow;
       throw ApiException('Could not reach server.');
     }
     final body = HelperService.safeDecode(response.body);
@@ -44,6 +45,7 @@ class JamSessionService {
             }),
           ));
     } catch (e) {
+      if (e is ApiException) rethrow;
       throw ApiException('Could not reach server.');
     }
   }
@@ -56,6 +58,7 @@ class JamSessionService {
       response = await ApiClient.authorizedRequest(
           () => http.post(uri, headers: HelperService.authHeaders()));
     } catch (e) {
+      if (e is ApiException) rethrow;
       throw ApiException('Could not reach server.');
     }
     final body = HelperService.safeDecode(response.body);
@@ -73,6 +76,7 @@ class JamSessionService {
       response = await ApiClient.authorizedRequest(
           () => http.get(uri, headers: HelperService.authHeaders()));
     } catch (e) {
+      if (e is ApiException) rethrow;
       throw ApiException('Could not reach server.');
     }
     final body = HelperService.safeDecode(response.body);
@@ -90,6 +94,7 @@ class JamSessionService {
       response = await ApiClient.authorizedRequest(
           () => http.get(uri, headers: HelperService.authHeaders()));
     } catch (e) {
+      if (e is ApiException) rethrow;
       throw ApiException('Could not reach server.');
     }
     if (response.statusCode != 200) return [];
@@ -115,6 +120,7 @@ class JamSessionService {
       await ApiClient.authorizedRequest(
           () => http.post(uri, headers: HelperService.authHeaders()));
     } catch (e) {
+      if (e is ApiException) rethrow;
       throw ApiException('Could not reach server.');
     }
   }
@@ -126,6 +132,7 @@ class JamSessionService {
       await ApiClient.authorizedRequest(
           () => http.post(uri, headers: HelperService.authHeaders()));
     } catch (e) {
+      if (e is ApiException) rethrow;
       throw ApiException('Could not reach server.');
     }
   }
@@ -137,6 +144,7 @@ class JamSessionService {
       await ApiClient.authorizedRequest(
           () => http.post(uri, headers: HelperService.authHeaders()));
     } catch (e) {
+      if (e is ApiException) rethrow;
       throw ApiException('Could not reach server.');
     }
   }
@@ -150,6 +158,7 @@ class JamSessionService {
       response = await ApiClient.authorizedRequest(
           () => http.get(uri, headers: HelperService.authHeaders()));
     } catch (e) {
+      if (e is ApiException) rethrow;
       throw ApiException('Could not reach server.');
     }
     final body = HelperService.safeDecode(response.body);
@@ -174,6 +183,7 @@ class JamSessionService {
                 {'songId': songId, if (position != null) 'position': position}),
           ));
     } catch (e) {
+      if (e is ApiException) rethrow;
       throw ApiException('Could not reach server.');
     }
     final body = HelperService.safeDecode(response.body);
@@ -193,6 +203,7 @@ class JamSessionService {
       response = await ApiClient.authorizedRequest(
           () => http.delete(uri, headers: HelperService.authHeaders()));
     } catch (e) {
+      if (e is ApiException) rethrow;
       throw ApiException('Could not reach server.');
     }
     if (response.statusCode != 200) {
@@ -218,6 +229,7 @@ class JamSessionService {
             }),
           ));
     } catch (e) {
+      if (e is ApiException) rethrow;
       throw ApiException('Could not reach server.');
     }
     final body = HelperService.safeDecode(response.body);
@@ -240,6 +252,7 @@ class JamSessionService {
             body: jsonEncode({'transposeOffset': transposeOffset}),
           ));
     } catch (e) {
+      if (e is ApiException) rethrow;
       throw ApiException('Could not reach server.');
     }
     final body = HelperService.safeDecode(response.body);

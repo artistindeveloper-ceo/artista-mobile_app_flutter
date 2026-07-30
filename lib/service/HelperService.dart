@@ -39,6 +39,7 @@ class HelperService {
         msg.contains('unauthorized') ||
         msg.contains('not logged in') ||
         msg.contains('security context') ||
+        msg.contains('session_expired') ||   // 👈 add this line
         msg.contains('401') ||
         msg.contains('403');
   }

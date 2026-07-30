@@ -46,6 +46,7 @@ class AuthService {
         }),
       );
     } catch (e) {
+      if (e is ApiException) rethrow;
       throw ApiException(
           'Could not reach server. Check your internet connection.');
     }
@@ -140,6 +141,7 @@ class AuthService {
             }),
           ));
     } catch (e) {
+      if (e is ApiException) rethrow;
       throw ApiException(
           'Could not reach server. Check your internet connection.');
     }
@@ -175,6 +177,7 @@ class AuthService {
       }
       return false;
     } catch (e) {
+      if (e is ApiException) rethrow;
       return false;
     }
   }
@@ -190,6 +193,7 @@ class AuthService {
         body: jsonEncode({'refreshToken': refreshToken}),
       );
     } catch (e) {
+      if (e is ApiException) rethrow;
       // ignore, local clear to hoga hi
     }
 
@@ -216,6 +220,7 @@ class AuthService {
             }),
           ));
     } catch (e) {
+      if (e is ApiException) rethrow;
       // silent fail — agla app-open pe retry ho jayega
     }
   }

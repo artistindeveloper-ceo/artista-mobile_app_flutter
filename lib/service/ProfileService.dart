@@ -18,6 +18,7 @@ class ProfileService {
         ),
       );
     } catch (e) {
+      if (e is ApiException) rethrow;
       throw ApiException(
           'Could not reach server. Check your internet connection.');
     }
@@ -40,6 +41,7 @@ class ProfileService {
         ),
       );
     } catch (e) {
+      if (e is ApiException) rethrow;
       throw ApiException(
           'Could not reach server. Check your internet connection.');
     }
@@ -58,6 +60,7 @@ class ProfileService {
       response = await ApiClient.authorizedRequest(
           () => http.get(uri, headers: HelperService.authHeaders()));
     } catch (e) {
+      if (e is ApiException) rethrow;
       throw ApiException(
           'Could not reach server. Check your internet connection.');
     }
@@ -101,6 +104,7 @@ class ProfileService {
             body: jsonEncode(details),
           ));
     } catch (e) {
+      if (e is ApiException) rethrow;
       throw ApiException(
           'Could not reach server. Check your internet connection.');
     }
@@ -199,7 +203,6 @@ class ProfileDto {
     this.countryName,
     required this.details,
   });
-
 
   factory ProfileDto.fromJson(Map<String, dynamic> json) {
     final city = json['city'] as Map<String, dynamic>?;

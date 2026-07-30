@@ -1,11 +1,10 @@
-
 import 'package:artist_in/screens/profile/ProfileScreen.dart';
 import 'package:flutter/material.dart';
 
 import '../config/ApiConfig.dart' as $baseUrl;
+import '../service/HelperService.dart';
 import '../service/NotificationService.dart';
 import '../theme/app_theme.dart';
-
 
 class NotificationScreen extends StatefulWidget {
   const NotificationScreen({super.key});
@@ -32,13 +31,20 @@ class _NotificationScreenState extends State<NotificationScreen> {
     });
     try {
       final notifs = await NotificationService.getNotifications();
-      print('🔔 NOTIF DATA: ${notifs}'); // 👈 add this
+      print('🔔 NOTIF DATA: ${notifs}');
       setState(() {
         _notifications = notifs;
         _isLoading = false;
       });
       await NotificationService.markAllNotificationsRead();
     } catch (e) {
+      // 👇 auth error check + forced logout
+      if (HelperService.isAuthError(e)) {
+        if (mounted) {
+          await HelperService.forceLogout(context);
+        }
+        return;
+      }
       setState(() {
         _isLoading = false;
         _error = e.toString();
@@ -171,8 +177,11 @@ class _NotificationScreenState extends State<NotificationScreen> {
 
           final rawUrl = actor?['profilePhotoUrl'];
           final avatarUrl = rawUrl != null
-              ? '${$baseUrl.ApiConfig.baseUrl}$rawUrl' // 👈 adds https://yourserver.com
+              ? (rawUrl.toString().startsWith('http')
+                  ? rawUrl.toString()
+                  : '${$baseUrl.ApiConfig.baseUrl}$rawUrl')
               : null;
+          print('🖼️ AVATAR URL: $avatarUrl');
           return InkWell(
             // 👈 wrap with InkWell
             onTap: () => _onNotificationTap(n), // 👈 tap goes to profile

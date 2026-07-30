@@ -32,6 +32,7 @@ class UserProfileService {
             body: jsonEncode({'mediaKey': result.key}),
           ));
     } catch (e) {
+      if (e is ApiException) rethrow;
       throw ApiException(
           'Could not reach server. Check your internet connection.');
     }
@@ -65,6 +66,7 @@ class UserProfileService {
             body: jsonEncode({'mediaKey': result.key}),
           ));
     } catch (e) {
+      if (e is ApiException) rethrow;
       throw ApiException(
           'Could not reach server. Check your internet connection.');
     }

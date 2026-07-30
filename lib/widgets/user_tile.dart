@@ -2,16 +2,27 @@ import 'package:flutter/material.dart';
 
 import '../../../model/UserModel.dart';
 import '../../../theme/app_theme.dart';
-
+import '../screens/profile/ProfileScreen.dart';
 class UserTile extends StatelessWidget {
   final UserModel user;
   final VoidCallback onFollow;
 
   const UserTile({super.key, required this.user, required this.onFollow});
 
+  // ⬅️ YAHAN 2: ye poora naya method add karo
+  void _openProfile(BuildContext context) {
+    Navigator.push(
+      context,
+      MaterialPageRoute(
+        builder: (_) => ProfileScreen(username: user.username),
+      ),
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
     return ListTile(
+      onTap: () => _openProfile(context),
       leading: CircleAvatar(
         backgroundColor: AppColors.primaryLight,
         backgroundImage:

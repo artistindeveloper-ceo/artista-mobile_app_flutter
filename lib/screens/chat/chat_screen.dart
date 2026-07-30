@@ -2,19 +2,26 @@ import 'dart:async';
 import 'package:flutter/material.dart';
 import '../../config/Session.dart';
 import '../../service/ConversationService.dart';
+import '../../service/PresenceService.dart';
 import '../../theme/app_theme.dart';
+import '../profile/ProfileScreen.dart';
 
 class ChatScreen extends StatefulWidget {
-  final int conversationId;
-  final String username;
+  // Nullable ab: naya chat start hone par conversation abhi bani hi nahi hai.
+  // Pehla message bhejte hi backend lazily conversation create karega aur
+  // response me asli conversationId milegi.
+  final int? conversationId;
+  final String username; // display name (dikhane ke liye)
+  final String? profileUsername; // asli @username (profile lookup ke liye)
   final String? avatarUrl;
   final int otherUserId;
 
   const ChatScreen({
     super.key,
-    required this.conversationId,
+    this.conversationId,
     required this.username,
     required this.otherUserId,
+    this.profileUsername,
     this.avatarUrl,
   });
 
@@ -29,13 +36,28 @@ class _ChatScreenState extends State<ChatScreen> {
   final _scrollCtrl = ScrollController();
   Timer? _pollingTimer;
 
+  // conversationId ab state me rakhte hain kyunki pehle message ke baad
+  // widget.conversationId se alag ho sakti hai (lazily create hone ke baad).
+  int? _conversationId;
+
   @override
   void initState() {
     super.initState();
-    _loadMessages();
-    _pollingTimer = Timer.periodic(const Duration(seconds: 3), (_) {
-      _pollMessages();
-    });
+    _conversationId = widget.conversationId;
+
+    if (_conversationId != null) {
+      // Existing conversation: normal load + polling.
+      _loadMessages();
+      _startPolling();
+    } else {
+      // Naya chat: koi API call nahi, seedha empty state dikhao.
+      _isLoading = false;
+    }
+
+    // Presence: REST se turant status laao (WebSocket event abhi tak nahi
+    // aaya ho sakta), aur live updates ke liye listener lagao.
+    PresenceService.instance.fetchInitialStatus(widget.otherUserId);
+    PresenceService.instance.addListener(_onPresenceChanged);
   }
 
   @override
@@ -43,20 +65,33 @@ class _ChatScreenState extends State<ChatScreen> {
     _pollingTimer?.cancel();
     _msgCtrl.dispose();
     _scrollCtrl.dispose();
+    PresenceService.instance.removeListener(_onPresenceChanged);
     super.dispose();
   }
 
+  void _onPresenceChanged() {
+    if (mounted) setState(() {}); // avatar dot repaint
+  }
+
+  void _startPolling() {
+    _pollingTimer?.cancel();
+    _pollingTimer = Timer.periodic(const Duration(seconds: 3), (_) {
+      _pollMessages();
+    });
+  }
+
   Future<void> _loadMessages() async {
+    if (_conversationId == null) return;
     setState(() => _isLoading = true);
     try {
-      final msgs = await ConversationService.getMessages(widget.conversationId);
+      final msgs = await ConversationService.getMessages(_conversationId!);
       final sorted = msgs.reversed.toList();
       setState(() {
         _messages = sorted;
         _isLoading = false;
       });
       if (mounted) {
-        await ConversationService.markAsRead(widget.conversationId);
+        await ConversationService.markAsRead(_conversationId!);
       }
       _scrollToBottom();
     } catch (e) {
@@ -65,12 +100,13 @@ class _ChatScreenState extends State<ChatScreen> {
   }
 
   Future<void> _pollMessages() async {
+    if (_conversationId == null) return;
     try {
-      final msgs = await ConversationService.getMessages(widget.conversationId);
+      final msgs = await ConversationService.getMessages(_conversationId!);
       if (!mounted) return;
       final sorted = msgs.reversed.toList();
       setState(() => _messages = sorted);
-      await ConversationService.markAsRead(widget.conversationId);
+      await ConversationService.markAsRead(_conversationId!);
     } catch (_) {}
   }
 
@@ -86,13 +122,37 @@ class _ChatScreenState extends State<ChatScreen> {
     });
   }
 
+  // Backend response se conversation id nikaalne ki koshish karta hai.
+  // Response ka exact shape ConversationService.sendMessage() par depend
+  // karta hai — dono common key names (`id`, `conversationId`) try kiye hain.
+  int? _extractConversationId(dynamic response) {
+    if (response == null) return null;
+    if (response is int) return response;
+    if (response is Map) {
+      final raw = response['conversationId'] ??
+          response['conversation_id'] ??
+          response['id'];
+      if (raw is int) return raw;
+      if (raw is String) return int.tryParse(raw);
+    }
+    return null;
+  }
+
   Future<void> _sendMessage() async {
     final text = _msgCtrl.text.trim();
     if (text.isEmpty) return;
     _msgCtrl.clear();
     try {
-      await ConversationService.sendMessage(
+      final response = await ConversationService.sendMessage(
           recipientId: widget.otherUserId, content: text);
+      if (_conversationId == null) {
+        final newId = _extractConversationId(response);
+        if (newId != null) {
+          setState(() => _conversationId = newId);
+          _startPolling();
+        }
+      }
+
       await _pollMessages();
       _scrollToBottom();
     } catch (e) {
@@ -117,26 +177,13 @@ class _ChatScreenState extends State<ChatScreen> {
     }
   }
 
-  void _showFullImage() {
-    if (widget.avatarUrl == null) return;
-    showDialog(
-      context: context,
-      builder: (_) => Dialog(
-        backgroundColor: Colors.black,
-        insetPadding: EdgeInsets.zero,
-        child: GestureDetector(
-          onTap: () => Navigator.pop(context),
-          child: SizedBox(
-            width: double.infinity,
-            height: double.infinity,
-            child: InteractiveViewer(
-              child: Image.network(
-                widget.avatarUrl!,
-                fit: BoxFit.contain,
-              ),
-            ),
-          ),
-        ),
+  // ⬅️ NAYA METHOD: tap karne par profile screen khulegi
+  void _openProfile() {
+    Navigator.push(
+      context,
+      MaterialPageRoute(
+        builder: (_) =>
+            ProfileScreen(username: widget.profileUsername ?? widget.username),
       ),
     );
   }
@@ -144,6 +191,7 @@ class _ChatScreenState extends State<ChatScreen> {
   @override
   Widget build(BuildContext context) {
     final myId = Session().userId;
+    final isOnline = PresenceService.instance.isOnline(widget.otherUserId);
 
     return Scaffold(
       resizeToAvoidBottomInset: true,
@@ -158,34 +206,65 @@ class _ChatScreenState extends State<ChatScreen> {
           onPressed: () => Navigator.pop(context),
         ),
         title: GestureDetector(
-          onTap: _showFullImage,
+          onTap: _openProfile, // ⬅️ ab profile khulegi
           child: Row(
             mainAxisSize: MainAxisSize.min,
             children: [
-              CircleAvatar(
-                radius: 20,
-                backgroundColor: AppColors.gold,
-                backgroundImage: widget.avatarUrl != null
-                    ? NetworkImage(widget.avatarUrl!)
-                    : null,
-                child: widget.avatarUrl == null
-                    ? Text(
-                        widget.username.isNotEmpty
-                            ? widget.username[0].toUpperCase()
-                            : '?',
-                        style: const TextStyle(
-                            color: AppColors.textOnGold,
-                            fontWeight: FontWeight.bold),
-                      )
-                    : null,
+              Stack(
+                clipBehavior: Clip.none,
+                children: [
+                  CircleAvatar(
+                    radius: 20,
+                    backgroundColor: AppColors.gold,
+                    backgroundImage: widget.avatarUrl != null
+                        ? NetworkImage(widget.avatarUrl!)
+                        : null,
+                    child: widget.avatarUrl == null
+                        ? Text(
+                            widget.username.isNotEmpty
+                                ? widget.username[0].toUpperCase()
+                                : '?',
+                            style: const TextStyle(
+                                color: AppColors.textOnGold,
+                                fontWeight: FontWeight.bold),
+                          )
+                        : null,
+                  ),
+                  if (isOnline)
+                    Positioned(
+                      right: 0,
+                      bottom: 0,
+                      child: Container(
+                        width: 11,
+                        height: 11,
+                        decoration: BoxDecoration(
+                          color: Colors.green,
+                          shape: BoxShape.circle,
+                          border:
+                              Border.all(color: AppColors.bgAppBar, width: 2),
+                        ),
+                      ),
+                    ),
+                ],
               ),
               const SizedBox(width: 10),
-              Text(
-                widget.username,
-                style: const TextStyle(
-                    color: AppColors.textPrimary,
-                    fontWeight: FontWeight.bold,
-                    fontSize: 16),
+              Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  Text(
+                    widget.username,
+                    style: const TextStyle(
+                        color: AppColors.textPrimary,
+                        fontWeight: FontWeight.bold,
+                        fontSize: 16),
+                  ),
+                  if (isOnline)
+                    const Text(
+                      'Online',
+                      style: TextStyle(color: Colors.green, fontSize: 11),
+                    ),
+                ],
               ),
             ],
           ),

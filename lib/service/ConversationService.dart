@@ -51,7 +51,13 @@ class ConversationService {
   }
 
 // ─── SEND MESSAGE ────────────────────────────────────────
-  static Future<void> sendMessage({
+  // Backend ka POST /api/v1/messages/users/{recipientId} lazily conversation
+  // create karta hai (agar pehle se nahi hai) aur ChatMessageResponse laut
+  // aata hai — jisme conversationId included hota hai. Isi wajah se ab yeh
+  // method Future<void> nahi, decoded response Map return karta hai, taaki
+  // ChatScreen naye chat ke pehle message se hi asli conversationId nikaal
+  // sake.
+  static Future<Map<String, dynamic>> sendMessage({
     required int recipientId,
     required String content,
     File? attachmentFile,
@@ -67,8 +73,9 @@ class ConversationService {
     }
 
     final uri = Uri.parse(ApiConfig.sendMessageUrl(recipientId));
+    http.Response response;
     try {
-      final response = await ApiClient.authorizedRequest(() => http.post(
+      response = await ApiClient.authorizedRequest(() => http.post(
             uri,
             headers: HelperService.authHeaders(),
             body: jsonEncode({
@@ -82,6 +89,16 @@ class ConversationService {
       if (e is ApiException) rethrow;
       throw ApiException('Could not reach server.');
     }
+
+    final body = HelperService.safeDecode(response.body);
+    if (response.statusCode != 200 && response.statusCode != 201) {
+      throw ApiException(body['message'] ?? 'Could not send message.');
+    }
+
+    // Kuch endpoints response ko {'data': {...}} me wrap karte hain,
+    // kuch seedha object bhejte hain — dono handle karte hain.
+    final data = body['data'] ?? body['content'] ?? body;
+    return (data as Map).cast<String, dynamic>();
   }
 
 // ─── MARK AS READ ────────────────────────────────────────
@@ -94,36 +111,6 @@ class ConversationService {
       if (e is ApiException) rethrow;
       // Silent fail
     }
-  }
-
-  // ─── START / FIND CONVERSATION WITH USER ─────────────────
-  static Future<int> startConversation(int userId) async {
-    // POST /api/v1/messages/users/{recipientId} — creates conversation
-    final uri = Uri.parse('${ApiConfig.baseUrl}/api/v1/messages/users/$userId');
-    http.Response response;
-    try {
-      response = await ApiClient.authorizedRequest(() => http.post(
-            uri,
-            headers: HelperService.authHeaders(),
-            body: jsonEncode(
-                {'content': '👋'}), // sends a hi to open the conversation
-          ));
-    } catch (e) {
-      if (e is ApiException) rethrow;
-      throw ApiException('Could not reach server.');
-    }
-
-    print('🗨️ startConversation status: ${response.statusCode}');
-    print('🗨️ startConversation body: ${response.body}');
-
-    final body = HelperService.safeDecode(response.body);
-    if (response.statusCode != 200 && response.statusCode != 201) {
-      throw ApiException(body['message'] ?? 'Could not start conversation.');
-    }
-
-    // Extract conversationId from response
-    final data = (body['data'] ?? body) as Map<String, dynamic>;
-    return (data['conversationId'] ?? data['id']) as int;
   }
 
   static Future<int> getTotalUnreadCount() async {

@@ -9,9 +9,12 @@ import '../config/ApiConfig.dart';
 import '../config/Session.dart';
 import '../model/UserModel.dart';
 import '../utils/DeviceInfoHelper.dart';
+import '../websocket/ChatSocketService.dart';
 import 'HelperService.dart';
 import 'ApiClient.dart';
 import 'NotificationService.dart';
+import 'PresenceService.dart';
+import 'WebSocketService.dart';
 
 class AuthService {
   // ─── LOGIN ──────────────────────────────────────────────────────
@@ -71,6 +74,16 @@ class AuthService {
     );
 
     await NotificationService.init();
+
+    // ✅ Login successful — shared socket connect karo, uske upar
+    // presence + chat dono subscribe honge.
+    WebSocketService.instance.connect(token);
+    PresenceService.instance.startListening();
+    ChatSocketService().connect((message) {
+      // TODO: unread badge update logic yahan call karein
+      // e.g. ChatBadgeController.instance.onNewMessage(message);
+    });
+
     return user;
   }
 
@@ -173,6 +186,21 @@ class AuthService {
           newAccessToken,
           newRefreshToken: newRefreshToken,
         );
+
+        // Access token badal gaya — WebSocket connection purane token se
+        // bani thi, isliye use bhi naye token ke saath reconnect karo warna
+        // agli baar socket drop hone par reconnect galat/expired token
+        // bhejega. Presence + chat dono ko naye socket par resubscribe
+        // karo (dono services internally isConnected check karte hain
+        // isliye yeh safe hai).
+        WebSocketService.instance.disconnect();
+        WebSocketService.instance.connect(newAccessToken);
+        PresenceService.instance.startListening();
+        ChatSocketService().connect((message) {
+          // TODO: unread badge update logic yahan call karein
+          // e.g. ChatBadgeController.instance.onNewMessage(message);
+        });
+
         return true;
       }
       return false;
@@ -202,6 +230,14 @@ class AuthService {
     if (!Platform.isIOS) {
       await FirebaseMessaging.instance.deleteToken();
     }
+
+    // ✅ Logout hote hi presence + chat + socket sab band karo — warna
+    // server side hume galat se "online" dikhata rahega jab tak socket
+    // timeout na ho.
+    PresenceService.instance.stopListening();
+    ChatSocketService().disconnect();
+    WebSocketService.instance.disconnect();
+
     await Session().clear();
   }
 

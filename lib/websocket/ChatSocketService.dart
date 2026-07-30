@@ -1,16 +1,15 @@
 import 'dart:convert';
+
 import 'package:stomp_dart_client/stomp_dart_client.dart';
-import '../config/ApiConfig.dart';
-import '../config/Session.dart';
+
+import '../service/WebSocketService.dart';
 
 typedef ChatMessageHandler = void Function(Map<String, dynamic> message);
 
-/// Global chat socket — connects once for the whole app session (not tied
-/// to a single conversation) and listens on the user's private queue so
-/// the unread badge updates instantly without polling.
-///
-/// Singleton: only one connection should exist for the app's lifetime,
-/// separate from JamSessionSocketService (which is per jam-session).
+/// Chat message listener — rides on top of the single shared
+/// WebSocketService connection (does NOT open its own socket). Listens on
+/// the user's private queue so the unread badge updates instantly without
+/// polling.
 class ChatSocketService {
   ChatSocketService._internal();
 
@@ -18,58 +17,35 @@ class ChatSocketService {
 
   factory ChatSocketService() => _instance;
 
-  StompClient? _client;
-  bool _connected = false;
+  static const String _destination = '/user/queue/messages';
+
   ChatMessageHandler? _onMessage;
+  bool _subscribed = false;
 
+  /// Call once after WebSocketService.instance.connect() — e.g. right
+  /// after login, on app restart, and after token refresh. Same isConnected
+  /// check as PresenceService — a stale _subscribed=true must not skip
+  /// re-subscribing on a freshly reconnected socket.
   void connect(ChatMessageHandler onMessage) {
-    if (_connected) {
-      // Already connected — just update the handler (e.g. HomeScreen rebuilt)
-      _onMessage = onMessage;
-      return;
-    }
     _onMessage = onMessage;
-    final token = Session().token;
-
-    // ⚠️ Same '/ws' endpoint as JamSessionSocketService — must match
-    // WebSocketConfig.registerStompEndpoints().
-    final wsUrl =
-        '${ApiConfig.baseUrl.replaceFirst('https://', 'wss://').replaceFirst('http://', 'ws://')}/ws-native?token=$token';
-
-    _client = StompClient(
-      config: StompConfig(
-        url: wsUrl,
-        onConnect: _onConnect,
-        onWebSocketError: (dynamic e) => print('ChatSocket WS error: $e'),
-        onStompError: (frame) => print('ChatSocket STOMP error: ${frame.body}'),
-        onDisconnect: (_) => _connected = false,
-        stompConnectHeaders: {'Authorization': 'Bearer $token'},
-        webSocketConnectHeaders: {'Authorization': 'Bearer $token'},
-      ),
-    );
-    _client!.activate();
+    if (_subscribed && WebSocketService.instance.isConnected) return;
+    _subscribed = true;
+    WebSocketService.instance.subscribe(_destination, _onFrame);
   }
 
-  void _onConnect(StompFrame frame) {
-    _connected = true;
-    _client!.subscribe(
-      // Spring resolves this to the caller's own private queue based on
-      // the authenticated Principal — matches convertAndSendToUser(...).
-      destination: '/user/queue/messages',
-      callback: (StompFrame f) {
-        if (f.body == null) return;
-        try {
-          final data = jsonDecode(f.body!);
-          if (data is Map<String, dynamic>) _onMessage?.call(data);
-        } catch (_) {}
-      },
-    );
+  void _onFrame(StompFrame frame) {
+    if (frame.body == null) return;
+    try {
+      final data = jsonDecode(frame.body!);
+      if (data is Map<String, dynamic>) _onMessage?.call(data);
+    } catch (_) {
+      // Ignore malformed frames.
+    }
   }
 
   void disconnect() {
-    if (_connected) {
-      _client?.deactivate();
-      _connected = false;
-    }
+    WebSocketService.instance.unsubscribe(_destination);
+    _subscribed = false;
+    _onMessage = null;
   }
 }

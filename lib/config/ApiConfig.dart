@@ -158,4 +158,7 @@ class ApiConfig {
 
   // Media (presigned S3 upload)
   static const String presignUrl = '$baseUrl/api/v1/media/presign';
+
+  static String presenceStatusUrl(int userId) =>
+      '$baseUrl/api/v1/presence/$userId';
 }

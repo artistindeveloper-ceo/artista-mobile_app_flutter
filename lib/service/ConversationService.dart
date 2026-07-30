@@ -97,8 +97,12 @@ class ConversationService {
 
     // Kuch endpoints response ko {'data': {...}} me wrap karte hain,
     // kuch seedha object bhejte hain — dono handle karte hain.
-    final data = body['data'] ?? body['content'] ?? body;
-    return (data as Map).cast<String, dynamic>();
+    final dynamic data = body.containsKey('data') ? body['data'] : body;
+
+    if (data is! Map) {
+      throw ApiException('Unexpected response format from server.');
+    }
+    return Map<String, dynamic>.from(data);
   }
 
 // ─── MARK AS READ ────────────────────────────────────────

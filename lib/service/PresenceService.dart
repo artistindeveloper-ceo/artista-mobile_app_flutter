@@ -80,6 +80,8 @@ class PresenceService extends ChangeNotifier {
     try {
       final response = await ApiClient.authorizedRequest(
           () => http.get(uri, headers: HelperService.authHeaders()));
+      print('👀 PRESENCE BULK status: ${response.statusCode}');
+      print('👀 PRESENCE BULK body: ${response.body}');
       if (response.statusCode != 200) return;
       final list = jsonDecode(response.body) as List<dynamic>;
       for (final item in list) {

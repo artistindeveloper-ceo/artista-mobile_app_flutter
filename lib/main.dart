@@ -25,7 +25,7 @@ void main() async {
   FirebaseMessaging.onBackgroundMessage(_firebaseMessagingBackgroundHandler);
 
   await Session().load();
-
+  print('🔌 WS connected: ${WebSocketService.instance.isConnected}');
   if (Session().isLoggedIn) {
     await NotificationService.init();
     _connectRealtime();

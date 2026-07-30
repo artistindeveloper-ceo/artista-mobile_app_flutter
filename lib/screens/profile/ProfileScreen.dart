@@ -350,7 +350,8 @@ class _ProfileScreenState extends State<ProfileScreen> {
       // profile keeps the back-arrow leading icon instead.
       // endDrawer (not drawer) so it slides in from the right, matching
       // the hamburger button's position in the AppBar.
-      endDrawer: _isOwnProfile ? AppDrawer(isOwnProfileScreen: _isOwnProfile) : null,
+      endDrawer:
+          _isOwnProfile ? AppDrawer(isOwnProfileScreen: _isOwnProfile) : null,
       appBar: AppBar(
         backgroundColor: AppColors.bgAppBar,
         elevation: 0,
@@ -601,27 +602,21 @@ class _ProfileScreenState extends State<ProfileScreen> {
                           // Message
                           Expanded(
                             child: OutlinedButton.icon(
-                              onPressed: () async {
-                                try {
-                                  final conversationId =
-                                      await ConversationService
-                                          .startConversation(user.id);
-                                  if (mounted) {
-                                    Navigator.push(
-                                        context,
-                                        MaterialPageRoute(
-                                          builder: (_) => ChatScreen(
-                                            conversationId: conversationId,
-                                            username:
-                                                user.username ?? user.name,
-                                            avatarUrl: user.avatarUrl,
-                                            otherUserId: user.id,
-                                          ),
-                                        ));
-                                  }
-                                } catch (e) {
-                                  _showSnack(e.toString(), isError: true);
-                                }
+                              onPressed: () {
+                                Navigator.push(
+                                  context,
+                                  MaterialPageRoute(
+                                    builder: (_) => ChatScreen(
+                                      conversationId: null,
+                                      // naya chat — pehla message bhejte hi banegi
+                                      otherUserId: user.id,
+                                      username: user.username ?? user.name,
+                                      profileUsername: user.username,
+                                      avatarUrl: user
+                                          .avatarUrl, // jo bhi field profile pic ke liye ho
+                                    ),
+                                  ),
+                                );
                               },
                               icon: const Icon(Icons.chat_bubble_outline,
                                   size: 16),

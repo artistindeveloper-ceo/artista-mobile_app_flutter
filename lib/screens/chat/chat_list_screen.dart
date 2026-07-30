@@ -6,6 +6,7 @@ import 'package:flutter/material.dart';
 import '../../config/ApiConfig.dart';
 import '../../config/UrlHelper.dart';
 import '../../service/HelperService.dart';
+import '../../service/PresenceService.dart';
 import '../../theme/app_theme.dart';
 import 'chat_screen.dart';
 
@@ -30,12 +31,19 @@ class _ChatListScreenState extends State<ChatListScreen> {
     _pollingTimer = Timer.periodic(const Duration(seconds: 5), (_) {
       _silentRefresh();
     });
+    // List me jitne bhi users hain, unka live online status dikhane ke liye.
+    PresenceService.instance.addListener(_onPresenceChanged);
   }
 
   @override
   void dispose() {
     _pollingTimer?.cancel();
+    PresenceService.instance.removeListener(_onPresenceChanged);
     super.dispose();
+  }
+
+  void _onPresenceChanged() {
+    if (mounted) setState(() {}); // saare dots repaint
   }
 
   Future<void> _loadConversations() async {
@@ -49,6 +57,7 @@ class _ChatListScreenState extends State<ChatListScreen> {
         _conversations = convos;
         _isLoading = false;
       });
+      _fetchPresenceForVisibleUsers(convos);
     } catch (e) {
       if (HelperService.isAuthError(e)) {
         await HelperService.forceLogout(context);
@@ -72,6 +81,17 @@ class _ChatListScreenState extends State<ChatListScreen> {
         await HelperService.forceLogout(context);
       }
     }
+  }
+
+  // Saare conversations ke otherUser ka initial presence ek hi bulk REST
+  // call se laao — jab tak koi WebSocket event na aaye tab tak dots sahi
+  // dikhne chahiye. N alag calls ki jagah 1 call.
+  void _fetchPresenceForVisibleUsers(List<dynamic> convos) {
+    final ids = convos
+        .map((c) => (c['otherUser'] as Map<String, dynamic>?)?['id'] as int?)
+        .whereType<int>()
+        .toList();
+    PresenceService.instance.fetchBulkStatus(ids);
   }
 
   String _formatTime(String? isoString) {
@@ -154,12 +174,14 @@ class _ChatListScreenState extends State<ChatListScreen> {
           final otherUserId = otherUser['id'] as int? ?? 0;
           final displayName =
               otherUser['displayName'] ?? otherUser['username'] ?? 'Unknown';
-          final rawAvatarUrl = otherUser['profilePhotoUrl'] as String?;
+          final realUsername = otherUser['username']
+              as String?; // ⬅️ NAYA: profile ke liye asli username
           final avatarUrl =
               UrlHelper.resolveMediaUrl(otherUser['profilePhotoUrl']);
           final lastMessage = convo['lastMessagePreview'] ?? '';
           final unreadCount = convo['unreadCount'] ?? 0;
           final timeAgo = _formatTime(convo['lastMessageAt']);
+          final isOnline = PresenceService.instance.isOnline(otherUserId);
 
           return ListTile(
             onTap: () {
@@ -169,6 +191,7 @@ class _ChatListScreenState extends State<ChatListScreen> {
                   builder: (_) => ChatScreen(
                     conversationId: convoId,
                     username: displayName,
+                    profileUsername: realUsername,
                     avatarUrl: avatarUrl,
                     otherUserId: otherUserId,
                   ),
@@ -179,21 +202,40 @@ class _ChatListScreenState extends State<ChatListScreen> {
                 });
               });
             },
-            leading: CircleAvatar(
-              radius: 24,
-              backgroundColor: AppColors.gold,
-              backgroundImage:
-                  avatarUrl != null ? NetworkImage(avatarUrl) : null,
-              child: avatarUrl == null
-                  ? Text(
-                      displayName.isNotEmpty
-                          ? displayName[0].toUpperCase()
-                          : '?',
-                      style: const TextStyle(
-                          color: AppColors.textOnGold,
-                          fontWeight: FontWeight.bold),
-                    )
-                  : null,
+            leading: Stack(
+              clipBehavior: Clip.none,
+              children: [
+                CircleAvatar(
+                  radius: 24,
+                  backgroundColor: AppColors.gold,
+                  backgroundImage:
+                      avatarUrl != null ? NetworkImage(avatarUrl) : null,
+                  child: avatarUrl == null
+                      ? Text(
+                          displayName.isNotEmpty
+                              ? displayName[0].toUpperCase()
+                              : '?',
+                          style: const TextStyle(
+                              color: AppColors.textOnGold,
+                              fontWeight: FontWeight.bold),
+                        )
+                      : null,
+                ),
+                if (isOnline)
+                  Positioned(
+                    right: 0,
+                    bottom: 0,
+                    child: Container(
+                      width: 12,
+                      height: 12,
+                      decoration: BoxDecoration(
+                        color: Colors.green,
+                        shape: BoxShape.circle,
+                        border: Border.all(color: AppColors.bgBase, width: 2),
+                      ),
+                    ),
+                  ),
+              ],
             ),
             title: Text(
               displayName,

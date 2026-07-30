@@ -191,29 +191,6 @@ class _LoginScreenState extends State<LoginScreen> {
 
               const SizedBox(height: 20),
 
-              // Skip Login
-              OutlinedButton(
-                onPressed: _goToHome,
-                style: OutlinedButton.styleFrom(
-                  minimumSize: const Size(double.infinity, 48),
-                  side: const BorderSide(color: AppColors.border),
-                  backgroundColor: AppColors.bgSurface,
-                  foregroundColor: AppColors.textSecondary,
-                  shape: RoundedRectangleBorder(
-                      borderRadius: BorderRadius.circular(8)),
-                ),
-                child: Text(
-                  'SKIP LOGIN',
-                  style: AppFonts.body(
-                    fontWeight: FontWeight.bold,
-                    letterSpacing: 1.2,
-                    color: AppColors.textSecondary,
-                  ),
-                ),
-              ),
-
-              const SizedBox(height: 20),
-
               // Register
               Row(
                 mainAxisAlignment: MainAxisAlignment.center,

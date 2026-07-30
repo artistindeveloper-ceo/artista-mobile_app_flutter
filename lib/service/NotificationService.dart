@@ -73,9 +73,20 @@ class NotificationService {
 
   // ─── FCM: GET DEVICE TOKEN ──────────────────────────────────
   static Future<String?> getDeviceToken() async {
-    final token = await _messaging.getToken();
-    print('🔔 FCM Token: $token');
-    return token;
+    await requestPermission();
+
+    String? apnsToken = await FirebaseMessaging.instance.getAPNSToken();
+    print("APNS Token: $apnsToken");
+
+    if (apnsToken == null) {
+      print("APNS token not available yet.");
+      return null;
+    }
+
+    String? fcmToken = await FirebaseMessaging.instance.getToken();
+    print("FCM Token: $fcmToken");
+
+    return fcmToken;
   }
 
   // ─── FCM: REGISTER TOKEN WITH BACKEND ───────────────────────

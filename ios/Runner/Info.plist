@@ -67,6 +67,11 @@
 			<string>UIInterfaceOrientationLandscapeRight</string>
 		</array>
 		<key>UIStatusBarHidden</key>
+
+		<key>UIBackgroundModes</key>
+        <array>
+            <string>remote-notification</string>
+        </array>
 		<false/>
 	</dict>
 </plist>

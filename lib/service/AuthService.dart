@@ -1,4 +1,5 @@
 import 'dart:convert';
+import 'dart:io' show Platform;
 
 import 'package:firebase_messaging/firebase_messaging.dart';
 import 'package:http/http.dart' as http;
@@ -22,7 +23,12 @@ class AuthService {
 
     final deviceId = await DeviceInfoHelper.getDeviceId();
     final deviceDetails = await DeviceInfoHelper.getDeviceDetails();
-    final fcmToken = await FirebaseMessaging.instance.getToken();
+
+    // iOS par abhi Push Notifications capability enable nahi hai
+    // (paid Apple Developer account chahiye), isliye FCM token
+    // maangna hi skip karo — warna APNS-token-not-set error aata hai
+    final String? fcmToken =
+        Platform.isIOS ? null : await FirebaseMessaging.instance.getToken();
 
     http.Response response;
     try {
@@ -187,7 +193,11 @@ class AuthService {
       // ignore, local clear to hoga hi
     }
 
-    await FirebaseMessaging.instance.deleteToken();
+    // iOS par push notifications configured nahi hai, isliye
+    // deleteToken() call karne ki zaroorat nahi (token bana hi nahi)
+    if (!Platform.isIOS) {
+      await FirebaseMessaging.instance.deleteToken();
+    }
     await Session().clear();
   }
 

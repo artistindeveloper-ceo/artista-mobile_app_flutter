@@ -182,7 +182,7 @@ class _ChatListScreenState extends State<ChatListScreen> {
           final unreadCount = convo['unreadCount'] ?? 0;
           final timeAgo = _formatTime(convo['lastMessageAt']);
           final isOnline = PresenceService.instance.isOnline(otherUserId);
-
+          print('🟢 userId=$otherUserId isOnline=$isOnline');
           return ListTile(
             onTap: () {
               Navigator.push(

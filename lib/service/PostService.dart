@@ -20,6 +20,7 @@ class PostService {
       response = await ApiClient.authorizedRequest(
           () => http.get(uri, headers: HelperService.authHeaders()));
     } catch (e) {
+      if (e is ApiException) rethrow;
       throw ApiException('Could not reach server.');
     }
 
@@ -71,6 +72,7 @@ class PostService {
         ),
       );
     } catch (e) {
+      if (e is ApiException) rethrow;
       throw ApiException('Could not reach server. Check your connection.');
     }
 
@@ -88,6 +90,7 @@ class PostService {
       response = await ApiClient.authorizedRequest(
           () => http.get(uri, headers: HelperService.authHeaders()));
     } catch (e) {
+      if (e is ApiException) rethrow;
       throw ApiException('Could not reach server.');
     }
 
@@ -110,6 +113,7 @@ class PostService {
       response = await ApiClient.authorizedRequest(
           () => http.post(uri, headers: HelperService.authHeaders()));
     } catch (e) {
+      if (e is ApiException) rethrow;
       throw ApiException('Could not reach server.');
     }
     if (response.statusCode != 200 &&
@@ -127,6 +131,7 @@ class PostService {
       response = await ApiClient.authorizedRequest(
           () => http.get(uri, headers: HelperService.authHeaders()));
     } catch (e) {
+      if (e is ApiException) rethrow;
       throw ApiException('Could not reach server.');
     }
 
@@ -148,6 +153,7 @@ class PostService {
       await ApiClient.authorizedRequest(
           () => http.post(uri, headers: HelperService.authHeaders()));
     } catch (e) {
+      if (e is ApiException) rethrow;
       // Silent fail — view count fail hone se user experience break nahi hona chahiye
     }
   }

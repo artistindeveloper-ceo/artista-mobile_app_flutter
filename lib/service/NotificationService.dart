@@ -24,6 +24,7 @@ class NotificationService {
       response = await ApiClient.authorizedRequest(
           () => http.get(uri, headers: HelperService.authHeaders()));
     } catch (e) {
+      if (e is ApiException) rethrow;
       throw ApiException('Could not reach server.');
     }
 
@@ -45,6 +46,7 @@ class NotificationService {
       response = await ApiClient.authorizedRequest(
           () => http.get(uri, headers: HelperService.authHeaders()));
     } catch (e) {
+      if (e is ApiException) rethrow;
       return 0;
     }
     final body = HelperService.safeDecode(response.body);
@@ -135,6 +137,7 @@ class NotificationService {
       );
       print('✅ Device token registered with backend');
     } catch (e) {
+      if (e is ApiException) rethrow;
       print('❌ Failed to register device token: $e');
     }
   }

@@ -40,6 +40,7 @@ class MediaUploadService {
         () => http.post(presignUri, headers: HelperService.authHeaders()),
       );
     } catch (e) {
+      if (e is ApiException) rethrow;
       throw ApiException(
           'Could not reach server. Check your internet connection.');
     }

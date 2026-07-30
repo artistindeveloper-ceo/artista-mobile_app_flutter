@@ -17,6 +17,7 @@ class UserService {
       response = await ApiClient.authorizedRequest(
           () => http.get(uri, headers: HelperService.authHeaders()));
     } catch (e) {
+      if (e is ApiException) rethrow;
       throw ApiException(
           'Could not reach server. Check your internet connection.');
     }
@@ -38,6 +39,7 @@ class UserService {
       response = await ApiClient.authorizedRequest(
           () => http.get(uri, headers: HelperService.authHeaders()));
     } catch (e) {
+      if (e is ApiException) rethrow;
       throw ApiException('Could not reach server.');
     }
 
@@ -71,6 +73,7 @@ class UserService {
             }),
           ));
     } catch (e) {
+      if (e is ApiException) rethrow;
       throw ApiException(
           'Could not reach server. Check your internet connection.');
     }
@@ -95,6 +98,7 @@ class UserService {
             body: jsonEncode({'isPrivate': isPrivate}),
           ));
     } catch (e) {
+      if (e is ApiException) rethrow;
       throw ApiException(
           'Could not reach server. Check your internet connection.');
     }
@@ -119,6 +123,7 @@ class UserService {
       response = await ApiClient.authorizedRequest(
           () => http.get(uri, headers: HelperService.authHeaders()));
     } catch (e) {
+      if (e is ApiException) rethrow;
       throw ApiException('Could not reach server.');
     }
 
@@ -146,6 +151,7 @@ class UserService {
       response = await ApiClient.authorizedRequest(
           () => http.get(uri, headers: HelperService.authHeaders()));
     } catch (e) {
+      if (e is ApiException) rethrow;
       throw ApiException('Could not reach server.');
     }
 

@@ -7,6 +7,7 @@ import 'package:flutter/material.dart';
 import '../config/Session.dart';
 import '../model/UserModel.dart';
 import '../service/ConversationService.dart';
+import '../service/HelperService.dart';
 import '../service/NotificationService.dart';
 import '../service/UserService.dart';
 import '../theme/app_theme.dart';
@@ -80,16 +81,28 @@ class _HomeScreenState extends State<HomeScreen> {
       final user = await UserService.getMe();
       if (!mounted) return;
       setState(() => _currentUser = user);
-    } catch (_) {
+    } catch (e) {
+      // Session expire ho chuki ho to turant login screen par bhej do —
+      // warna UI stuck reh jata hai jab tak user app kill na kare
+      if (HelperService.isAuthError(e)) {
+        if (mounted) await HelperService.forceLogout(context);
+        return;
+      }
       // Silent fail — Profile tab apne aap _loadProfile() karke retry
       // kar lega, ye sirf tab-routing decide karne ke liye hai
     }
   }
 
   Future<void> _loadUnreadCount() async {
-    final count = await NotificationService.getUnreadCount();
-    if (!mounted) return;
-    setState(() => _unreadCount = count);
+    try {
+      final count = await NotificationService.getUnreadCount();
+      if (!mounted) return;
+      setState(() => _unreadCount = count);
+    } catch (e) {
+      if (HelperService.isAuthError(e)) {
+        if (mounted) await HelperService.forceLogout(context);
+      }
+    }
   }
 
   Future<void> _loadChatUnreadCount() async {
@@ -101,7 +114,11 @@ class _HomeScreenState extends State<HomeScreen> {
       }
       if (!mounted) return;
       setState(() => _chatUnreadCount = total);
-    } catch (_) {
+    } catch (e) {
+      if (HelperService.isAuthError(e)) {
+        if (mounted) await HelperService.forceLogout(context);
+        return;
+      }
       // Silent fail — badge simply won't update this cycle
     }
   }

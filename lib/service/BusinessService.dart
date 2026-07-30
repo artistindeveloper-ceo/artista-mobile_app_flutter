@@ -19,6 +19,7 @@ class BusinessService {
         () => http.get(uri, headers: HelperService.authHeaders()),
       );
     } catch (e) {
+      if (e is ApiException) rethrow;
       throw ApiException(
           'Could not reach server. Check your internet connection.');
     }
@@ -60,6 +61,7 @@ class BusinessService {
         ),
       );
     } catch (e) {
+      if (e is ApiException) rethrow;
       throw ApiException(
           'Could not reach server. Check your internet connection.');
     }
@@ -82,6 +84,7 @@ class BusinessService {
         () => http.post(uri, headers: HelperService.authHeaders()),
       );
     } catch (e) {
+      if (e is ApiException) rethrow;
       throw ApiException(
           'Could not reach server. Check your internet connection.');
     }
@@ -102,6 +105,7 @@ class BusinessService {
         () => http.delete(uri, headers: HelperService.authHeaders()),
       );
     } catch (e) {
+      if (e is ApiException) rethrow;
       throw ApiException(
           'Could not reach server. Check your internet connection.');
     }
@@ -128,6 +132,7 @@ class BusinessService {
         ),
       );
     } catch (e) {
+      if (e is ApiException) rethrow;
       throw ApiException(
           'Could not reach server. Check your internet connection.');
     }
@@ -162,6 +167,7 @@ class BusinessService {
         () => http.get(uri, headers: HelperService.authHeaders()),
       );
     } catch (e) {
+      if (e is ApiException) rethrow;
       throw ApiException('Could not reach server.');
     }
 

@@ -18,6 +18,7 @@ class FollowUserservice {
       response = await ApiClient.authorizedRequest(
           () => http.post(uri, headers: HelperService.authHeaders()));
     } catch (e) {
+      if (e is ApiException) rethrow;
       throw ApiException('Could not reach server.');
     }
 
@@ -56,6 +57,7 @@ class FollowUserservice {
       await ApiClient.authorizedRequest(
           () => http.delete(uri, headers: HelperService.authHeaders()));
     } catch (e) {
+      if (e is ApiException) rethrow;
       throw ApiException('Could not reach server.');
     }
   }
@@ -68,6 +70,7 @@ class FollowUserservice {
       response = await ApiClient.authorizedRequest(
           () => http.get(uri, headers: HelperService.authHeaders()));
     } catch (e) {
+      if (e is ApiException) rethrow;
       throw ApiException('Could not reach server.');
     }
     final body = HelperService.safeDecode(response.body);
@@ -84,6 +87,7 @@ class FollowUserservice {
       await ApiClient.authorizedRequest(
           () => http.post(uri, headers: HelperService.authHeaders()));
     } catch (e) {
+      if (e is ApiException) rethrow;
       throw ApiException('Could not reach server.');
     }
   }
@@ -95,6 +99,7 @@ class FollowUserservice {
       await ApiClient.authorizedRequest(
           () => http.post(uri, headers: HelperService.authHeaders()));
     } catch (e) {
+      if (e is ApiException) rethrow;
       throw ApiException('Could not reach server.');
     }
   }
@@ -108,6 +113,7 @@ class FollowUserservice {
       response = await ApiClient.authorizedRequest(
           () => http.get(uri, headers: HelperService.authHeaders()));
     } catch (e) {
+      if (e is ApiException) rethrow;
       throw ApiException('Could not reach server.');
     }
 
@@ -136,6 +142,7 @@ class FollowUserservice {
       response = await ApiClient.authorizedRequest(
           () => http.get(uri, headers: HelperService.authHeaders()));
     } catch (e) {
+      if (e is ApiException) rethrow;
       throw ApiException('Could not reach server.');
     }
 

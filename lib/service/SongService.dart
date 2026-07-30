@@ -16,6 +16,7 @@ class SongService {
       response = await ApiClient.authorizedRequest(
           () => http.get(uri, headers: HelperService.authHeaders()));
     } catch (e) {
+      if (e is ApiException) rethrow;
       throw ApiException('Could not reach server.');
     }
     final body = HelperService.safeDecode(response.body);
@@ -45,6 +46,7 @@ class SongService {
             }),
           ));
     } catch (e) {
+      if (e is ApiException) rethrow;
       throw ApiException('Could not reach server.');
     }
   }
@@ -59,6 +61,7 @@ class SongService {
       response = await ApiClient.authorizedRequest(
           () => http.get(uri, headers: HelperService.authHeaders()));
     } catch (e) {
+      if (e is ApiException) rethrow;
       throw ApiException('Could not reach server.');
     }
     if (response.statusCode != 200) return [];
@@ -75,6 +78,7 @@ class SongService {
       response = await ApiClient.authorizedRequest(
           () => http.get(uri, headers: HelperService.authHeaders()));
     } catch (e) {
+      if (e is ApiException) rethrow;
       throw ApiException('Could not reach server.');
     }
     final body = HelperService.safeDecode(response.body);

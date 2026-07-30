@@ -1,4 +1,5 @@
 import 'dart:convert';
+import 'dart:io' show Platform;
 import 'package:http/http.dart' as http;
 import 'package:firebase_messaging/firebase_messaging.dart';
 import 'package:flutter_local_notifications/flutter_local_notifications.dart';
@@ -63,6 +64,15 @@ class NotificationService {
 
   // ─── FCM: REQUEST PERMISSION ───────────────────────────────
   static Future<void> requestPermission() async {
+    // iOS par push notification permission maangne ki zaroorat nahi
+    // (paid Apple Developer account / Push Notifications capability
+    // abhi enable nahi hai, isliye iOS ke liye poora FCM flow skip)
+    if (Platform.isIOS) {
+      print(
+          '🔕 iOS: Push notification permission skipped (not configured yet)');
+      return;
+    }
+
     NotificationSettings settings = await _messaging.requestPermission(
       alert: true,
       badge: true,
@@ -73,6 +83,15 @@ class NotificationService {
 
   // ─── FCM: GET DEVICE TOKEN ──────────────────────────────────
   static Future<String?> getDeviceToken() async {
+    // iOS par abhi Push Notifications capability enable nahi hai
+    // (Apple Developer paid account chahiye), isliye seedha null return
+    // karo taaki login/app normally chale, sirf push notification na aaye
+    if (Platform.isIOS) {
+      print(
+          '🔕 iOS: FCM token fetch skipped (Push Notifications not configured)');
+      return null;
+    }
+
     await requestPermission();
 
     String? apnsToken = await FirebaseMessaging.instance.getAPNSToken();
@@ -122,6 +141,8 @@ class NotificationService {
 
 // ─── CREATE ANDROID NOTIFICATION CHANNEL ───────────────────
   static Future<void> _createNotificationChannel() async {
+    if (Platform.isIOS) return; // Android-only feature
+
     const AndroidNotificationChannel channel = AndroidNotificationChannel(
       'high_importance_channel',
       'High Importance Notifications',
@@ -162,6 +183,13 @@ class NotificationService {
 
   // ─── FCM: SETUP LISTENERS (foreground + tap + token refresh) ────
   static void setupListeners() {
+    // iOS par abhi push notifications configured nahi hai,
+    // isliye FCM listeners register hi mat karo
+    if (Platform.isIOS) {
+      print('🔕 iOS: FCM listeners skipped (not configured)');
+      return;
+    }
+
     // App foreground mein ho aur notification aaye
     FirebaseMessaging.onMessage.listen((RemoteMessage message) {
       print('🔔 Foreground notification: ${message.notification?.title}');
@@ -174,7 +202,7 @@ class NotificationService {
       // yahan navigation logic daalo (jaise specific screen pe le jaana)
     });
 
-    // 🔴 YE NAYA HAI — background me FCM token refresh hone par backend update karo
+    // 🔴 background me FCM token refresh hone par backend update karo
     FirebaseMessaging.instance.onTokenRefresh.listen((newToken) {
       print('🔔 FCM token refreshed, syncing with backend');
       registerDeviceToken();
@@ -186,13 +214,20 @@ class NotificationService {
     const androidSettings =
         AndroidInitializationSettings('@mipmap/ic_launcher');
     const iosSettings = DarwinInitializationSettings(
-      requestAlertPermission: true,
-      requestBadgePermission: true,
-      requestSoundPermission: true,
+      requestAlertPermission: false,
+      requestBadgePermission: false,
+      requestSoundPermission: false,
     );
     const initSettings =
         InitializationSettings(android: androidSettings, iOS: iosSettings);
     await _localNotifications.initialize(initSettings);
+
+    if (Platform.isIOS) {
+      // iOS ke liye push notification setup poora skip —
+      // sirf normal login/app flow chalne do
+      print('🔕 iOS: NotificationService.init() — push setup skipped');
+      return;
+    }
 
     await _createNotificationChannel();
     await requestPermission();

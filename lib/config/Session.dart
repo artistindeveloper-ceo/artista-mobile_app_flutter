@@ -10,12 +10,15 @@ class Session {
   Session._internal();
 
   String? token;
-  String? refreshToken; // ← ADD
+  String? refreshToken;
   int? userId;
   String? profilePhotoUrl;
   String? displayName;
+  String? accountType; // "INDIVIDUAL" or "BUSINESS" — routing ke liye chahiye
 
   bool get isLoggedIn => token != null && userId != null;
+
+  bool get isBusinessAccount => accountType?.toUpperCase() == 'BUSINESS';
 
   Future<String?> getDisplayName() async => displayName;
 
@@ -24,35 +27,42 @@ class Session {
   Future<void> load() async {
     final prefs = await SharedPreferences.getInstance();
     token = prefs.getString('token');
-    refreshToken = prefs.getString('refreshToken'); // ← ADD
+    refreshToken = prefs.getString('refreshToken');
     userId = prefs.getInt('userId');
     profilePhotoUrl = prefs.getString('profilePhotoUrl');
     displayName = prefs.getString('displayName');
+    accountType = prefs.getString('accountType');
   }
 
   Future<void> save({
     required String token,
-    String? refreshToken, // ← ADD
+    String? refreshToken,
     required int userId,
     String? profilePhotoUrl,
     String? displayName,
+    String? accountType,
   }) async {
     this.token = token;
-    if (refreshToken != null) this.refreshToken = refreshToken; // ← ADD
+    if (refreshToken != null) this.refreshToken = refreshToken;
     this.userId = userId;
     this.displayName = displayName ?? this.displayName;
     if (profilePhotoUrl != null) {
       this.profilePhotoUrl = profilePhotoUrl;
     }
+    if (accountType != null) this.accountType = accountType;
+
     final prefs = await SharedPreferences.getInstance();
     await prefs.setString('token', token);
     if (refreshToken != null) {
-      await prefs.setString('refreshToken', refreshToken); // ← ADD
+      await prefs.setString('refreshToken', refreshToken);
     }
     await prefs.setInt('userId', userId);
     await prefs.setString('displayName', displayName ?? '');
     if (profilePhotoUrl != null) {
       await prefs.setString('profilePhotoUrl', profilePhotoUrl);
+    }
+    if (accountType != null) {
+      await prefs.setString('accountType', accountType);
     }
   }
 
@@ -80,16 +90,18 @@ class Session {
 
   Future<void> clear() async {
     token = null;
-    refreshToken = null; // ← ADD
+    refreshToken = null;
     userId = null;
     displayName = null;
     profilePhotoUrl = null;
+    accountType = null;
     final prefs = await SharedPreferences.getInstance();
     await prefs.remove('token');
-    await prefs.remove('refreshToken'); // ← ADD
+    await prefs.remove('refreshToken');
     await prefs.remove('userId');
     await prefs.remove('profilePhotoUrl');
     await prefs.remove('displayName');
+    await prefs.remove('accountType');
   }
 
   // Home screen par jo upar Post ka laga he vaha profile ke leay use ho rahah he

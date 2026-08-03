@@ -101,12 +101,16 @@ class _ProfileScreenState extends State<ProfileScreen> {
     final user = _user!;
     setState(() => _isFollowLoading = true);
     try {
+      final FollowActionResult result;
       if (_isFollowing) {
-        await FollowUserservice.unfollowUser(user.id);
+        result = await FollowUserservice.unfollowUser(user.id);
       } else {
-        await FollowUserservice.followUser(user.id);
+        result = await FollowUserservice.followUser(user.id);
       }
-      setState(() => _isFollowing = !_isFollowing);
+      setState(() {
+        _isFollowing = result.following;
+        _user = user.copyWith(followersCount: result.followersCount);
+      });
     } catch (e) {
       if (HelperService.isAuthError(e)) {
         await HelperService.forceLogout(context);

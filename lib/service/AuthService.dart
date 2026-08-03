@@ -2,12 +2,14 @@ import 'dart:convert';
 import 'dart:io' show Platform;
 
 import 'package:firebase_messaging/firebase_messaging.dart';
+import 'package:google_sign_in/google_sign_in.dart';
 import 'package:http/http.dart' as http;
 
 import '../Exception/ApiException.dart';
 import '../config/ApiConfig.dart';
 import '../config/Session.dart';
 import '../model/UserModel.dart';
+import '../screens/auth/GoogleAuthResult.dart';
 import '../utils/DeviceInfoHelper.dart';
 import '../websocket/ChatSocketService.dart';
 import 'HelperService.dart';
@@ -71,6 +73,7 @@ class AuthService {
       userId: user.id,
       profilePhotoUrl: user.profilePhotoUrl,
       displayName: user.name,
+      accountType: user.accountType,
     );
 
     await NotificationService.init();
@@ -82,6 +85,188 @@ class AuthService {
     ChatSocketService().connect((message) {
       // TODO: unread badge update logic yahan call karein
       // e.g. ChatBadgeController.instance.onNewMessage(message);
+    });
+
+    return user;
+  }
+
+  // ─── GOOGLE SIGN-IN (STEP 1) ──────────────────────────────────────
+  // Google se idToken lekar backend ke /auth/google endpoint ko bhejte
+  // hain. Backend do cases return kar sakta hai:
+  //   1. LOGIN_SUCCESS  -> user pehle se registered hai, seedha login
+  //      (session save + socket connect yahin kar dete hain)
+  //   2. SIGNUP_REQUIRED -> naya Google user hai, account type + category
+  //      abhi tak nahi bhara — caller ko signupToken/email/name milega,
+  //      jisse GoogleCompleteRegistrationScreen khulegi.
+  static Future<GoogleAuthResult> loginWithGoogle() async {
+    final googleSignIn = GoogleSignIn(
+      // Web Client ID — Google Cloud Console me "Web application" type
+      // OAuth client se liya hua, Android client ID nahi.
+      serverClientId:
+          '401598862863-n171u0e51di4qaddo9o5btlggi75sphm.apps.googleusercontent.com',
+    );
+
+    GoogleSignInAccount? googleUser;
+    try {
+      googleUser = await googleSignIn.signIn();
+    } catch (e) {
+      throw ApiException('Google sign-in failed. Please try again.');
+    }
+
+    if (googleUser == null) {
+      // User ne cancel kar diya picker se
+      throw ApiException('Google sign-in was cancelled.');
+    }
+
+    final googleAuth = await googleUser.authentication;
+    final idToken = googleAuth.idToken;
+
+    if (idToken == null) {
+      throw ApiException('Could not get Google credentials. Please try again.');
+    }
+
+    final uri = Uri.parse(ApiConfig.googleLoginUrl);
+
+    final deviceId = await DeviceInfoHelper.getDeviceId();
+    final deviceDetails = await DeviceInfoHelper.getDeviceDetails();
+    final String? fcmToken =
+        Platform.isIOS ? null : await FirebaseMessaging.instance.getToken();
+
+    http.Response response;
+    try {
+      response = await http.post(
+        uri,
+        headers: {'Content-Type': 'application/json'},
+        body: jsonEncode({
+          'idToken': idToken,
+          'deviceId': deviceId,
+          'deviceType': deviceDetails['deviceType'],
+          'deviceModel': deviceDetails['deviceModel'],
+          'deviceOs': deviceDetails['deviceOs'],
+          'fcmToken': fcmToken,
+        }),
+      );
+    } catch (e) {
+      if (e is ApiException) rethrow;
+      throw ApiException(
+          'Could not reach server. Check your internet connection.');
+    }
+
+    final body = HelperService.safeDecode(response.body);
+
+    if (response.statusCode != 200) {
+      throw ApiException(
+          body['message'] ?? 'Google sign-in failed. Please try again.');
+    }
+
+    final status = body['status'] as String?;
+
+    // ── Case 1: naya user, account type/category abhi choose karni hai ──
+    if (status == 'SIGNUP_REQUIRED') {
+      return GoogleAuthResult.signupRequired(
+        signupToken: body['signupToken'] as String,
+        email: body['email'] as String?,
+        name: body['name'] as String?,
+      );
+    }
+
+    // ── Case 2: existing user, seedha login ──
+    final authJson = body['auth'] as Map<String, dynamic>;
+    final token = authJson['accessToken'] as String;
+    final refreshTokenValue = authJson['refreshToken'] as String?;
+    final userJson = authJson['user'] as Map<String, dynamic>;
+    final user = UserModel.fromJson(userJson);
+
+    Session().save(
+      token: token,
+      refreshToken: refreshTokenValue,
+      userId: user.id,
+      profilePhotoUrl: user.profilePhotoUrl,
+      displayName: user.name,
+      accountType: user.accountType,
+    );
+
+    await NotificationService.init();
+
+    WebSocketService.instance.connect(token);
+    PresenceService.instance.startListening();
+    ChatSocketService().connect((message) {
+      // TODO: unread badge update logic yahan call karein
+    });
+
+    return GoogleAuthResult.loginSuccess(user);
+  }
+
+  // ─── GOOGLE SIGN-IN (STEP 2) — COMPLETE REGISTRATION ──────────────
+  // SIGNUP_REQUIRED aane ke baad, GoogleCompleteRegistrationScreen se
+  // account type + category (+ business name agar business hai) select
+  // karke ye call hota hai. Success pe seedha login ho jata hai
+  // (session save + socket connect), normal register() ke ulat.
+  static Future<UserModel> completeGoogleRegistration({
+    required String signupToken,
+    required String accountType,
+    String? professionalType,
+    String? businessType,
+    String? businessName,
+  }) async {
+    final uri = Uri.parse(
+        '${ApiConfig.baseUrl}/api/v1/auth/google/complete-registration');
+
+    final deviceId = await DeviceInfoHelper.getDeviceId();
+    final deviceDetails = await DeviceInfoHelper.getDeviceDetails();
+    final String? fcmToken =
+        Platform.isIOS ? null : await FirebaseMessaging.instance.getToken();
+
+    http.Response response;
+    try {
+      response = await http.post(
+        uri,
+        headers: {'Content-Type': 'application/json'},
+        body: jsonEncode({
+          'signupToken': signupToken,
+          'accountType': accountType,
+          if (professionalType != null) 'professionalType': professionalType,
+          if (businessType != null) 'businessType': businessType,
+          if (businessName != null) 'businessName': businessName,
+          'deviceId': deviceId,
+          'deviceType': deviceDetails['deviceType'],
+          'deviceModel': deviceDetails['deviceModel'],
+          'deviceOs': deviceDetails['deviceOs'],
+          'fcmToken': fcmToken,
+        }),
+      );
+    } catch (e) {
+      if (e is ApiException) rethrow;
+      throw ApiException(
+          'Could not reach server. Check your internet connection.');
+    }
+
+    final body = HelperService.safeDecode(response.body);
+
+    if (response.statusCode != 200 && response.statusCode != 201) {
+      throw ApiException(body['message'] ?? 'Registration failed.');
+    }
+
+    final token = body['accessToken'] as String;
+    final refreshTokenValue = body['refreshToken'] as String?;
+    final userJson = body['user'] as Map<String, dynamic>;
+    final user = UserModel.fromJson(userJson);
+
+    Session().save(
+      token: token,
+      refreshToken: refreshTokenValue,
+      userId: user.id,
+      profilePhotoUrl: user.profilePhotoUrl,
+      displayName: user.name,
+      accountType: user.accountType,
+    );
+
+    await NotificationService.init();
+
+    WebSocketService.instance.connect(token);
+    PresenceService.instance.startListening();
+    ChatSocketService().connect((message) {
+      // TODO: unread badge update logic yahan call karein
     });
 
     return user;
@@ -100,12 +285,6 @@ class AuthService {
   }) async {
     final uri = Uri.parse('${ApiConfig.baseUrl}/api/v1/auth/register');
 
-    print('📤 Register URL: $uri');
-    print(
-        '📤 Register payload: username=${name.replaceAll(' ', '_').toLowerCase()}, '
-        'email=$email, accountType=$accountType, professionalType=$professionalType, '
-        'businessType=$businessType, businessName=$businessName');
-
     http.Response response;
     try {
       response = await http.post(
@@ -122,11 +301,8 @@ class AuthService {
           if (businessName != null) 'businessName': businessName,
         }),
       );
-      print('📥 Register status: ${response.statusCode}');
-      print('📥 Register body: ${response.body}');
-    } catch (e, stack) {
-      print('❌ Register network/exception error: $e');
-      print('❌ Stack: $stack');
+    } catch (e) {
+      if (e is ApiException) rethrow;
       throw ApiException(
           'Could not reach server. Check your internet connection.');
     }
@@ -187,18 +363,11 @@ class AuthService {
           newRefreshToken: newRefreshToken,
         );
 
-        // Access token badal gaya — WebSocket connection purane token se
-        // bani thi, isliye use bhi naye token ke saath reconnect karo warna
-        // agli baar socket drop hone par reconnect galat/expired token
-        // bhejega. Presence + chat dono ko naye socket par resubscribe
-        // karo (dono services internally isConnected check karte hain
-        // isliye yeh safe hai).
         WebSocketService.instance.disconnect();
         WebSocketService.instance.connect(newAccessToken);
         PresenceService.instance.startListening();
         ChatSocketService().connect((message) {
           // TODO: unread badge update logic yahan call karein
-          // e.g. ChatBadgeController.instance.onNewMessage(message);
         });
 
         return true;
@@ -225,15 +394,10 @@ class AuthService {
       // ignore, local clear to hoga hi
     }
 
-    // iOS par push notifications configured nahi hai, isliye
-    // deleteToken() call karne ki zaroorat nahi (token bana hi nahi)
     if (!Platform.isIOS) {
       await FirebaseMessaging.instance.deleteToken();
     }
 
-    // ✅ Logout hote hi presence + chat + socket sab band karo — warna
-    // server side hume galat se "online" dikhata rahega jab tak socket
-    // timeout na ho.
     PresenceService.instance.stopListening();
     ChatSocketService().disconnect();
     WebSocketService.instance.disconnect();

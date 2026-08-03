@@ -7,11 +7,37 @@ import '../model/UserModel.dart';
 import 'HelperService.dart';
 import 'ApiClient.dart'; // ← NAYA IMPORT
 
+// ✅ NEW — follow/unfollow ka result wrap karta hai. Backend ab
+// FollowActionResponse (status, following, followersCount) bhejta hai,
+// isliye Flutter side manual +1/-1 karne ki bajaye seedha yahi
+// canonical count use karta hai.
+class FollowActionResult {
+  final String status;
+  final bool following;
+  final int followersCount;
+
+  FollowActionResult({
+    required this.status,
+    required this.following,
+    required this.followersCount,
+  });
+
+  factory FollowActionResult.fromJson(Map<String, dynamic> json) {
+    return FollowActionResult(
+      status: json['status']?.toString() ?? '',
+      following: json['following'] ?? false,
+      followersCount: json['followersCount'] is int
+          ? json['followersCount']
+          : int.tryParse('${json['followersCount']}') ?? 0,
+    );
+  }
+}
+
 class FollowUserservice {
   // ─── FOLLOW USER ─────────────────────────────────────────
-  // ✅ CHANGED: now returns the backend status string so the UI can show
-  // the correct state — "FOLLOWING", "REQUEST_PENDING", or "ALREADY_FOLLOWING".
-  static Future<String> followUser(int userId) async {
+  // ✅ CHANGED: ab FollowActionResult return karta hai (status, following,
+  // followersCount) — backend ka FollowActionResponse parse karke.
+  static Future<FollowActionResult> followUser(int userId) async {
     final uri = Uri.parse(ApiConfig.followUserUrl(userId));
     http.Response response;
     try {
@@ -22,44 +48,47 @@ class FollowUserservice {
       throw ApiException('Could not reach server.');
     }
 
+    final decoded = HelperService.safeDecode(response.body);
+
     if (response.statusCode != 200 && response.statusCode != 201) {
-      String message = 'Could not follow user.';
-      try {
-        final body = HelperService.safeDecode(response.body);
-        if (body is Map && body['message'] != null) {
-          message = body['message'].toString();
-        }
-      } catch (_) {}
+      final message = (decoded is Map && decoded['message'] != null)
+          ? decoded['message'].toString()
+          : 'Could not follow user.';
       throw ApiException(message);
     }
 
-    final raw = response.body.trim();
-    if (raw.isEmpty) return 'FOLLOWING'; // fallback if backend sends empty 200
-
-// Backend may return a plain string ("REQUEST_PENDING") or JSON
-// wrapped like {"data":"REQUEST_PENDING"} or {"message":"FOLLOWING"}.
-    try {
-      final decoded = HelperService.safeDecode(raw);
-      if (decoded is Map) {
-        if (decoded['data'] != null) return decoded['data'].toString();
-        if (decoded['message'] != null) return decoded['message'].toString();
-      }
-    } catch (_) {
-      // not JSON — it's a plain string body
+    if (decoded is Map) {
+      return FollowActionResult.fromJson(Map<String, dynamic>.from(decoded));
     }
-    return raw.replaceAll('"', '');
+    throw ApiException('Unexpected response from server.');
   }
 
   // ─── UNFOLLOW USER ───────────────────────────────────────
-  static Future<void> unfollowUser(int userId) async {
+  // ✅ CHANGED: ab FollowActionResult return karta hai (pehle void tha)
+  static Future<FollowActionResult> unfollowUser(int userId) async {
     final uri = Uri.parse(ApiConfig.unfollowUserUrl(userId));
+    http.Response response;
     try {
-      await ApiClient.authorizedRequest(
+      response = await ApiClient.authorizedRequest(
           () => http.delete(uri, headers: HelperService.authHeaders()));
     } catch (e) {
       if (e is ApiException) rethrow;
       throw ApiException('Could not reach server.');
     }
+
+    final decoded = HelperService.safeDecode(response.body);
+
+    if (response.statusCode != 200) {
+      final message = (decoded is Map && decoded['message'] != null)
+          ? decoded['message'].toString()
+          : 'Could not unfollow user.';
+      throw ApiException(message);
+    }
+
+    if (decoded is Map) {
+      return FollowActionResult.fromJson(Map<String, dynamic>.from(decoded));
+    }
+    throw ApiException('Unexpected response from server.');
   }
 
   // ─── PENDING FOLLOW REQUESTS ─────────────────────────────
@@ -105,7 +134,6 @@ class FollowUserservice {
   }
 
   // ─── GET FOLLOWERS LIST ──────────────────────────────────
-  // ✅ NEW — used by the Instagram-style Followers/Following screen.
   static Future<List<UserModel>> getFollowers(int userId) async {
     final uri = Uri.parse(ApiConfig.followersUrl(userId));
     http.Response response;
@@ -134,7 +162,6 @@ class FollowUserservice {
   }
 
   // ─── GET FOLLOWING LIST ──────────────────────────────────
-  // ✅ NEW
   static Future<List<UserModel>> getFollowing(int userId) async {
     final uri = Uri.parse(ApiConfig.followingUrl(userId));
     http.Response response;

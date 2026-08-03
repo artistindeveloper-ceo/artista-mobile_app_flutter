@@ -43,9 +43,9 @@ class _EditBusinessProfileScreenState extends State<EditBusinessProfileScreen> {
 
   final _scaffoldKey = GlobalKey<ScaffoldState>(); // ← drawer ke liye
 
-  static const _navyDark = Color(0xFF0B1622);
-  static const _navyCard = Color(0xFF13212F);
-  static const _orange = Color(0xFFE8722A);
+  static const _navyDark = AppColors.bgBase;
+  static const _navyCard = AppColors.bgSurface;
+  static const _orange = AppColors.gold;
 
   @override
   void initState() {

@@ -28,6 +28,7 @@ class UserService {
     }
 
     final userJson = (body['data'] ?? body) as Map<String, dynamic>;
+    print('🔍 /users/me RAW RESPONSE: $userJson'); // ← YE LINE ADD KARO
     return UserModel.fromJson(userJson);
   }
 

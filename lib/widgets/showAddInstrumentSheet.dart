@@ -225,7 +225,7 @@ class _AddInstrumentSheetState extends State<_AddInstrumentSheet> {
 
   Widget _buildBreadcrumb() {
     final parts = <String>[];
-    if (_selectedCategory != null) parts.add(_selectedCategory!.name);
+    if (_selectedCategory != null) parts.add(_selectedCategory!.displayName);
     if (_selectedType != null) parts.add(_selectedType!.name);
     if (_selectedModel != null) parts.add(_selectedModel!.displayName);
     if (parts.isEmpty) return const SizedBox.shrink();
@@ -272,7 +272,7 @@ class _AddInstrumentSheetState extends State<_AddInstrumentSheet> {
         return ListTile(
           leading: const Icon(Icons.category_outlined,
               color: AppColors.textSecondary),
-          title: Text(cat.name,
+          title: Text(cat.displayName,
               style: AppFonts.body(color: AppColors.textPrimary)),
           trailing: const Icon(Icons.chevron_right,
               size: 18, color: AppColors.textTertiary),

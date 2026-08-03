@@ -7,12 +7,13 @@ class PostModel {
   final String? imageUrl;
   final bool isVideo;
   final String? caption;
-  final String? timeAgo; // raw ISO string from backend
+  final String? timeAgo;
   final int likesCount;
   final int commentsCount;
   final bool likedByMe;
   final int authorId;
   final int viewsCount;
+  final bool isBusinessAccount; // ✅ NAYA FIELD
 
   PostModel({
     required this.id,
@@ -27,6 +28,7 @@ class PostModel {
     required this.commentsCount,
     required this.likedByMe,
     required this.authorId,
+    this.isBusinessAccount = false, // ✅ NAYA FIELD
   });
 
   // ── Instagram-style relative time ──
@@ -110,6 +112,9 @@ class PostModel {
       likedByMe:
           json['likedByViewer'] ?? json['likedByMe'] ?? json['liked'] ?? false,
       viewsCount: json['viewsCount'] ?? json['views'] ?? json['viewCount'] ?? 0,
+      // ✅ NAYA — backend jo bhi field bhejta ho account type ke liye
+      isBusinessAccount:
+          (author?['accountType'] ?? json['accountType']) == 'BUSINESS',
     );
   }
 }

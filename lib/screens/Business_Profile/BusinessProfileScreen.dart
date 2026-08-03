@@ -5,7 +5,9 @@ import '../../config/Session.dart';
 import '../../model/BusinessModel.dart';
 import '../../model/PostModel.dart';
 import '../../service/BusinessService.dart';
+import '../../service/FollowUserService.dart';
 import '../../service/PostService.dart';
+import '../../theme/app_theme.dart';
 import '../chat/chat_screen.dart';
 import 'EditBusinessProfileScreen.dart';
 import '../auth/login_screen.dart';
@@ -13,7 +15,20 @@ import '../auth/login_screen.dart';
 class BusinessProfileScreen extends StatefulWidget {
   final int businessId;
 
-  const BusinessProfileScreen({super.key, required this.businessId});
+  // Jab ye screen bottom-nav "Profile" tab ke andar dikhayi jaati hai
+  // (HomeScreen._buildBody se, push nahi hua), to back button dikhana
+  // galat hai — pop karne layak koi route hota hi nahi, aur
+  // Navigator.pop() poore HomeScreen ko pop kar deta hai -> black screen.
+  // Jab ye screen kisi doosre business ka profile dekhne ke liye push
+  // karke khola jaata hai (search/list se), to showBackButton true
+  // (default) rakhein.
+  final bool showBackButton;
+
+  const BusinessProfileScreen({
+    super.key,
+    required this.businessId,
+    this.showBackButton = true,
+  });
 
   @override
   State<BusinessProfileScreen> createState() => _BusinessProfileScreenState();
@@ -34,12 +49,10 @@ class _BusinessProfileScreenState extends State<BusinessProfileScreen>
 
   final _scaffoldKey = GlobalKey<ScaffoldState>();
 
-  static const _navyDark = Color(0xFF0B1622);
-  static const _navyCard = Color(0xFF13212F);
-  static const _orange = Color(0xFFE8722A);
+  static const _navyDark = AppColors.bgBase;
+  static const _navyCard = AppColors.bgSurface;
+  static const _orange = AppColors.gold;
 
-  // Apni khud ki business profile dekh rahe hain kya — Follow/Message/Call
-  // buttons ki jagah "Edit Business" button dikhega
   bool get _isOwnBusiness => Session().userId == widget.businessId;
 
   @override
@@ -90,29 +103,29 @@ class _BusinessProfileScreenState extends State<BusinessProfileScreen>
     }
   }
 
+  // ✅ FOLLOW/UNFOLLOW — ab FollowUserservice use karta hai (users table
+  // wala endpoint), kyunki business ka id hi user.id hai. Response se
+  // seedha backend ka canonical followersCount leta hai — koi manual
+  // +1/-1 nahi.
   Future<void> _toggleFollow() async {
     final business = _business;
     if (business == null || _isFollowActionInProgress) return;
 
-    final wasFollowing = business.isFollowedByViewer;
-    setState(() {
-      _isFollowActionInProgress = true;
-      _business = business.copyWith(
-        isFollowedByViewer: !wasFollowing,
-        followerCount: wasFollowing
-            ? business.followerCount - 1
-            : business.followerCount + 1,
-      );
-    });
-
+    setState(() => _isFollowActionInProgress = true);
     try {
-      if (wasFollowing) {
-        await BusinessService.unfollow(widget.businessId);
+      final FollowActionResult result;
+      if (business.isFollowedByViewer) {
+        result = await FollowUserservice.unfollowUser(widget.businessId);
       } else {
-        await BusinessService.follow(widget.businessId);
+        result = await FollowUserservice.followUser(widget.businessId);
       }
+      setState(() {
+        _business = business.copyWith(
+          isFollowedByViewer: result.following,
+          followerCount: result.followersCount,
+        );
+      });
     } on ApiException catch (e) {
-      setState(() => _business = business);
       if (mounted) {
         ScaffoldMessenger.of(context)
             .showSnackBar(SnackBar(content: Text(e.message)));
@@ -122,19 +135,65 @@ class _BusinessProfileScreenState extends State<BusinessProfileScreen>
     }
   }
 
+  // ✅ MESSAGE — ab seedha chat screen khulega, koi text popup nahi.
+  // Agar aapke BusinessService me "getOrCreateConversation" jaisa
+  // dedicated endpoint hai (bina message bheje), to use ka use karo —
+  // zyada clean rahega. Filhal messageBusiness(id, '') call kar rahe
+  // hain; agar backend empty content accept nahi karta to us endpoint
+  // ko update karna padega.
   Future<void> _openMessageDialog() async {
+    final business = _business;
+    if (business == null) return;
+
+    try {
+      final result =
+          await BusinessService.messageBusiness(widget.businessId, '');
+      if (result == null || !mounted) return;
+
+      Navigator.push(
+        context,
+        MaterialPageRoute(
+          builder: (_) => ChatScreen(
+            conversationId: result['conversationId'],
+            otherUserId: result['otherUserId'],
+            username: business.name,
+            avatarUrl: business.profilePhotoUrl,
+          ),
+        ),
+      );
+    } on ApiException catch (e) {
+      if (mounted) {
+        ScaffoldMessenger.of(context)
+            .showSnackBar(SnackBar(content: Text(e.message)));
+      }
+    } catch (e) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(
+              content: Text('Something went wrong. Please try again.')),
+        );
+      }
+    }
+  }
+
+  // ✅ INQUIRY — text box khulega jaha user apna sawaal type kar sakta
+  // hai, phir woh message business ko bhej ke chat khol dega.
+  Future<void> _openInquiryDialog() async {
+    final business = _business;
+    if (business == null) return;
+
     final controller = TextEditingController();
     final content = await showDialog<String>(
       context: context,
       builder: (ctx) => AlertDialog(
         backgroundColor: _navyCard,
-        title: Text('Message ${_business?.name ?? ''}',
+        title: Text('Inquiry to ${business.name}',
             style: const TextStyle(color: Colors.white)),
         content: TextField(
           controller: controller,
           autofocus: true,
           style: const TextStyle(color: Colors.white),
-          decoration: const InputDecoration(hintText: 'Type your message...'),
+          decoration: const InputDecoration(hintText: 'Type your inquiry...'),
           maxLines: 3,
         ),
         actions: [
@@ -164,8 +223,8 @@ class _BusinessProfileScreenState extends State<BusinessProfileScreen>
           builder: (_) => ChatScreen(
             conversationId: result['conversationId'],
             otherUserId: result['otherUserId'],
-            username: _business!.name,
-            avatarUrl: _business!.profilePhotoUrl,
+            username: business.name,
+            avatarUrl: business.profilePhotoUrl,
           ),
         ),
       );
@@ -236,7 +295,6 @@ class _BusinessProfileScreenState extends State<BusinessProfileScreen>
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.stretch,
           children: [
-            // ── Header: business photo + name ──
             Container(
               padding: const EdgeInsets.fromLTRB(20, 24, 20, 20),
               decoration: const BoxDecoration(
@@ -291,7 +349,6 @@ class _BusinessProfileScreenState extends State<BusinessProfileScreen>
               label: 'Bookings',
               onTap: () {
                 Navigator.pop(context);
-                // TODO: navigate to bookings screen once implemented
               },
             ),
             _drawerItem(
@@ -299,7 +356,6 @@ class _BusinessProfileScreenState extends State<BusinessProfileScreen>
               label: 'Analytics',
               onTap: () {
                 Navigator.pop(context);
-                // TODO: navigate to analytics screen once implemented
               },
             ),
             _drawerItem(
@@ -307,7 +363,6 @@ class _BusinessProfileScreenState extends State<BusinessProfileScreen>
               label: 'Settings',
               onTap: () {
                 Navigator.pop(context);
-                // TODO: navigate to settings screen once implemented
               },
             ),
             const Spacer(),
@@ -388,10 +443,20 @@ class _BusinessProfileScreenState extends State<BusinessProfileScreen>
           backgroundColor: _navyDark,
           pinned: true,
           elevation: 0,
-          leading: IconButton(
-            icon: const Icon(Icons.arrow_back, color: Colors.white),
-            onPressed: () => Navigator.pop(context),
-          ),
+          // ✅ Ye screen do jagah use hoti hai:
+          //  1) HomeScreen ke bottom-nav "Profile" tab me — direct body
+          //     swap hota hai, push nahi. Waha back icon dikhana galat
+          //     hai kyunki Navigator.pop poore HomeScreen ko pop kar
+          //     deta hai -> black screen.
+          //  2) Kisi doosre business ka profile dekhne ke liye push
+          //     karke khola jaata hai — waha back icon chahiye.
+          automaticallyImplyLeading: widget.showBackButton,
+          leading: widget.showBackButton
+              ? IconButton(
+                  icon: const Icon(Icons.arrow_back, color: Colors.white),
+                  onPressed: () => Navigator.pop(context),
+                )
+              : null,
           title: Text(business.name,
               style: const TextStyle(color: Colors.white, fontSize: 18)),
           actions: [
@@ -412,7 +477,6 @@ class _BusinessProfileScreenState extends State<BusinessProfileScreen>
         SliverToBoxAdapter(
           child: Column(
             children: [
-              // ── Cover photo ──
               SizedBox(
                 height: 130,
                 width: double.infinity,
@@ -424,7 +488,6 @@ class _BusinessProfileScreenState extends State<BusinessProfileScreen>
                 offset: const Offset(0, -40),
                 child: Column(
                   children: [
-                    // ── Logo circle (overlapping cover) ──
                     CircleAvatar(
                       radius: 40,
                       backgroundColor: Colors.white,
@@ -465,21 +528,38 @@ class _BusinessProfileScreenState extends State<BusinessProfileScreen>
                           const Icon(Icons.location_on,
                               color: Colors.white54, size: 12),
                           const SizedBox(width: 2),
-                          Text(business.cityName!,
-                              style: const TextStyle(
-                                  color: Colors.white54, fontSize: 12)),
+                          Text(
+                            business.countryName != null
+                                ? '${business.cityName}, ${business.countryName}'
+                                : business.cityName!,
+                            style: const TextStyle(
+                                color: Colors.white54, fontSize: 12),
+                          ),
                         ],
                       ],
                     ),
+                    if (business.contactPhone != null) ...[
+                      const SizedBox(height: 2),
+                      Row(
+                        mainAxisAlignment: MainAxisAlignment.center,
+                        children: [
+                          const Icon(Icons.phone,
+                              color: Colors.white54, size: 12),
+                          const SizedBox(width: 4),
+                          Text(
+                            business.contactPhone!,
+                            style: const TextStyle(
+                                color: Colors.white54, fontSize: 12),
+                          ),
+                        ],
+                      ),
+                    ],
                     Text(
                       business.businessType,
                       style:
                           const TextStyle(color: Colors.white54, fontSize: 12),
                     ),
                     const SizedBox(height: 12),
-
-                    // ── Buttons — owner sees "Edit Business",
-                    // visitors see Follow/Message/Call ──
                     Padding(
                       padding: const EdgeInsets.symmetric(horizontal: 24),
                       child: _isOwnBusiness
@@ -539,32 +619,28 @@ class _BusinessProfileScreenState extends State<BusinessProfileScreen>
                                     child: const Text('Message'),
                                   ),
                                 ),
-                                if (business.contactPhone != null) ...[
-                                  const SizedBox(width: 8),
-                                  Expanded(
-                                    flex: 2,
-                                    child: OutlinedButton(
-                                      onPressed: _call,
-                                      style: OutlinedButton.styleFrom(
-                                        foregroundColor: Colors.white,
-                                        side: const BorderSide(
-                                            color: Colors.white24),
-                                        padding: const EdgeInsets.symmetric(
-                                            vertical: 10),
-                                        shape: RoundedRectangleBorder(
-                                            borderRadius:
-                                                BorderRadius.circular(8)),
-                                      ),
-                                      child: const Text('Call'),
+                                const SizedBox(width: 8),
+                                Expanded(
+                                  flex: 2,
+                                  child: OutlinedButton(
+                                    onPressed: _openInquiryDialog,
+                                    style: OutlinedButton.styleFrom(
+                                      foregroundColor: Colors.white,
+                                      side: const BorderSide(
+                                          color: Colors.white24),
+                                      padding: const EdgeInsets.symmetric(
+                                          vertical: 10),
+                                      shape: RoundedRectangleBorder(
+                                          borderRadius:
+                                              BorderRadius.circular(8)),
                                     ),
+                                    child: const Text('Inquiry'),
                                   ),
-                                ],
+                                ),
                               ],
                             ),
                     ),
                     const SizedBox(height: 14),
-
-                    // ── Rating / Followers row ──
                     Row(
                       mainAxisAlignment: MainAxisAlignment.center,
                       children: [
@@ -583,11 +659,15 @@ class _BusinessProfileScreenState extends State<BusinessProfileScreen>
                           style: const TextStyle(
                               color: Colors.white70, fontSize: 13),
                         ),
+                        const SizedBox(width: 18),
+                        Text(
+                          '${_formatCount(business.followingCount)} Following',
+                          style: const TextStyle(
+                              color: Colors.white70, fontSize: 13),
+                        ),
                       ],
                     ),
                     const SizedBox(height: 10),
-
-                    // ── Bio ──
                     if (business.description != null)
                       Padding(
                         padding: const EdgeInsets.symmetric(horizontal: 24),

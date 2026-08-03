@@ -3,6 +3,7 @@ class ApiConfig {
 
   // Auth
   static const String loginUrl = '$baseUrl/api/v1/auth/login';
+  static const String googleLoginUrl = '$baseUrl/api/v1/auth/google';
   static const String refreshTokenUrl =
       '$baseUrl/api/v1/auth/refresh'; // ← FIXED path
 
@@ -161,4 +162,10 @@ class ApiConfig {
 
   static String presenceStatusUrl(int userId) =>
       '$baseUrl/api/v1/presence/$userId';
+
+// Categories (Create Account dropdowns)
+  static const String profileCategoriesUrl =
+      '$baseUrl/api/v1/categories/profile-categories';
+  static const String businessCategoriesUrl =
+      '$baseUrl/api/v1/categories/business-categories';
 }

@@ -1,39 +1,50 @@
 import 'package:flutter/material.dart';
 
 import '../../model/CategoryModel.dart';
+import '../../model/UserModel.dart';
 import '../../service/AuthService.dart';
 import '../../service/CategoryService.dart';
 import '../../theme/app_theme.dart';
 
 enum AccountType { individual, business }
 
-class RegisterScreen extends StatefulWidget {
-  const RegisterScreen({super.key});
+/// Google Sign-In se naya user aane par (SIGNUP_REQUIRED) ye screen khulti
+/// hai — password nahi maangte (Google se auth ho chuka hai), sirf account
+/// type + category (+ business name agar business hai) poochte hain.
+/// Dropdown data RegisterScreen wale hi CategoryService se DB se load hota
+/// hai — koi hardcoded list nahi.
+class GoogleCompleteRegistrationScreen extends StatefulWidget {
+  final String signupToken;
+  final String? email;
+  final String? name;
+  final VoidCallback
+      onComplete; // success ke baad home pe navigate karne ke liye
+
+  const GoogleCompleteRegistrationScreen({
+    super.key,
+    required this.signupToken,
+    required this.onComplete,
+    this.email,
+    this.name,
+  });
 
   @override
-  State<RegisterScreen> createState() => _RegisterScreenState();
+  State<GoogleCompleteRegistrationScreen> createState() =>
+      _GoogleCompleteRegistrationScreenState();
 }
 
-class _RegisterScreenState extends State<RegisterScreen> {
-  final _nameCtrl = TextEditingController();
-  final _emailCtrl = TextEditingController();
-  final _passwordCtrl = TextEditingController();
-  final _confirmCtrl = TextEditingController();
+class _GoogleCompleteRegistrationScreenState
+    extends State<GoogleCompleteRegistrationScreen> {
   final _businessNameCtrl = TextEditingController();
-  bool _obscurePassword = true;
-  bool _obscureConfirm = true;
   bool _isLoading = false;
 
-  // Account type toggle — decides which fields below are shown/sent
   AccountType _accountType = AccountType.individual;
 
-  // Profession type dropdown (individual only) — DB se load hota hai
   CategoryModel? _selectedProfessionType;
   List<CategoryModel> _professionTypes = [];
   bool _loadingProfessionTypes = true;
   String? _professionTypesError;
 
-  // Business type dropdown (business only) — DB se load hota hai
   CategoryModel? _selectedBusinessType;
   List<CategoryModel> _businessTypes = [];
   bool _loadingBusinessTypes = true;
@@ -80,21 +91,7 @@ class _RegisterScreenState extends State<RegisterScreen> {
     }
   }
 
-  Future<void> _register() async {
-    final name = _nameCtrl.text.trim();
-    final email = _emailCtrl.text.trim();
-    final password = _passwordCtrl.text.trim();
-    final confirm = _confirmCtrl.text.trim();
-
-    if (name.isEmpty || email.isEmpty || password.isEmpty) {
-      _showSnack('Please fill all fields');
-      return;
-    }
-    if (password != confirm) {
-      _showSnack('Passwords do not match!');
-      return;
-    }
-
+  Future<void> _completeRegistration() async {
     if (_accountType == AccountType.individual &&
         _selectedProfessionType == null) {
       _showSnack('Please select your profession type');
@@ -113,13 +110,8 @@ class _RegisterScreenState extends State<RegisterScreen> {
 
     setState(() => _isLoading = true);
     try {
-      // Backend ko category ka "code" (MUSICIAN, SHOP, etc.) bhejna hai,
-      // display naam nahi — resolveProfessionalCategory() isi code se
-      // DB match karta hai.
-      await AuthService.register(
-        name: name,
-        email: email,
-        password: password,
+      final UserModel user = await AuthService.completeGoogleRegistration(
+        signupToken: widget.signupToken,
         accountType:
             _accountType == AccountType.individual ? 'INDIVIDUAL' : 'BUSINESS',
         professionalType: _accountType == AccountType.individual
@@ -133,8 +125,9 @@ class _RegisterScreenState extends State<RegisterScreen> {
             : null,
       );
       if (!mounted) return;
-      _showSnack('Account created! Please login.');
-      Navigator.pop(context); // Login screen pe wapas
+      // completeGoogleRegistration() session save + socket connect kar
+      // chuka hai — ab seedha home pe bhej do.
+      widget.onComplete();
     } catch (e) {
       if (!mounted) return;
       _showSnack(e.toString());
@@ -146,10 +139,7 @@ class _RegisterScreenState extends State<RegisterScreen> {
   void _showSnack(String msg) {
     ScaffoldMessenger.of(context).showSnackBar(
       SnackBar(
-        content: Text(
-          msg,
-          style: AppFonts.body(color: AppColors.textPrimary),
-        ),
+        content: Text(msg, style: AppFonts.body(color: AppColors.textPrimary)),
         backgroundColor: AppColors.bgSurfaceElevated,
       ),
     );
@@ -162,11 +152,9 @@ class _RegisterScreenState extends State<RegisterScreen> {
       appBar: AppBar(
         backgroundColor: AppColors.bgBase,
         elevation: 0,
-        leading: IconButton(
-          icon: const Icon(Icons.arrow_back, color: AppColors.textPrimary),
-          onPressed: () => Navigator.pop(context),
-        ),
-        title: Text('Create Account',
+        automaticallyImplyLeading: false,
+        // wapas login pe jaana sahi nahi (signup token consume ho chuka)
+        title: Text('Complete Your Profile',
             style:
                 AppFonts.heading(fontSize: 20, color: AppColors.textPrimary)),
       ),
@@ -174,29 +162,43 @@ class _RegisterScreenState extends State<RegisterScreen> {
         child: SingleChildScrollView(
           padding: const EdgeInsets.symmetric(horizontal: 24),
           child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
             children: [
               const SizedBox(height: 24),
 
-              // Logo
               Image.asset('assets/images/Artist.inlogo.png', width: 160),
 
-              const SizedBox(height: 32),
+              const SizedBox(height: 24),
 
-              // Name
-              TextField(
-                controller: _nameCtrl,
-                style: AppFonts.body(color: AppColors.textPrimary),
-                decoration: const InputDecoration(labelText: 'Full Name*'),
-              ),
-              const SizedBox(height: 16),
+              if (widget.name != null || widget.email != null)
+                Container(
+                  width: double.infinity,
+                  padding: const EdgeInsets.all(16),
+                  decoration: BoxDecoration(
+                    color: AppColors.bgSurfaceElevated,
+                    borderRadius: BorderRadius.circular(12),
+                  ),
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      if (widget.name != null)
+                        Text(widget.name!,
+                            style: AppFonts.heading(
+                                fontSize: 16, color: AppColors.textPrimary)),
+                      if (widget.email != null)
+                        Text(widget.email!,
+                            style: AppFonts.body(
+                                color: AppColors.textSecondary, fontSize: 13)),
+                    ],
+                  ),
+                ),
 
-              // Email
-              TextField(
-                controller: _emailCtrl,
-                keyboardType: TextInputType.emailAddress,
-                style: AppFonts.body(color: AppColors.textPrimary),
-                decoration: const InputDecoration(labelText: 'Email*'),
-              ),
+              const SizedBox(height: 24),
+
+              Text('Just one more step to set up your account',
+                  style: AppFonts.body(
+                      color: AppColors.textSecondary, fontSize: 13)),
+
               const SizedBox(height: 16),
 
               // Account Type toggle — Individual vs Business
@@ -217,8 +219,6 @@ class _RegisterScreenState extends State<RegisterScreen> {
                 onSelectionChanged: (selection) {
                   setState(() {
                     _accountType = selection.first;
-                    // clear whichever branch just got hidden — stale value
-                    // should never leak into the register() call
                     if (_accountType == AccountType.individual) {
                       _selectedBusinessType = null;
                       _businessNameCtrl.clear();
@@ -230,9 +230,8 @@ class _RegisterScreenState extends State<RegisterScreen> {
               ),
               const SizedBox(height: 16),
 
-              // Individual-only field — DB se loaded categories
               if (_accountType == AccountType.individual)
-                _buildCategoryDropdown<CategoryModel>(
+                _buildCategoryDropdown(
                   label: 'Profession Type*',
                   loading: _loadingProfessionTypes,
                   error: _professionTypesError,
@@ -243,9 +242,8 @@ class _RegisterScreenState extends State<RegisterScreen> {
                       setState(() => _selectedProfessionType = value),
                 ),
 
-              // Business-only fields — DB se loaded categories
               if (_accountType == AccountType.business) ...[
-                _buildCategoryDropdown<CategoryModel>(
+                _buildCategoryDropdown(
                   label: 'Business Type*',
                   loading: _loadingBusinessTypes,
                   error: _businessTypesError,
@@ -263,51 +261,11 @@ class _RegisterScreenState extends State<RegisterScreen> {
                       const InputDecoration(labelText: 'Business Name*'),
                 ),
               ],
-              const SizedBox(height: 16),
 
-              // Password
-              TextField(
-                controller: _passwordCtrl,
-                obscureText: _obscurePassword,
-                style: AppFonts.body(color: AppColors.textPrimary),
-                decoration: InputDecoration(
-                  labelText: 'Password*',
-                  suffixIcon: IconButton(
-                    icon: Icon(
-                        _obscurePassword
-                            ? Icons.visibility_off_outlined
-                            : Icons.visibility_outlined,
-                        color: AppColors.textSecondary),
-                    onPressed: () =>
-                        setState(() => _obscurePassword = !_obscurePassword),
-                  ),
-                ),
-              ),
-              const SizedBox(height: 16),
+              const SizedBox(height: 32),
 
-              // Confirm Password
-              TextField(
-                controller: _confirmCtrl,
-                obscureText: _obscureConfirm,
-                style: AppFonts.body(color: AppColors.textPrimary),
-                decoration: InputDecoration(
-                  labelText: 'Confirm Password*',
-                  suffixIcon: IconButton(
-                    icon: Icon(
-                        _obscureConfirm
-                            ? Icons.visibility_off_outlined
-                            : Icons.visibility_outlined,
-                        color: AppColors.textSecondary),
-                    onPressed: () =>
-                        setState(() => _obscureConfirm = !_obscureConfirm),
-                  ),
-                ),
-              ),
-              const SizedBox(height: 24),
-
-              // Register Button
               ElevatedButton(
-                onPressed: _isLoading ? null : _register,
+                onPressed: _isLoading ? null : _completeRegistration,
                 child: _isLoading
                     ? const SizedBox(
                         height: 22,
@@ -315,29 +273,10 @@ class _RegisterScreenState extends State<RegisterScreen> {
                         child: CircularProgressIndicator(
                             strokeWidth: 2, color: AppColors.textOnGold),
                       )
-                    : const Text('CREATE ACCOUNT'),
+                    : const Text('FINISH SETUP'),
               ),
 
-              const SizedBox(height: 16),
-
-              // Already have account
-              Row(
-                mainAxisAlignment: MainAxisAlignment.center,
-                children: [
-                  Text('Already have an account? ',
-                      style: AppFonts.body(
-                          color: AppColors.textSecondary, fontSize: 13)),
-                  GestureDetector(
-                    onTap: () => Navigator.pop(context),
-                    child: Text('Login',
-                        style: AppFonts.body(
-                            color: AppColors.gold,
-                            fontWeight: FontWeight.w600,
-                            fontSize: 13)),
-                  ),
-                ],
-              ),
-              const SizedBox(height: 24),
+              const SizedBox(height: 32),
             ],
           ),
         ),
@@ -345,8 +284,7 @@ class _RegisterScreenState extends State<RegisterScreen> {
     );
   }
 
-  // Common dropdown builder — loading / error / normal states handle karta hai
-  Widget _buildCategoryDropdown<T extends CategoryModel>({
+  Widget _buildCategoryDropdown({
     required String label,
     required bool loading,
     required String? error,
@@ -379,10 +317,8 @@ class _RegisterScreenState extends State<RegisterScreen> {
         child: Row(
           children: [
             Expanded(
-              child: Text(
-                'Could not load options',
-                style: AppFonts.body(color: AppColors.textSecondary),
-              ),
+              child: Text('Could not load options',
+                  style: AppFonts.body(color: AppColors.textSecondary)),
             ),
             TextButton(
               onPressed: onRetry,
@@ -404,10 +340,8 @@ class _RegisterScreenState extends State<RegisterScreen> {
       items: items
           .map((cat) => DropdownMenuItem<CategoryModel>(
                 value: cat,
-                child: Text(
-                  cat.displayName,
-                  style: AppFonts.body(color: AppColors.textPrimary),
-                ),
+                child: Text(cat.displayName,
+                    style: AppFonts.body(color: AppColors.textPrimary)),
               ))
           .toList(),
       onChanged: onChanged,

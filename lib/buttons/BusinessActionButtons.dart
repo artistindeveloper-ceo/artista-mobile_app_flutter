@@ -3,6 +3,7 @@ import 'package:url_launcher/url_launcher.dart';
 
 import '../../model/BusinessModel.dart';
 import '../../service/BusinessService.dart';
+import '../../service/FollowUserService.dart';
 import '../../theme/app_theme.dart';
 
 class BusinessActionButtons extends StatefulWidget {
@@ -24,16 +25,16 @@ class _BusinessActionButtonsState extends State<BusinessActionButtons> {
 
   Future<void> _toggleFollow() async {
     setState(() => _isFollowLoading = true);
-    final wasFollowing = widget.business.isFollowedByViewer;
     try {
-      if (wasFollowing) {
-        await BusinessService.unfollow(widget.business.id);
+      final FollowActionResult result;
+      if (widget.business.isFollowedByViewer) {
+        result = await FollowUserservice.unfollowUser(widget.business.id);
       } else {
-        await BusinessService.follow(widget.business.id);
+        result = await FollowUserservice.followUser(widget.business.id);
       }
       final updated = widget.business.copyWith(
-        isFollowedByViewer: !wasFollowing,
-        followerCount: widget.business.followerCount + (wasFollowing ? -1 : 1),
+        isFollowedByViewer: result.following,
+        followerCount: result.followersCount,
       );
       widget.onBusinessUpdated?.call(updated);
     } catch (e) {
@@ -45,16 +46,15 @@ class _BusinessActionButtonsState extends State<BusinessActionButtons> {
   }
 
   Future<void> _message() async {
-    // Simple starter message — swap for an actual compose dialog/screen if you have one
     try {
-      final conversationId = await BusinessService.messageBusiness(
+      final result = await BusinessService.messageBusiness(
         widget.business.id,
         'Hi, I\'m interested in your ${widget.business.businessType.toLowerCase()}.',
       );
       if (!mounted) return;
-      if (conversationId != null) {
+      if (result != null) {
         // Navigator.push(context, MaterialPageRoute(
-        //   builder: (_) => ChatScreen(conversationId: conversationId),
+        //   builder: (_) => ChatScreen(conversationId: result['conversationId']),
         // ));
       }
       _showSnack('Message sent');

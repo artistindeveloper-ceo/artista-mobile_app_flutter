@@ -37,8 +37,8 @@ class BusinessService {
     String? name,
     String? description,
     int? cityId,
-    String? contactEmail, // ← NAYA
-    String? contactPhone, // ← NAYA
+    String? contactEmail,
+    String? contactPhone,
     Map<String, dynamic>? details,
   }) async {
     final uri = Uri.parse('${ApiConfig.baseUrl}/api/v1/businesses/$businessId');
@@ -53,9 +53,7 @@ class BusinessService {
             if (description != null) 'description': description,
             if (cityId != null) 'cityId': cityId,
             if (contactEmail != null) 'contactEmail': contactEmail,
-            // ← NAYA
             if (contactPhone != null) 'contactPhone': contactPhone,
-            // ← NAYA
             if (details != null) 'details': details,
           }),
         ),
@@ -72,49 +70,6 @@ class BusinessService {
           body['message'] ?? 'Could not update business profile.');
     }
     return BusinessModel.fromJson(body);
-  }
-
-  // ─── FOLLOW ─────────────────────────────────────────────
-  static Future<void> follow(int businessId) async {
-    final uri =
-        Uri.parse('${ApiConfig.baseUrl}/api/v1/businesses/$businessId/follow');
-    http.Response response;
-    try {
-      response = await ApiClient.authorizedRequest(
-        () => http.post(uri, headers: HelperService.authHeaders()),
-      );
-    } catch (e) {
-      if (e is ApiException) rethrow;
-      throw ApiException(
-          'Could not reach server. Check your internet connection.');
-    }
-
-    final body = HelperService.safeDecode(response.body);
-    if (response.statusCode != 200) {
-      throw ApiException(body['message'] ?? 'Could not follow this business.');
-    }
-  }
-
-  // ─── UNFOLLOW ───────────────────────────────────────────
-  static Future<void> unfollow(int businessId) async {
-    final uri =
-        Uri.parse('${ApiConfig.baseUrl}/api/v1/businesses/$businessId/follow');
-    http.Response response;
-    try {
-      response = await ApiClient.authorizedRequest(
-        () => http.delete(uri, headers: HelperService.authHeaders()),
-      );
-    } catch (e) {
-      if (e is ApiException) rethrow;
-      throw ApiException(
-          'Could not reach server. Check your internet connection.');
-    }
-
-    final body = HelperService.safeDecode(response.body);
-    if (response.statusCode != 200) {
-      throw ApiException(
-          body['message'] ?? 'Could not unfollow this business.');
-    }
   }
 
   // ─── MESSAGE BUSINESS (routes to the owner's DM thread) ───────────
@@ -155,7 +110,7 @@ class BusinessService {
     };
   }
 
-  // ─── GET BUSINESS POSTS ─────────────────────────────────── ← NAYA METHOD
+  // ─── GET BUSINESS POSTS ───────────────────────────────────
   static Future<List<PostModel>> getPosts(int businessId,
       {int page = 0, int size = 20}) async {
     final uri = Uri.parse(

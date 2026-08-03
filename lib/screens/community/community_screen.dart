@@ -8,7 +8,6 @@ import '../../service/UserService.dart';
 import '../../theme/app_theme.dart';
 import 'discover_tab.dart';
 
-
 class CommunityScreen extends StatefulWidget {
   const CommunityScreen({super.key});
 
@@ -150,10 +149,10 @@ class _CommunityScreenState extends State<CommunityScreen>
   // ─── Follow User ──────────────────────────────────────
   Future<void> _followUser(int userId) async {
     try {
-      final status = await FollowUserservice.followUser(userId);
+      final result = await FollowUserservice.followUser(userId);
 
-      final bool nowFollowing = status == 'FOLLOWING';
-      final bool nowPending = status == 'REQUEST_PENDING';
+      final bool nowFollowing = result.status == 'FOLLOWING';
+      final bool nowPending = result.status == 'REQUEST_PENDING';
 
       if (nowPending) {
         _showSnack('Follow request sent!');
@@ -168,6 +167,7 @@ class _CommunityScreenState extends State<CommunityScreen>
           return u.copyWith(
             isFollowing: nowFollowing || u.isFollowing,
             hasPendingFollowRequest: nowPending,
+            followersCount: result.followersCount,
           );
         }).toList();
         _searchResults = _searchResults.map((u) {
@@ -175,6 +175,7 @@ class _CommunityScreenState extends State<CommunityScreen>
           return u.copyWith(
             isFollowing: nowFollowing || u.isFollowing,
             hasPendingFollowRequest: nowPending,
+            followersCount: result.followersCount,
           );
         }).toList();
       });

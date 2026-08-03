@@ -6,6 +6,7 @@ import '../screens/jamming_room/jamming_screen.dart';
 import '../screens/auth/login_screen.dart';
 
 import '../screens/profile/ProfileScreen.dart';
+import '../screens/Business_Profile/BusinessProfileScreen.dart'; // ← NAYA IMPORT
 import '../screens/settings_screen.dart';
 import '../theme/app_theme.dart';
 
@@ -63,14 +64,30 @@ class _AppDrawerState extends State<AppDrawer> {
 
               // ✅ Agar already apni ProfileScreen ke andar ho
               // (endDrawer se khula), toh dobara push mat karo.
+              // NOTE: BusinessProfileScreen apna khud ka endDrawer use karta
+              // hai (ye check sirf ProfileScreen ke andar hone ke liye hai) —
+              // BusinessProfileScreen se ye AppDrawer generally nahi khulta.
               if (widget.isOwnProfileScreen) return;
 
-              Navigator.push(
-                context,
-                MaterialPageRoute(
-                  builder: (_) => const ProfileScreen(),
-                ),
-              );
+              // ✅ Business account ho to BusinessProfileScreen kholo,
+              // warna normal ProfileScreen — pehle ye hamesha ProfileScreen
+              // hi kholta tha, chahe account Business ho.
+              if (Session().isBusinessAccount && Session().userId != null) {
+                Navigator.push(
+                  context,
+                  MaterialPageRoute(
+                    builder: (_) =>
+                        BusinessProfileScreen(businessId: Session().userId!),
+                  ),
+                );
+              } else {
+                Navigator.push(
+                  context,
+                  MaterialPageRoute(
+                    builder: (_) => const ProfileScreen(),
+                  ),
+                );
+              }
             },
             child: Container(
               width: double.infinity,

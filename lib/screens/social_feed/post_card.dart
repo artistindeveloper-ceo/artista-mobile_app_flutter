@@ -5,6 +5,7 @@ import '../../../../screens/profile/ProfileScreen.dart';
 import '../../../../service/PostService.dart';
 import '../../../../theme/app_theme.dart';
 import '../../../../widgets/video_post_player.dart';
+import '../Business_Profile/BusinessProfileScreen.dart';
 import 'comments_sheet.dart';
 
 class PostCard extends StatefulWidget {
@@ -65,8 +66,9 @@ class _PostCardState extends State<PostCard> {
     Navigator.push(
       context,
       MaterialPageRoute(
-        builder: (_) =>
-            ProfileScreen(username: post.username), // ✅ use username
+        builder: (_) => post.isBusinessAccount
+            ? BusinessProfileScreen(businessId: post.authorId)
+            : ProfileScreen(username: post.username),
       ),
     );
   }

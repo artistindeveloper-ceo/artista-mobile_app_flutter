@@ -138,8 +138,19 @@ class _HomeScreenState extends State<HomeScreen> {
         // ProfileScreen. _currentUser abhi load ho raha ho to (null) tab
         // tak normal ProfileScreen dikhate hain — wo khud apna loading
         // state handle karta hai.
+        //
+        // ✅ showBackButton: false — ye screen yaha ek bottom-nav TAB
+        // ke roop me dikh rahi hai (push nahi hui), isliye iske andar
+        // back button dikhana galat hai. Back button dabane par
+        // Navigator.pop(context) poore HomeScreen ko hi pop kar deta
+        // tha (kyunki stack me neeche kuch nahi bacha tha, SplashScreen
+        // pushReplacement se replace ho chuka tha) -> black screen aata
+        // tha. Ab back icon hi is mode me nahi dikhega.
         if (_currentUser != null && _currentUser!.isBusinessAccount) {
-          return BusinessProfileScreen(businessId: _currentUser!.id);
+          return BusinessProfileScreen(
+            businessId: _currentUser!.id,
+            showBackButton: false,
+          );
         }
         return const ProfileScreen();
       default:

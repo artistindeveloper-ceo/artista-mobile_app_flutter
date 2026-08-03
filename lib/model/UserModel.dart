@@ -5,8 +5,24 @@ class UserModel {
   final String name;
   final String email;
   final String? role;
-  final String?
-      professionalType; // MUSICIAN, PHOTOGRAPHER, etc. (backend: roleType)
+
+  // Legacy field — INDIVIDUAL account ke liye ProfileCategory.code
+  // (MUSICIAN, PHOTOGRAPHER...). BUSINESS account ke liye ab null aata hai —
+  // categoryCode use karo (dono account type ke liye kaam karta hai).
+  final String? professionalType;
+
+  // Naya — backend ab explicit accountType bhejta hai (INDIVIDUAL/BUSINESS).
+  // isBusinessAccount isi pe base hai, ab koi guessing nahi.
+  final String? accountType;
+
+  // Dono account type ke liye common field — INDIVIDUAL ke liye
+  // ProfileCategory.code, BUSINESS ke liye BusinessCategory.code
+  final String? categoryCode;
+  final String? categoryDisplayName;
+
+  // BUSINESS account ke liye hi set hota hai
+  final String? businessName;
+
   final String? createdAt;
   final String? avatarUrl;
   final String? coverPhotoUrl;
@@ -27,6 +43,10 @@ class UserModel {
     required this.email,
     this.role,
     this.professionalType,
+    this.accountType,
+    this.categoryCode,
+    this.categoryDisplayName,
+    this.businessName,
     this.createdAt,
     this.avatarUrl,
     this.coverPhotoUrl,
@@ -42,26 +62,23 @@ class UserModel {
     this.mobileNumber,
   });
 
-  // Business account types jo roleType me aa sakte hain — inke against
-  // check karke individual vs business decide karte hain, kyunki backend
-  // response me abhi ek separate "accountType" field nahi hai.
-  static const Set<String> _businessRoleTypes = {
-    'SHOP',
-    'ACADEMY',
-    'SCHOOL',
-    'INSTITUTE',
-  };
-
-  bool get isBusinessAccount =>
-      professionalType != null &&
-      _businessRoleTypes.contains(professionalType!.toUpperCase());
+  // accountType field pe direct base hai — backend "INDIVIDUAL"/"BUSINESS"
+  // bhejta hai. Pehle ye professionalType ki hardcoded list se guess karta
+  // tha, jo tab galat result deta tha jab backend roleType hi nahi bhejta
+  // tha (business accounts ke liye).
+  bool get isBusinessAccount => accountType?.toUpperCase() == 'BUSINESS';
 
   UserModel copyWith({
     bool? isFollowing,
+    int? followersCount,
     String? profilePhotoUrl,
     bool? isPrivate,
     bool? hasPendingFollowRequest,
     String? professionalType,
+    String? accountType,
+    String? categoryCode,
+    String? categoryDisplayName,
+    String? businessName,
     String? mobileNumber,
   }) {
     return UserModel(
@@ -70,12 +87,16 @@ class UserModel {
       email: email,
       role: role,
       professionalType: professionalType ?? this.professionalType,
+      accountType: accountType ?? this.accountType,
+      categoryCode: categoryCode ?? this.categoryCode,
+      categoryDisplayName: categoryDisplayName ?? this.categoryDisplayName,
+      businessName: businessName ?? this.businessName,
       createdAt: createdAt,
       avatarUrl: avatarUrl,
       coverPhotoUrl: coverPhotoUrl,
       username: username,
       bio: bio,
-      followersCount: followersCount,
+      followersCount: followersCount ?? this.followersCount,
       followingCount: followingCount,
       postsCount: postsCount,
       isFollowing: isFollowing ?? this.isFollowing,
@@ -100,10 +121,14 @@ class UserModel {
       name: json['displayName'] ?? json['name'] ?? json['fullName'] ?? '',
       email: json['email'] ?? '',
       role: json['role'],
-      // Backend field is called "roleType" on the User entity
-      // (MUSICIAN, PHOTOGRAPHER, etc.) — kept as a separate professionalType
-      // key here so it never gets confused with the USER/ADMIN `role` enum.
+      // Backend field is called "roleType" on the response — sirf INDIVIDUAL
+      // account ke liye set hota hai ab. Business ke liye null aayega,
+      // categoryCode dekho.
       professionalType: json['roleType'] ?? json['professionalType'],
+      accountType: json['accountType'],
+      categoryCode: json['categoryCode'],
+      categoryDisplayName: json['categoryDisplayName'],
+      businessName: json['businessName'],
       createdAt: json['createdAt'],
       avatarUrl: _buildUrl(
         json['profilePhotoUrl'] ??

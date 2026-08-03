@@ -17,6 +17,13 @@
         android:label="artista"
         android:usesCleartextTraffic="true">       <!-- ✅ ADD: HTTP allow -->
 
+        <!-- ✅ ADD: Disable Impeller — fixes black-screen glitch on back
+             navigation from screens with NestedScrollView/SliverAppBar
+             (e.g. BusinessProfileScreen) on some Android GPUs. -->
+        <meta-data
+            android:name="io.flutter.embedding.android.EnableImpeller"
+            android:value="false" />
+
         <activity
             android:name=".MainActivity"
             android:configChanges="orientation|keyboardHidden|keyboard|screenSize|smallestScreenSize|locale|layoutDirection|fontScale|screenLayout|density|uiMode"

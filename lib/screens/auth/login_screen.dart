@@ -4,6 +4,8 @@ import '../../service/AuthService.dart';
 import '../../service/NotificationService.dart';
 import '../../theme/app_theme.dart';
 import '../home_screen.dart';
+import 'GoogleAuthResult.dart';
+import 'GoogleCompleteRegistrationScreen.dart';
 import 'register_screen.dart';
 
 class LoginScreen extends StatefulWidget {
@@ -18,6 +20,7 @@ class _LoginScreenState extends State<LoginScreen> {
   final _passwordController = TextEditingController();
   bool _obscurePassword = true;
   bool _isLoading = false;
+  bool _isGoogleLoading = false;
 
   void _goToHome() {
     Navigator.pushReplacement(
@@ -53,6 +56,53 @@ class _LoginScreenState extends State<LoginScreen> {
       _showSnack(e.toString());
     } finally {
       if (mounted) setState(() => _isLoading = false);
+    }
+  }
+
+  // ─── GOOGLE SIGN-IN ─────────────────────────────────────────────
+  Future<void> _loginWithGoogle() async {
+    if (_isGoogleLoading) return; // double-tap guard
+
+    setState(() => _isGoogleLoading = true);
+
+    try {
+      final GoogleAuthResult result = await AuthService.loginWithGoogle();
+      if (!mounted) return;
+
+      if (result.status == GoogleAuthStatus.loginSuccess) {
+        // Existing user — seedha login ho chuka hai (AuthService ke andar
+        // hi session save + socket connect ho gaya)
+        NotificationService
+            .init(); // await mat karo — background mein chalne do
+        _goToHome();
+      } else {
+        // Naya Google user — account type + category poochni hai
+        Navigator.push(
+          context,
+          MaterialPageRoute(
+            builder: (_) => GoogleCompleteRegistrationScreen(
+              signupToken: result.signupToken!,
+              email: result.email,
+              name: result.name,
+              onComplete: () {
+                NotificationService.init();
+                // GoogleCompleteRegistrationScreen ke upar se home tak seedha
+                // pop karke jaana hai, login screen wapas nahi dikhni chahiye
+                Navigator.pushAndRemoveUntil(
+                  context,
+                  MaterialPageRoute(builder: (_) => const HomeScreen()),
+                  (route) => false,
+                );
+              },
+            ),
+          ),
+        );
+      }
+    } catch (e) {
+      if (!mounted) return;
+      _showSnack(e.toString());
+    } finally {
+      if (mounted) setState(() => _isGoogleLoading = false);
     }
   }
 
@@ -177,7 +227,8 @@ class _LoginScreenState extends State<LoginScreen> {
                   _SocialButton(
                     label: 'G',
                     color: AppColors.googleRed,
-                    onTap: () {},
+                    onTap: _loginWithGoogle,
+                    isLoading: _isGoogleLoading,
                   ),
                   const SizedBox(width: 20),
                   _SocialButton(
@@ -234,18 +285,20 @@ class _SocialButton extends StatelessWidget {
   final Color color;
   final VoidCallback onTap;
   final bool isF;
+  final bool isLoading;
 
   const _SocialButton({
     required this.label,
     required this.color,
     required this.onTap,
     this.isF = false,
+    this.isLoading = false,
   });
 
   @override
   Widget build(BuildContext context) {
     return GestureDetector(
-      onTap: onTap,
+      onTap: isLoading ? null : onTap,
       child: Container(
         width: 52,
         height: 52,
@@ -261,15 +314,24 @@ class _SocialButton extends StatelessWidget {
           ],
         ),
         child: Center(
-          child: Text(
-            label,
-            style: TextStyle(
-              color: Colors.white,
-              fontSize: isF ? 26 : 22,
-              fontWeight: FontWeight.bold,
-              fontFamily: isF ? 'serif' : null,
-            ),
-          ),
+          child: isLoading
+              ? const SizedBox(
+                  height: 20,
+                  width: 20,
+                  child: CircularProgressIndicator(
+                    strokeWidth: 2,
+                    color: Colors.white,
+                  ),
+                )
+              : Text(
+                  label,
+                  style: TextStyle(
+                    color: Colors.white,
+                    fontSize: isF ? 26 : 22,
+                    fontWeight: FontWeight.bold,
+                    fontFamily: isF ? 'serif' : null,
+                  ),
+                ),
         ),
       ),
     );
